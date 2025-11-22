@@ -1,7 +1,8 @@
 <?php
+session_start();
 require '../inc/koneksi.php';
 require '../inc/utils.php';
-session_start();
+
 if (!is_admin()) { die('Forbidden'); }
 $id_booking = intval($_GET['id_booking']);
 

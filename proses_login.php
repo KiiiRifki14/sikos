@@ -1,12 +1,10 @@
 <?php
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
-
 session_start();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_check($_POST['csrf'])) {
     die('Invalid Request');
 }
-
 $email = $_POST['email'];
 $password = $_POST['password'];
 
@@ -19,7 +17,9 @@ if ($row = $res->fetch_assoc()) {
         session_regenerate_id(true);
         $_SESSION['id_pengguna'] = $row['id_pengguna'];
         $_SESSION['peran'] = $row['peran'];
-        header('Location: ' . ($row['peran']=='ADMIN' ? 'admin/index.php' : 'penghuni_dashboard.php'));
+        if ($row['peran']=='ADMIN') header('Location: admin/index.php');
+        elseif ($row['peran']=='OWNER') header('Location: owner_dashboard.php');
+        else header('Location: penghuni_dashboard.php');
         exit;
     }
 }

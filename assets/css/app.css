@@ -1,6 +1,70 @@
-body {font-family: Arial, sans-serif;margin:0;background:#fafafa;}
-.header,.footer {background:#333;color:#fff;padding:12px;}
-.footer {text-align:center;}
-.container {max-width:900px;margin:18px auto;padding:18px;background:#fff;border-radius:6px;}
-.breadcrumb {font-size:small;margin-bottom:15px;}
-@media (max-width:520px){.container{padding:4px;}}
+body {
+  background: #f3f6f9;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #223;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 700px;
+  margin: 28px auto;
+  background: #fff;
+  padding: 34px 34px 20px 34px;
+  border-radius: 12px;
+  box-shadow: 0 4px 22px 0 rgba(0,0,50,.09);
+}
+h1,h2,h3 { color: #1545a7; font-weight: 600; margin-top:0;margin-bottom:16px; }
+a { color: #1565c0; text-decoration: none; transition:.15s; }
+a.button, button {
+  display: inline-block;
+  background: #1e88e5;
+  color: #fff;
+  border: none;
+  padding: 9px 26px;
+  border-radius: 6px;
+  margin-top:12px;
+  margin-bottom:9px;
+  cursor: pointer;
+  font-size: 16px;
+  text-decoration:none;
+}
+a.button:hover, button:hover { background: #1565c0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top:14px;
+  font-size:15px;
+}
+th, td {
+  border: 1px solid #e0e0e0;
+  padding: 10px;
+  text-align: left;
+  vertical-align:top;
+}
+th {
+  background: #e3f2fd;
+  color: #1565c0;
+  font-weight: 500;
+}
+input, select, textarea {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1.5px solid #a6c0ed;
+  width: 96%;
+  margin-bottom: 12px;
+  margin-top: 4px;
+  box-sizing: border-box;
+  font-size:15px;
+  background:#f8fafc;
+}
+input[type="file"] {
+  padding:0; border:none; background:none; width:auto;
+}
+input[type="submit"],button { width:auto; }
+form label { font-weight:500; }
+.alert-error { background:#fde4e4; color:#b3042b; padding:9px 12px; border-radius:5px; margin-bottom:10px;}
+.alert-success { background:#e5f9e2; color:#226c30; padding:9px 12px; border-radius:5px; margin-bottom:10px;}
+@media (max-width:750px){
+  .container { max-width:97vw; padding:13px;}
+  table th,table td { font-size:13px; padding:5px;}
+}

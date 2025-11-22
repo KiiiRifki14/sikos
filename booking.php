@@ -1,28 +1,39 @@
 <?php
+session_start();
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
-session_start();
+
 if (!isset($_SESSION['id_pengguna'])) {
-    header('Location: login.php?next=booking');
+    header('Location: login.php?info=Login dulu sebelum booking!');
     exit;
 }
 $id_kamar = intval($_GET['id_kamar'] ?? 0);
+if ($id_kamar < 1) die("Kamar tidak valid!");
+
 $res = $mysqli->prepare("SELECT * FROM kamar WHERE id_kamar=? AND status_kamar='TERSEDIA'");
 $res->bind_param('i', $id_kamar);
 $res->execute();
-$data_kamar = $res->get_result()->fetch_assoc();
-if (!$data_kamar) {
-    die('Kamar tidak tersedia!');
-}
+$row = $res->get_result()->fetch_assoc();
+if (!$row) die('Kamar tidak tersedia!');
+
 ?>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Booking Kamar <?= htmlspecialchars($row['kode_kamar']) ?></title>
+  <link rel="stylesheet" href="assets/css/app.css"/>
+</head>
+<body>
+<div class="container">
+<h3>Booking Kamar <?= htmlspecialchars($row['kode_kamar']) ?></h3>
 <form method="POST" action="proses_booking.php" enctype="multipart/form-data">
-    <input type="hidden" name="csrf" value="<?php echo csrf_token(); ?>">
-    <input type="hidden" name="id_kamar" value="<?php echo $id_kamar; ?>">
-    <label>KTP (opsional, jpg/png/webp, max 2MB):</label>
-    <input type="file" name="ktp_opt">
-    <label>Check-in Rencana:</label>
-    <input type="date" name="checkin_rencana" required>
-    <label>Durasi (bulan):</label>
-    <input type="number" name="durasi_bulan_rencana" min="1" required>
-    <button type="submit">Booking</button>
+  <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+  <input type="hidden" name="id_kamar" value="<?= $id_kamar ?>">
+  KTP (jpg/png/webp): <input type="file" name="ktp_opt" required><br>
+  Check-in Rencana: <input type="date" name="checkin_rencana" required><br>
+  Durasi (bulan): <input type="number" name="durasi_bulan_rencana" min="1" value="12" required><br>
+  <button type="submit">Booking</button>
 </form>
+</div>
+</body>
+</html>
