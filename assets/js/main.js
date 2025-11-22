@@ -1,3 +1,6 @@
-document.addEventListener('DOMContentLoaded',function(){
-    // Confirm/breadcrumb navigation logic here
+// assets/js/main.js
+document.addEventListener('DOMContentLoaded', function(){
+    console.log('SIKOS App Loaded');
+    
+    // Contoh animasi sederhana atau validasi form bisa ditaruh di sini
 });

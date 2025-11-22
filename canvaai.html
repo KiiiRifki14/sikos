@@ -2019,3 +2019,100 @@
     </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a292cc880cbb882',t:'MTc2MzgyMjM1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
+<?php
+session_start();
+require 'inc/koneksi.php';
+require 'inc/csrf.php';
+
+// Redirect jika user sudah login (tidak perlu daftar lagi)
+if (isset($_SESSION['id_pengguna'])) {
+    header('Location: penghuni_dashboard.php');
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <title>Daftar Akun - SIKOS</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="assets/css/app.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-container">
+    
+    <div class="login-left">
+      <svg class="login-illustration" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <rect x="50" y="100" width="300" height="250" rx="10" fill="rgba(255,255,255,0.2)" />
+        <rect x="50" y="100" width="300" height="60" rx="10" fill="rgba(255,255,255,0.3)" />
+        <circle cx="200" cy="80" r="25" fill="#f59e0b" />
+        <circle cx="200" cy="200" r="40" fill="rgba(255,255,255,0.8)" />
+        <path d="M140,280 Q200,350 260,280" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="10" stroke-linecap="round" />
+        <text x="200" y="360" text-anchor="middle" fill="white" font-size="18" font-weight="bold" font-family="Poppins">JOIN US</text>
+      </svg>
+      <h1>Bergabunglah</h1>
+      <p>Dapatkan pengalaman nge-kost terbaik<br>dengan fasilitas lengkap dan modern.</p>
+    </div>
+
+    <div class="login-right">
+      <div class="login-header">
+        <h2>Buat Akun Baru</h2>
+        <p>Isi data diri Anda untuk mulai menyewa</p>
+      </div>
+
+      <div class="login-tabs">
+        <a href="login.php" class="login-tab">Login</a>
+        <a href="#" class="login-tab active">Register</a>
+      </div>
+
+      <?php 
+      if (!empty($_GET['error'])) {
+        $pesan = "Terjadi kesalahan, silakan coba lagi.";
+        if ($_GET['error'] == 'duplikat') {
+            $pesan = "Email tersebut sudah terdaftar! Silakan Login.";
+        } elseif ($_GET['error'] == 'invalid') {
+            $pesan = "Format email salah atau password terlalu pendek (min 8 karakter).";
+        }
+        echo '<div class="alert-box alert-red">'.$pesan.'</div>';
+      } 
+      ?>
+
+      <form method="POST" action="proses_register.php">
+        <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+        
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input type="text" name="nama" class="form-input" placeholder="Contoh: Budi Santoso" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-input" placeholder="nama@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nomor HP (WhatsApp)</label>
+          <input type="text" name="no_hp" class="form-input" placeholder="0812xxxxxxxx" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-input" placeholder="Minimal 8 karakter" minlength="8" required>
+        </div>
+
+        <button type="submit" class="btn-login-full">Daftar Sekarang</button>
+      </form>
+
+      <div style="text-align:center; margin-top:20px; font-size:14px; color:#64748b;">
+        Sudah punya akun? <a href="login.php" style="color:var(--primary); font-weight:600;">Login di sini</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -4,33 +4,64 @@ require '../inc/koneksi.php';
 require '../inc/guard.php';
 if (!is_admin() && !is_owner()) die('Forbidden');
 
-// Contoh proses penyimpanan, edit sesuai kebutuhan
+// Dummy Save Process
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Simpan pengaturan (boleh ke database/file, di sini hanya contoh)
-    $nama_kos = $_POST['nama_kos'] ?? '';
-    $telp_kos = $_POST['telp_kos'] ?? '';
-    $alamat_kos = $_POST['alamat_kos'] ?? '';
-    $pesan = '<div style="color:green;">Pengaturan disimpan.</div>';
+    $pesan = '<div style="background:#d1fae5; color:#065f46; padding:10px; border-radius:6px; margin-bottom:1rem;">Pengaturan berhasil disimpan!</div>';
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Pengaturan Admin - SIKOS Paadaasih</title>
+  <title>Pengaturan - SIKOS Admin</title>
   <link rel="stylesheet" href="../assets/css/app.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-<div class="container">
-  <h2>Pengaturan Admin</h2>
-  <?php if (!empty($pesan)) echo $pesan; ?>
-  <form method="post">
-    Nama Kos: <input type="text" name="nama_kos" value="<?= htmlspecialchars($nama_kos ?? 'KOS Paadaasih') ?>"><br>
-    Telepon Kos: <input type="text" name="telp_kos" value="<?= htmlspecialchars($telp_kos ?? '0812xxxxxxxx') ?>"><br>
-    Alamat Kos: <textarea name="alamat_kos"><?= htmlspecialchars($alamat_kos ?? 'Jl. Paadaasih No. 123, Cimahi') ?></textarea><br>
-    <button type="submit">Simpan Pengaturan</button>
-  </form>
-  <br>
-  <a href="index.php" class="button">Kembali ke Dashboard</a>
-</div>
+<body class="admin-body">
+
+  <nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🏠</div>
+    <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
+    <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
+    <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
+    <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
+    <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
+    <li><a href="laporan.php"><span class="nav-icon">📈</span> Laporan</a></li>
+    <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
+    <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
+  </ul>
+</nav>
+
+  <main class="main-content">
+    <header class="admin-header">
+      <h2>Pengaturan Sistem</h2>
+    </header>
+
+    <div class="settings-card">
+        <?php if(isset($pesan)) echo $pesan; ?>
+        <form method="post">
+            <div class="form-group">
+                <label class="form-label">Nama Kost</label>
+                <input type="text" name="nama_kos" class="form-input" value="Kost Paadaasih">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nomor Telepon Pengelola</label>
+                <input type="text" name="telp_kos" class="form-input" value="0812-3456-7890">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Alamat Lengkap</label>
+                <textarea name="alamat_kos" class="form-input" rows="4">Jl. Paadaasih No. 123, Cimahi</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Rekening Bank (untuk transfer)</label>
+                <input type="text" name="rek_bank" class="form-input" value="BCA 123456789 a.n Owner">
+            </div>
+            <button type="submit" class="btn-primary">Simpan Perubahan</button>
+        </form>
+    </div>
+  </main>
 </body>
 </html>

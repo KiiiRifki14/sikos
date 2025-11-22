@@ -2,76 +2,124 @@
 session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
-
 if (!is_admin() && !is_owner()) die('Forbidden');
 
-// Penanganan POST: generate tagihan
-$pesan = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['act'] === 'generate') {
-    $id_kontrak = intval($_POST['id_kontrak'] ?? 0);
-    $bulan = $_POST['bulan_tagih'] ?? '';
-    // Validasi input
-    if ($id_kontrak < 1 || !$bulan) {
-        $pesan = "<div style='color:red'>Kontrak dan bulan wajib dipilih!</div>";
-    } else {
-        // Cek apakah tagihan bulan ini sudah ada
-        $stmt = $mysqli->prepare("SELECT 1 FROM tagihan WHERE id_kontrak=? AND bulan_tagih=?");
-        $stmt->bind_param('is', $id_kontrak, $bulan);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows == 0) {
-            // Ambil harga
-            $row = $mysqli->query("SELECT kamar.harga FROM kamar INNER JOIN kontrak ON kamar.id_kamar=kontrak.id_kamar WHERE kontrak.id_kontrak=$id_kontrak")->fetch_assoc();
-            $nominal = $row ? $row['harga'] : 0;
-            // Buat tagihan baru
-            $stmt2 = $mysqli->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo) VALUES (?, ?, ?, DATE_ADD(CURDATE(), INTERVAL 10 DAY))");
-            $stmt2->bind_param('isi', $id_kontrak, $bulan, $nominal);
-            $stmt2->execute();
-            $pesan = "<div style='color:green'>Tagihan sukses dibuat!</div>";
-        } else {
-            $pesan = "<div style='color:red'>Tagihan untuk kontrak dan bulan tersebut sudah ada!</div>";
-        }
-    }
-}
-
-// Ambil list kontrak aktif
-$kontrak = [];
-$res = $mysqli->query("SELECT k.id_kontrak, kamar.kode_kamar, p.nama, k.tanggal_mulai, k.tanggal_selesai FROM kontrak k 
-    JOIN kamar ON k.id_kamar = kamar.id_kamar
-    JOIN penghuni ph ON ph.id_penghuni=k.id_penghuni
-    JOIN pengguna p ON p.id_pengguna=ph.id_pengguna
-    WHERE k.status='AKTIF'");
-while ($r = $res->fetch_assoc()) $kontrak[] = $r;
+// Hitung Ringkasan Sederhana (Contoh)
+$total_masuk = $mysqli->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'")->fetch_row()[0] ?? 0;
+$total_tagihan_lunas = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE status='LUNAS'")->fetch_row()[0] ?? 0;
+$pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0] ?? 0;
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Generate Tagihan Bulanan</title>
-    <link rel="stylesheet" href="../assets/css/app.css"/>
+  <title>Laporan Keuangan - SIKOS Admin</title>
+  <link rel="stylesheet" href="../assets/css/app.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-<div class="container">
-    <h2>Generate Tagihan Bulanan</h2>
-    <?php if($pesan) echo $pesan; ?>
-    <form method="post">
-        Kontrak:
-        <select name="id_kontrak" required>
-            <option value="">-- Pilih Kontrak --</option>
-            <?php foreach($kontrak as $k){ ?>
-                <option value="<?= $k['id_kontrak'] ?>">
-                    Kamar <?= htmlspecialchars($k['kode_kamar']) ?> -
-                    <?= htmlspecialchars($k['nama']) ?> 
-                    (<?= $k['tanggal_mulai'] ?> s/d <?= $k['tanggal_selesai'] ?>)
-                </option>
-            <?php } ?>
-        </select>
-        Bulan Tagih:
-        <input type="month" name="bulan_tagih" required>
-        <input type="hidden" name="act" value="generate">
-        <button type="submit">Generate Tagihan</button>
-    </form>
-    <br>
-    <a href="index.php" class="button">Kembali ke Dashboard</a>
-</div>
+<body class="admin-body">
+
+  <nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🏠</div>
+    <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
+    <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
+    <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
+    <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
+    <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
+    <li><a href="laporan.php"><span class="nav-icon">📈</span> Laporan</a></li>
+    <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
+    <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
+  </ul>
+</nav>
+
+  <main class="main-content">
+    <header class="admin-header">
+      <h2>Laporan & Statistik</h2>
+    </header>
+
+    <div class="report-summary">
+        <div class="summary-card">
+            <span class="summary-label">Total Pemasukan</span>
+            <div class="summary-value text-success">Rp <?= number_format($total_masuk, 0, ',', '.') ?></div>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Tagihan Lunas</span>
+            <div class="summary-value text-primary"><?= $total_tagihan_lunas ?></div>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Menunggu Verifikasi</span>
+            <div class="summary-value text-danger"><?= $pending_verif ?></div>
+        </div>
+    </div>
+
+    <div class="data-section">
+        <div class="section-header">
+            <h3>Generate Tagihan Bulanan</h3>
+        </div>
+        <form method="post" style="display:flex; gap:10px; align-items:end; background:#f8fafc; padding:1.5rem; border-radius:8px;">
+            <div style="flex:1;">
+                <label class="form-label" style="font-size:0.9rem;">Pilih Kontrak Aktif</label>
+                <select name="id_kontrak" class="form-input" required>
+                    <option value="">-- Pilih Penghuni & Kamar --</option>
+                    <?php 
+                    $res = $mysqli->query("SELECT k.id_kontrak, ka.kode_kamar, p.nama 
+                                          FROM kontrak k 
+                                          JOIN kamar ka ON k.id_kamar=ka.id_kamar
+                                          JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
+                                          JOIN pengguna p ON ph.id_pengguna=p.id_pengguna
+                                          WHERE k.status='AKTIF'");
+                    while($k = $res->fetch_assoc()){
+                        echo "<option value='{$k['id_kontrak']}'>{$k['kode_kamar']} - {$k['nama']}</option>";
+                    }
+                    ?>
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label class="form-label" style="font-size:0.9rem;">Untuk Bulan</label>
+                <input type="month" name="bulan_tagih" class="form-input" required>
+            </div>
+            <input type="hidden" name="act" value="generate">
+            <button type="submit" class="btn-primary" style="height:45px;">+ Buat Tagihan</button>
+        </form>
+    </div>
+
+    <div class="data-section" style="margin-top:2rem;">
+        <div class="section-header">
+            <h3>Riwayat Pembayaran Terakhir</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Tipe</th>
+                        <th>Nominal</th>
+                        <th>Metode</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $pay = $mysqli->query("SELECT * FROM pembayaran ORDER BY id_pembayaran DESC LIMIT 5");
+                    while($p = $pay->fetch_assoc()){
+                        $st = $p['status']=='DITERIMA' ? 'badge-active' : ($p['status']=='PENDING' ? 'badge-pending' : 'badge-filled');
+                    ?>
+                    <tr>
+                        <td><?= $p['tanggal_bayar'] ?? '-' ?></td>
+                        <td><?= $p['ref_type'] ?> #<?= $p['ref_id'] ?></td>
+                        <td>Rp <?= number_format($p['jumlah'],0,',','.') ?></td>
+                        <td><?= $p['metode'] ?></td>
+                        <td><span class="status-badge <?= $st ?>"><?= $p['status'] ?></span></td>
+                    </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+  </main>
 </body>
 </html>
