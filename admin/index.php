@@ -2,95 +2,73 @@
 session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
-
 if (!is_admin() && !is_owner()) { header('Location: ../login.php'); exit; }
 
-// HITUNG STATISTIK (Real Data)
+// Hitung Data
 $total_kamar = $mysqli->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
 $kamar_terisi = $mysqli->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
 $booking_pending = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
-
-// Hitung Estimasi Pendapatan (Total harga kamar yang terisi)
-$pendapatan = $mysqli->query("SELECT SUM(harga) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
+$omset = $mysqli->query("SELECT SUM(harga) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0] ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <title>Admin Dashboard - SIKOS</title>
+  <title>Admin Dashboard</title>
   <link rel="stylesheet" href="../assets/css/app.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="admin-body">
+<body>
 
-  <nav class="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-icon">🏠</div>
-      <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
-    </div>
-    <ul class="nav-links">
-      <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
-      
-      <li><a href="pembayaran_data.php"><span class="nav-icon">💰</span> Pembayaran</a></li>
-      <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
-      <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
-      <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
-      <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
-      <li><a href="laporan.php" class="active"><span class="nav-icon">📈</span> Laporan</a></li>
-      <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
-      <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
-    </ul>
-  </nav>
-  <main class="main-content">
-    
-    <header class="admin-header">
-      <h2>Dashboard Overview</h2>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div style="text-align:right;">
-            <div style="font-weight:bold;">Administrator</div>
-            <div style="font-size:0.8rem; color:#64748b;">Super User</div>
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="mb-8">
+            <div class="text-2xl font-bold text-blue-600 mb-1">SIKOS</div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider">Admin Panel</div>
         </div>
-        <div style="width:40px; height:40px; background:#f59e0b; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">A</div>
-      </div>
-    </header>
+        <nav class="flex-1 overflow-y-auto">
+            <a href="index.php" class="sidebar-link active">📊 Dashboard</a>
+            <a href="kamar_data.php" class="sidebar-link">🛏️ Kelola Kamar</a>
+            <a href="booking_data.php" class="sidebar-link">📝 Booking <span class="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full"><?= $booking_pending ?></span></a>
+            <a href="pembayaran_data.php" class="sidebar-link">💰 Pembayaran</a>
+            <a href="penghuni_data.php" class="sidebar-link">👥 Penghuni</a>
+            <a href="keluhan_data.php" class="sidebar-link">🔧 Komplain</a>
+            <a href="laporan.php" class="sidebar-link">📈 Laporan</a>
+            <a href="settings.php" class="sidebar-link">⚙️ Pengaturan</a>
+        </nav>
+        <a href="../logout.php" class="sidebar-link text-red-600 mt-4 hover:bg-red-50">🚪 Logout</a>
+    </aside>
 
-    <div class="stats-grid">
-        <div class="stat-card blue">
-          <div class="stat-icon bg-blue-light">🛏️</div>
-          <div class="stat-info">
-            <h3><?= $total_kamar ?></h3>
-            <p>Total Kamar</p>
-          </div>
+    <main class="main-content">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+            <button class="btn btn-primary">+ Tambah Kamar</button>
         </div>
-        <div class="stat-card red">
-          <div class="stat-icon bg-red-light">👥</div>
-          <div class="stat-info">
-            <h3><?= $kamar_terisi ?></h3>
-            <p>Kamar Terisi</p>
-          </div>
-        </div>
-        <div class="stat-card yellow">
-          <div class="stat-icon bg-yellow-light">⏳</div>
-          <div class="stat-info">
-            <h3><?= $booking_pending ?></h3>
-            <p>Booking Pending</p>
-          </div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-icon bg-green-light">💰</div>
-          <div class="stat-info">
-            <h3>Rp<?= number_format($pendapatan, 0, ',', '.') ?></h3>
-            <p>Estimasi Omset/Bulan</p>
-          </div>
-        </div>
-    </div>
 
-    <div class="data-section">
-        <div class="section-header">
-            <h3>Aktivitas Terbaru</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="card">
+                <div class="text-gray-500 text-xs uppercase font-bold mb-2">Total Kamar</div>
+                <div class="text-3xl font-bold text-gray-800"><?= $total_kamar ?></div>
+            </div>
+            <div class="card">
+                <div class="text-gray-500 text-xs uppercase font-bold mb-2">Terisi</div>
+                <div class="text-3xl font-bold text-green-600"><?= $kamar_terisi ?></div>
+            </div>
+            <div class="card">
+                <div class="text-gray-500 text-xs uppercase font-bold mb-2">Booking Pending</div>
+                <div class="text-3xl font-bold text-amber-500"><?= $booking_pending ?></div>
+            </div>
+            <div class="card">
+                <div class="text-gray-500 text-xs uppercase font-bold mb-2">Est. Omset</div>
+                <div class="text-3xl font-bold text-blue-600"><?= number_format($omset/1000000, 1) ?> Jt</div>
+            </div>
         </div>
-        <p style="color:#64748b;">Selamat datang di panel admin SIKOS. Gunakan menu di sebelah kiri untuk mengelola data.</p>
-    </div>
 
-  </main>
+        <div class="card">
+            <h3 class="font-bold text-gray-800 mb-4">Booking Terbaru</h3>
+            <p class="text-gray-400 text-sm">Silakan cek menu Booking untuk verifikasi.</p>
+        </div>
+    </main>
+</div>
+
 </body>
 </html>
