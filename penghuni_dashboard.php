@@ -1,175 +1,100 @@
 <?php
 session_start();
 require 'inc/koneksi.php';
-
-if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') {
-    header('Location: login.php'); exit;
-}
+if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') { header('Location: login.php'); exit; }
 
 $id_pengguna = $_SESSION['id_pengguna'];
-
-// Ambil Data User
 $user = $mysqli->query("SELECT * FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-
-// Cari ID Penghuni
-$penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-$id_penghuni = $penghuni['id_penghuni'] ?? 0;
-
-// Cari Kontrak Aktif
+$id_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
 $kontrak = null;
 if($id_penghuni) {
-    $kontrak = $mysqli->query("SELECT k.*, km.kode_kamar, t.nama_tipe 
-                               FROM kontrak k 
-                               JOIN kamar km ON k.id_kamar=km.id_kamar 
-                               JOIN tipe_kamar t ON km.id_tipe=t.id_tipe
-                               WHERE k.id_penghuni=$id_penghuni AND k.status='AKTIF'")->fetch_assoc();
-}
-
-// Hitung Tagihan Pending
-$tagihan_count = 0;
-if($id_penghuni && $kontrak) {
-    $q_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} AND status='BELUM'");
-    $tagihan_count = $q_tagihan->fetch_row()[0] ?? 0;
+    $kontrak = $mysqli->query("SELECT k.*, km.kode_kamar, km.harga FROM kontrak k JOIN kamar km ON k.id_kamar=km.id_kamar WHERE k.id_penghuni=$id_penghuni AND k.status='AKTIF'")->fetch_assoc();
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Penghuni</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="assets/css/app.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="dashboard-body">
 
-<nav class="nav">
-   <div class="nav-container">
-     <a href="index.php" class="nav-logo">🏠 SIKOS</a>
-     <div class="nav-links">
-        <span class="text-sm text-gray-500">Selamat datang, <b><?= htmlspecialchars($user['nama']) ?></b></span>
-     </div>
-   </div>
-</nav>
-
-<div class="dashboard">
     <aside class="sidebar">
-        <div class="text-center mb-6 pb-6 border-b border-gray-100">
-            <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-3 shadow-lg">
-                <?= strtoupper(substr($user['nama'], 0, 2)) ?>
+        <div class="mb-8 flex items-center gap-3">
+            <div style="width:40px; height:40px; background:#eff6ff; color:#2563eb; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                <?= substr($user['nama'],0,1) ?>
             </div>
-            <h3 class="font-bold text-gray-800"><?= htmlspecialchars($user['nama']) ?></h3>
-            <p class="text-xs text-muted">Penghuni</p>
+            <div>
+                <div style="font-weight:700; color:#1e293b; font-size:14px;"><?= htmlspecialchars($user['nama']) ?></div>
+                <div style="font-size:12px; color:#64748b;">Penghuni</div>
+            </div>
         </div>
-        <nav class="flex flex-col gap-1">
-            <a href="penghuni_dashboard.php" class="sidebar-link active">📊 Dashboard</a>
-            <a href="kamar_saya.php" class="sidebar-link">🏠 Kamar Saya</a>
-            <a href="tagihan_saya.php" class="sidebar-link">💳 Tagihan</a>
-            <a href="keluhan.php" class="sidebar-link">📢 Keluhan</a>
-            <a href="logout.php" class="sidebar-link text-red-500 hover:bg-red-50">🚪 Logout</a>
+
+        <nav style="flex:1;">
+            <a href="penghuni_dashboard.php" class="sidebar-link active"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
+            <a href="kamar_saya.php" class="sidebar-link"><i class="fa-solid fa-bed w-6"></i> Kamar Saya</a>
+            <a href="tagihan_saya.php" class="sidebar-link"><i class="fa-solid fa-credit-card w-6"></i> Tagihan</a>
+            <a href="keluhan.php" class="sidebar-link"><i class="fa-solid fa-triangle-exclamation w-6"></i> Keluhan</a>
+            <a href="pengumuman.php" class="sidebar-link"><i class="fa-solid fa-bullhorn w-6"></i> Info</a>
         </nav>
+
+        <a href="logout.php" class="sidebar-link" style="color:#dc2626; margin-top:auto;">
+            <i class="fa-solid fa-right-from-bracket w-6"></i> Logout
+        </a>
     </aside>
 
-    <main>
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-800">Overview</h1>
-            <span class="text-sm text-muted"><?= date('d M Y') ?></span>
-        </div>
+    <main class="main-content">
+        <h1 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:8px;">Selamat Datang!</h1>
+        <p style="color:#64748b; margin-bottom:32px; font-size:14px;">Berikut ringkasan status sewa Anda hari ini.</p>
 
-        <div class="grid grid-3 mb-8">
-            <div class="card p-6 relative overflow-hidden">
-                <div class="text-sm text-muted mb-1 font-medium uppercase">Status Kontrak</div>
+        <div class="grid-stats">
+            <div class="card-white">
+                <div style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Status Kontrak</div>
                 <?php if($kontrak): ?>
-                    <div class="text-3xl font-bold text-green-500 mb-1">AKTIF</div>
-                    <div class="text-xs text-gray-400">Berakhir: <?= date('d M Y', strtotime($kontrak['tanggal_selesai'])) ?></div>
+                    <div style="font-size:28px; font-weight:700; color:#16a34a; margin-bottom:4px;">AKTIF</div>
+                    <div style="font-size:13px; color:#64748b;">Berakhir: <?= date('d M Y', strtotime($kontrak['tanggal_selesai'])) ?></div>
                 <?php else: ?>
-                    <div class="text-2xl font-bold text-gray-400">TIDAK ADA</div>
-                    <div class="text-xs text-gray-400"><a href="index.php" class="text-blue-500">Cari kamar?</a></div>
+                    <div style="font-size:24px; font-weight:700; color:#94a3b8;">Tidak Aktif</div>
                 <?php endif; ?>
             </div>
 
-            <div class="card p-6">
-                <div class="text-sm text-muted mb-1 font-medium uppercase">Kamar</div>
-                <?php if($kontrak): ?>
-                    <div class="text-3xl font-bold text-gray-800 mb-1"><?= $kontrak['kode_kamar'] ?></div>
-                    <div class="text-xs text-gray-400"><?= $kontrak['nama_tipe'] ?></div>
-                <?php else: ?>
-                    <div class="text-xl font-bold text-gray-400">-</div>
-                <?php endif; ?>
+            <div class="card-white">
+                <div style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Kamar Anda</div>
+                <div style="font-size:28px; font-weight:700; color:#1e293b; margin-bottom:4px;"><?= $kontrak['kode_kamar'] ?? '-' ?></div>
+                <div style="font-size:13px; color:#64748b;">
+                    <?= $kontrak ? 'Rp '.number_format($kontrak['harga']).'/bulan' : '-' ?>
+                </div>
             </div>
 
-            <div class="card p-6">
-                <div class="text-sm text-muted mb-1 font-medium uppercase">Tagihan Pending</div>
-                <?php if($tagihan_count > 0): ?>
-                    <div class="text-3xl font-bold text-amber-500 mb-1"><?= $tagihan_count ?></div>
-                    <div class="text-xs text-gray-400">Segera lunasi</div>
-                <?php else: ?>
-                    <div class="text-3xl font-bold text-blue-500 mb-1">0</div>
-                    <div class="text-xs text-gray-400">Semua lunas</div>
-                <?php endif; ?>
+            <div class="card-white">
+                <div style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Tagihan Pending</div>
+                <?php 
+                    $tagihan = 0;
+                    if($kontrak) $tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} AND status='BELUM'")->fetch_row()[0];
+                ?>
+                <div style="font-size:28px; font-weight:700; color: <?= $tagihan>0 ? '#f59e0b' : '#2563eb' ?>;">
+                    <?= $tagihan ?>
+                </div>
+                <div style="font-size:13px; color:#64748b;">Perlu dibayar</div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="flex justify-between items-center mb-6 px-6 pt-2">
-                <h2 class="text-lg font-bold text-gray-800">💳 Tagihan Terbaru</h2>
-                <a href="tagihan_saya.php" class="text-sm text-blue-600 font-medium hover:underline">Lihat Semua</a>
-            </div>
+        <div class="card-white">
+            <h3 style="font-size:16px; font-weight:700; color:#1e293b; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:16px;">
+                Tagihan Terbaru
+            </h3>
             
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Bulan</th>
-                            <th>Jumlah</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php
-                    if($kontrak) {
-                        // Ambil 3 tagihan terakhir
-                        $res = $mysqli->query("SELECT * FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} ORDER BY bulan_tagih DESC LIMIT 3");
-                        if($res->num_rows > 0) {
-                            while($row = $res->fetch_assoc()){
-                                $statusClass = ($row['status'] == 'LUNAS') ? 'badge-success' : 'badge-danger';
-                                if($row['status']=='BELUM') {
-                                     // Cek pembayaran pending (memanfaatkan logika yg sebelumnya)
-                                     $p = $mysqli->query("SELECT status FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id={$row['id_tagihan']} ORDER BY id_pembayaran DESC LIMIT 1")->fetch_assoc();
-                                     if($p && $p['status']=='PENDING') $row['status'] = 'PENDING VERIF';
-                                }
-                    ?>
-                        <tr>
-                            <td class="font-medium"><?= date('F Y', strtotime($row['bulan_tagih'])) ?></td>
-                            <td>Rp <?= number_format($row['nominal'],0,',','.') ?></td>
-                            <td class="text-gray-500"><?= date('d M Y', strtotime($row['jatuh_tempo'])) ?></td>
-                            <td><span class="badge <?= ($row['status']=='LUNAS')?'badge-success':'badge-danger' ?>"><?= $row['status'] ?></span></td>
-                            <td>
-                                <?php if($row['status'] == 'BELUM'): ?>
-                                    <a href="tagihan_saya.php" class="btn btn-primary btn-sm">Bayar</a>
-                                <?php else: ?>
-                                    <span class="text-gray-400 text-xs">Selesai</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php 
-                            }
-                        } else {
-                            echo "<tr><td colspan='5' class='text-center text-muted py-6'>Tidak ada data tagihan.</td></tr>";
-                        }
-                    } else {
-                        echo "<tr><td colspan='5' class='text-center text-muted py-6'>Belum ada kontrak sewa.</td></tr>";
-                    }
-                    ?>
-                    </tbody>
-                </table>
-            </div>
+            <?php if($tagihan > 0): ?>
+                <div style="background:#fffbeb; color:#b45309; padding:16px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:14px;">Anda memiliki <b><?= $tagihan ?></b> tagihan yang belum dibayar.</span>
+                    <a href="tagihan_saya.php" class="btn-primary" style="text-decoration:none;">Bayar Sekarang</a>
+                </div>
+            <?php else: ?>
+                <p style="text-align:center; color:#94a3b8; padding:20px; font-size:14px;">Tidak ada tagihan pending. Terima kasih!</p>
+            <?php endif; ?>
         </div>
-
     </main>
-</div>
 
 </body>
 </html>

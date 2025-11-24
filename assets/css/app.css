@@ -1,165 +1,296 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* === 1. GLOBAL RESET & TYPOGRAPHY === */
+/* === 1. GLOBAL RESET === */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); /* Background luar abu-abu */
-    color: #212529;
+    background-color: #f8fafc;
+    color: #1e293b;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
-    padding-top: 100px; /* Jarak agar tidak ketutup navbar */
 }
 
-a { text-decoration: none; color: inherit; transition: all 0.2s; }
+a { text-decoration: none; color: inherit; transition: all 0.2s ease; }
 ul { list-style: none; }
 
-/* === 2. NAVBAR (FIXED) === */
-.nav {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(233, 236, 239, 0.8);
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 1000;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-}
-
-.nav-container {
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.nav-logo {
-    font-weight: 800;
-    font-size: 1.5rem;
-    color: #2563eb;
-    display: flex; align-items: center; gap: 10px;
-}
-
-.nav-links { display: flex; gap: 30px; align-items: center; }
-
-.nav-link {
-    font-weight: 500; color: #64748b; font-size: 0.95rem;
-}
-.nav-link:hover { color: #2563eb; }
-
-/* === 3. HERO SECTION (INI YANG DIPERBAIKI: KOTAK PUTIH) === */
-.hero {
-    text-align: center;
-    padding: 60px 40px;
-    max-width: 1000px;
-    margin: 0 auto 60px auto; /* Margin bawah biar ada jarak sama kamar */
-    
-    /* PROPERTI KOTAK PUTIH */
-    background: #ffffff;
-    border-radius: 24px; /* Sudut melengkung */
-    box-shadow: 0 10px 40px rgba(0,0,0,0.05); /* Bayangan halus */
-    border: 1px solid rgba(233, 236, 239, 0.8); /* Garis tepi tipis */
-}
-
-.hero h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -1px;
-    line-height: 1.2;
-}
-
-.hero p {
-    font-size: 1.1rem; color: #64748b; margin-bottom: 40px;
-    max-width: 700px; margin-left: auto; margin-right: auto;
-}
-
-/* === 4. BUTTONS === */
+/* === 2. UTILITIES & BUTTONS === */
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 14px;
-    border: none; cursor: pointer; transition: all 0.3s; text-decoration: none;
+    padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: all 0.2s; border: none;
 }
+.btn-primary { background: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+.btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
 
-.btn-primary {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-}
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
-    color: white;
-}
-
-.btn-secondary {
-    background: white; color: #334155; border: 1px solid #e2e8f0;
-}
+.btn-secondary { background: white; color: #334155; border: 1px solid #e2e8f0; }
 .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
 
-/* === 5. CARDS & GRID === */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px 24px; }
+.btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+.btn-danger:hover { background: #fecaca; }
 
-.grid-3 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 30px;
+/* Social Login Button Style */
+.btn-social {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 10px; border: 1px solid #e2e8f0;
+    border-radius: 8px; background: white; font-weight: 500; color: #475569;
+    transition: 0.2s;
+}
+.btn-social:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* === 3. DASHBOARD LAYOUT (FIX ANCUR) === */
+/* Kita gunakan struktur Grid yang kuat */
+.dashboard-body {
+    background-color: #f8fafc; /* Pastikan background dashboard abu muda */
+    display: flex;             /* Gunakan Flexbox untuk wrapper utama */
+    min-height: 100vh;
 }
 
-.room-card {
+.sidebar {
+    width: 280px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    padding: 24px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.main-content {
+    margin-left: 280px; /* Geser konten agar tidak tertutup sidebar */
+    flex: 1;            /* Isi sisa ruang */
+    padding: 32px;
+    width: calc(100% - 280px); /* Lebar sisa */
+}
+
+/* Menu Item di Sidebar */
+.sidebar-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: 8px;
+    color: #64748b; font-weight: 500; font-size: 14px;
+    margin-bottom: 4px; transition: all 0.2s;
+}
+.sidebar-link:hover { background: #f1f5f9; color: #0f172a; }
+.sidebar-link.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+
+/* Card Dashboard */
+.card-white {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    margin-bottom: 24px;
+}
+
+/* Grid Stats Dashboard */
+.grid-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+/* === 4. LANDING PAGE STYLES === */
+.nav {
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e2e8f0; position: fixed; top: 0; width: 100%; z-index: 1000; height: 80px; display: flex; align-items: center;
+}
+.nav-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-link { font-weight: 500; color: #64748b; font-size: 14px; }
+.nav-link:hover { color: #2563eb; }
+
+.hero-section { padding-top: 140px; padding-bottom: 60px; text-align: center; }
+.hero-box {
+    background: white; max-width: 1200px; margin: 0 auto;
+    padding: 80px 20px; border-radius: 24px; border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05);
+}
+
+/* === 5. AUTH PAGES (LOGIN/REGISTER) === */
+.auth-container {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px; background: #f8fafc;
+}
+.auth-box {
+    background: white; width: 100%; max-width: 420px;
+    padding: 40px; border-radius: 20px;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+.form-input {
+    width: 100%; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid #e2e8f0; font-size: 14px; margin-bottom: 16px;
+    transition: 0.2s;
+}
+.form-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+
+/* Responsive Helpers */
+@media (max-width: 768px) {
+    .dashboard-body { display: block; }
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; width: 100%; padding: 20px; }
+    .grid-stats { grid-template-columns: 1fr; }
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* === 1. GLOBAL === */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6; /* Abu-abu muda seperti gambar */
+    color: #1f2937;
+}
+a { text-decoration: none; color: inherit; transition: 0.2s; }
+
+/* === 2. LAYOUT UTAMA (GRID) === */
+.admin-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 260px 1fr; /* Kiri Sidebar, Kanan Konten */
+    gap: 32px;
+    min-height: 100vh;
+    align-items: start;
+}
+
+/* === 3. SIDEBAR CARD (MIRIP GAMBAR) === */
+.sidebar-card {
     background: white;
     border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid rgba(233, 236, 239, 0.8);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    transition: all 0.3s ease;
-    position: relative; /* Untuk badge absolute */
-}
-.room-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.1);
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    position: sticky;
+    top: 24px;
 }
 
-.room-image {
-    height: 220px; background: #f1f5f9;
-    position: relative; display: flex; align-items: center; justify-content: center;
-    font-size: 3rem; color: #cbd5e1;
+.brand-header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f3f4f6;
 }
-.room-image img { width: 100%; height: 100%; object-fit: cover; }
 
-.room-content { padding: 24px; }
-
-.room-price {
-    font-size: 24px; font-weight: 700; color: #2563eb; margin: 10px 0;
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
 }
-.room-price span { font-size: 14px; font-weight: 500; color: #94a3b8; }
 
-/* Badge Style */
-.badge {
-    position: absolute; top: 16px; right: 16px;
-    padding: 6px 14px; border-radius: 30px;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
-    background: rgba(255,255,255,0.95); backdrop-filter: blur(4px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    z-index: 10;
+.nav-item:hover {
+    background-color: #f9fafb;
+    color: #374151;
 }
-.text-green { color: #10b981; }
-.text-red { color: #ef4444; }
 
-/* === 6. DASHBOARD STYLES === */
-.dashboard-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-.sidebar {
-    background: white; border-right: 1px solid #e2e8f0;
-    position: fixed; top: 0; bottom: 0; left: 0; width: 260px;
-    padding: 24px; z-index: 900;
+/* Active State mirip gambar (Biru Muda) */
+.nav-item.active {
+    background-color: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
 }
-.main-content { margin-left: 260px; padding: 32px; padding-top: 32px; }
+
+/* === 4. DASHBOARD CARDS === */
+.stat-card {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.stat-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 4px;
+    line-height: 1;
+}
+
+.stat-desc {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Warna Text Khusus */
+.text-green-500 { color: #10b981; }
+.text-orange-500 { color: #f59e0b; }
+.text-blue-500 { color: #3b82f6; }
+
+/* === 5. TABLE SECTION === */
+.table-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 32px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.table-header {
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr 1.5fr 2fr;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.table-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr 1.5fr 2fr;
+    padding: 16px 12px;
+    align-items: center;
+    font-size: 14px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.badge-pending {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* Tombol Aksi */
+.btn-accept {
+    background: #2563eb; color: white;
+    padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer;
+}
+.btn-reject {
+    background: white; color: #4b5563; border: 1px solid #e5e7eb;
+    padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+}
+
+/* Responsif */
+@media (max-width: 1024px) {
+    .admin-container { grid-template-columns: 1fr; }
+    .sidebar-card { display: none; } /* Mobile menu logic needed separate */
+}
