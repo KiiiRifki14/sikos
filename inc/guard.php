@@ -1,5 +1,13 @@
 <?php
-function is_admin() { return ($_SESSION['peran'] ?? '') == 'ADMIN'; }
-function is_owner() { return ($_SESSION['peran'] ?? '') == 'OWNER'; }
-function is_penghuni() { return ($_SESSION['peran'] ?? '') == 'PENGHUNI'; }
+// Fungsi untuk mengecek apakah user adalah Admin/Owner (Super User)
+function is_admin() {
+    if (!isset($_SESSION['peran'])) return false;
+    // Admin atau Owner dianggap sama-sama punya akses penuh
+    return ($_SESSION['peran'] == 'ADMIN' || $_SESSION['peran'] == 'OWNER');
+}
+
+// Fungsi untuk pengecekan Penghuni
+function is_penghuni() {
+    return (isset($_SESSION['peran']) && $_SESSION['peran'] == 'PENGHUNI');
+}
 ?>

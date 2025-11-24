@@ -1,11 +1,219 @@
 <?php
-$DB_HOST = 'localhost';
-$DB_USER = 'root';
-$DB_PASS = '';
-$DB_NAME = 'sikos';
-$mysqli = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-if ($mysqli->connect_errno) {
-    error_log('DB error: ' . $mysqli->connect_error, 3, __DIR__ . '/../logs/app.log');
-    die('Database error');
-}
+class Database {
+    // Properties
+    var $host = "localhost";
+    var $user = "root";
+    var $pass = "";
+    var $db   = "sikos";
+    public $koneksi;
+
+    // Constructor
+    function __construct() {
+        $this->koneksi = new mysqli($this->host, $this->user, $this->pass, $this->db);
+        if ($this->koneksi->connect_errno) {
+            die("Database Error: " . $this->koneksi->connect_error);
+        }
+    }
+
+    // ==========================================
+    // 1. AUTHENTICATION (Login & Register)
+    // ==========================================
+    function login($email, $password) {
+        $stmt = $this->koneksi->prepare("SELECT id_pengguna, password_hash, peran, status FROM pengguna WHERE email=?");
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+
+        if ($res && $res['status'] == 1 && password_verify($password, $res['password_hash'])) {
+            return $res; 
+        }
+        return false; 
+    }
+
+    function register($nama, $email, $hp, $password) {
+        // Cek Email Duplikat
+        $cek = $this->koneksi->prepare("SELECT id_pengguna FROM pengguna WHERE email=?");
+        $cek->bind_param('s', $email);
+        $cek->execute();
+        if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->koneksi->prepare("INSERT INTO pengguna (nama, email, no_hp, password_hash, peran, status) VALUES (?, ?, ?, ?, 'PENGHUNI', 1)");
+        $stmt->bind_param('ssss', $nama, $email, $hp, $hash);
+        return $stmt->execute();
+    }
+
+    // ==========================================
+    // 2. MANAJEMEN KAMAR (CRUD)
+    // ==========================================
+    function tampil_kamar() {
+        $query = "SELECT k.*, t.nama_tipe 
+                  FROM kamar k 
+                  JOIN tipe_kamar t ON k.id_tipe=t.id_tipe 
+                  ORDER BY k.kode_kamar ASC";
+        $res = mysqli_query($this->koneksi, $query);
+        
+        $hasil = [];
+        while ($row = mysqli_fetch_assoc($res)) {
+            $hasil[] = $row;
+        }
+        return $hasil;
+    }
+
+    function ambil_kamar_by_id($id) {
+        $stmt = $this->koneksi->prepare("SELECT * FROM kamar WHERE id_kamar=?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+
+    function tambah_kamar($kode, $tipe, $lantai, $luas, $harga, $foto, $catatan) {
+        // Cek Kode Kamar
+        $cek = $this->koneksi->prepare("SELECT 1 FROM kamar WHERE kode_kamar=?");
+        $cek->bind_param('s', $kode);
+        $cek->execute();
+        if ($cek->get_result()->fetch_assoc()) return false;
+
+        $status = 'TERSEDIA';
+        $stmt = $this->koneksi->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('siidiss', $kode, $tipe, $lantai, $luas, $harga, $status, $foto, $catatan);
+        return $stmt->execute();
+    }
+
+    function edit_kamar($id, $kode, $tipe, $lantai, $luas, $harga, $foto, $catatan) {
+        // Cek Kode Kamar (kecuali punya sendiri)
+        $cek = $this->koneksi->prepare("SELECT 1 FROM kamar WHERE kode_kamar=? AND id_kamar!=?");
+        $cek->bind_param('si', $kode, $id);
+        $cek->execute();
+        if ($cek->get_result()->fetch_assoc()) return false;
+
+        if (!empty($foto)) {
+            $stmt = $this->koneksi->prepare("UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, foto_cover=?, catatan=? WHERE id_kamar=?");
+            $stmt->bind_param('siidissi', $kode, $tipe, $lantai, $luas, $harga, $foto, $catatan, $id);
+        } else {
+            $stmt = $this->koneksi->prepare("UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, catatan=? WHERE id_kamar=?");
+            $stmt->bind_param('siidssi', $kode, $tipe, $lantai, $luas, $harga, $catatan, $id);
+        }
+        return $stmt->execute();
+    }
+
+    function hapus_kamar($id) {
+        // Hapus galeri dulu (relasi)
+        $this->koneksi->query("DELETE FROM kamar_foto WHERE id_kamar=$id");
+        // Hapus kamar
+        return $this->koneksi->query("DELETE FROM kamar WHERE id_kamar=$id");
+    }
+
+    function tampil_tipe_kamar() {
+        $data = mysqli_query($this->koneksi, "SELECT id_tipe, nama_tipe FROM tipe_kamar");
+        $hasil = [];
+        while ($row = mysqli_fetch_assoc($data)) {
+            $hasil[] = $row;
+        }
+        return $hasil;
+    }
+
+    // ==========================================
+    // 3. MANAJEMEN BOOKING
+    // ==========================================
+    function tampil_booking_admin() {
+        $sql = "SELECT b.*, g.nama, g.no_hp, k.kode_kamar FROM booking b 
+                JOIN pengguna g ON b.id_pengguna=g.id_pengguna
+                JOIN kamar k ON b.id_kamar=k.id_kamar
+                ORDER BY b.tanggal_booking DESC";
+        $res = $this->koneksi->query($sql);
+        $hasil = [];
+        while($row = $res->fetch_assoc()) { $hasil[] = $row; }
+        return $hasil;
+    }
+
+    function tambah_booking($id_user, $id_kamar, $checkin, $durasi, $ktp) {
+        $stmt = $this->koneksi->prepare("INSERT INTO booking (id_pengguna, id_kamar, checkin_rencana, durasi_bulan_rencana, status, ktp_path_opt) VALUES (?, ?, ?, ?, 'PENDING', ?)");
+        $stmt->bind_param('iisis', $id_user, $id_kamar, $checkin, $durasi, $ktp);
+        return $stmt->execute();
+    }
+
+    function verifikasi_booking($id_booking, $status) {
+        $stmt = $this->koneksi->prepare("UPDATE booking SET status=? WHERE id_booking=?");
+        $stmt->bind_param('si', $status, $id_booking);
+        return $stmt->execute();
+    }
+
+    // ==========================================
+    // 4. MANAJEMEN PENGHUNI
+    // ==========================================
+    function tampil_penghuni() {
+        $sql = "SELECT p.id_penghuni, u.nama, k.kode_kamar, ko.tanggal_mulai, ko.tanggal_selesai, ko.status
+                FROM penghuni p
+                JOIN pengguna u ON p.id_pengguna = u.id_pengguna
+                LEFT JOIN kontrak ko ON p.id_penghuni = ko.id_penghuni AND ko.status = 'AKTIF'
+                LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar
+                ORDER BY u.nama ASC";
+        
+        $res = $this->koneksi->query($sql);
+        $hasil = [];
+        while($row = $res->fetch_assoc()) { $hasil[] = $row; }
+        return $hasil;
+    }
+    // ... (kode sebelumnya di dalam class Database) ...
+
+    // ==========================================
+    // 5. MANAJEMEN KEUANGAN (TAGIHAN)
+    // ==========================================
+    
+    function get_list_kontrak_aktif() {
+        $sql = "SELECT k.id_kontrak, ka.kode_kamar, p.nama 
+                FROM kontrak k 
+                JOIN kamar ka ON k.id_kamar=ka.id_kamar
+                JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
+                JOIN pengguna p ON ph.id_pengguna=p.id_pengguna
+                WHERE k.status='AKTIF'";
+        return $this->koneksi->query($sql)->fetch_all(MYSQLI_ASSOC);
+    }
+
+    function generate_tagihan($id_kontrak, $bulan) {
+        // 1. Ambil harga sewa dari kontrak/kamar
+        $stmt = $this->koneksi->prepare("SELECT ka.harga FROM kontrak k JOIN kamar ka ON k.id_kamar=ka.id_kamar WHERE k.id_kontrak=?");
+        $stmt->bind_param('i', $id_kontrak);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        
+        if (!$res) return false; // Kontrak tidak valid
+        
+        $nominal = $res['harga'];
+        // Jatuh tempo set tanggal 10 bulan tersebut
+        $jatuh_tempo = $bulan . "-10"; 
+
+        // 2. Cek apakah tagihan bulan ini sudah ada?
+        $cek = $this->koneksi->prepare("SELECT id_tagihan FROM tagihan WHERE id_kontrak=? AND bulan_tagih=?");
+        $cek->bind_param('is', $id_kontrak, $bulan);
+        $cek->execute();
+        if ($cek->get_result()->num_rows > 0) {
+            return "DUPLIKAT"; // Sudah ada tagihan bulan ini
+        }
+
+        // 3. Insert Tagihan
+        $ins = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
+        $ins->bind_param('isis', $id_kontrak, $bulan, $nominal, $jatuh_tempo);
+        return $ins->execute();
+    }
+    
+// ... kode method lain ...
+
+    // ==========================================
+    // 6. MANAJEMEN PEMBAYARAN
+    // ==========================================
+    function tambah_pembayaran_tagihan($id_tagihan, $jumlah, $bukti, $metode = 'TRANSFER') {
+        $stmt = $this->koneksi->prepare("INSERT INTO pembayaran (ref_type, ref_id, metode, jumlah, bukti_path, status) VALUES ('TAGIHAN', ?, ?, ?, ?, 'PENDING')");
+        $stmt->bind_param('isis', $id_tagihan, $metode, $jumlah, $bukti);
+        return $stmt->execute();
+    }
+} 
+// Penutup Class Database
+
+// Global Instance (Wajib ada agar $db bisa dipakai di semua file)
+$db = new Database();
+$mysqli = $db->koneksi; // Backward compatibility untuk file yang belum diubah total
+
+
 ?>

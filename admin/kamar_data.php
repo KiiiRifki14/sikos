@@ -1,8 +1,13 @@
 <?php
 session_start();
-require '../inc/koneksi.php';
+require '../inc/koneksi.php'; // Didalamnya sudah ada class Database
 require '../inc/guard.php';
+
 if (!is_admin() && !is_owner()) die('Forbidden');
+
+// INSTANSIASI OBJEK (PBO)
+$db = new Database();
+$data_kamar = $db->tampil_kamar(); // Memanggil method tampil_kamar
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -23,29 +28,16 @@ if (!is_admin() && !is_owner()) die('Forbidden');
     </div>
     
     <ul class="nav-links">
-      <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
-      <li><a href="kamar_data.php" class="active"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
-      <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
-      <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
-      <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
-      <li><a href="laporan.php"><span class="nav-icon">📈</span> Laporan</a></li>
-      <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
-    </ul>
-
-    <div class="user-profile">
-        <div class="avatar">AD</div>
-        <div style="font-size:0.85rem;">
-            <div style="font-weight:600;">Admin User</div>
-            <div style="opacity:0.7; font-size:0.75rem;">Administrator</div>
-        </div>
-    </div>
-    
-    <div style="padding: 0 1.5rem 2rem 1.5rem;">
-        <a href="../logout.php" style="color: #cbd5e1; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; text-decoration: none;">
-            <span class="nav-icon">🚪</span> Logout
-        </a>
-    </div>
-  </nav>
+    <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
+    <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
+    <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
+    <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
+    <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
+    <li><a href="laporan.php"><span class="nav-icon">📈</span> Laporan</a></li>
+    <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
+    <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
+  </ul>
+</nav>
 
   <main class="main-content">
     <h2 class="page-header-title">Data Kamar</h2>
@@ -54,7 +46,6 @@ if (!is_admin() && !is_owner()) die('Forbidden');
         <div class="toolbar">
             <h3>Daftar Kamar</h3>
             <div class="toolbar-actions">
-                <input type="text" placeholder="🔍 Cari kamar..." class="search-input">
                 <a href="kamar_tambah.php" class="btn-solid btn-green">+ Tambah Data Baru</a>
             </div>
         </div>
@@ -74,8 +65,8 @@ if (!is_admin() && !is_owner()) die('Forbidden');
                 <tbody>
                 <?php
                 $no = 1;
-                $res = $mysqli->query("SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe ORDER BY k.kode_kamar ASC");
-                while($row = $res->fetch_assoc()){
+                // LOOPING DATA DARI ARRAY HASIL METHOD CLASS (Foreach)
+                foreach($data_kamar as $row){
                     $badgeClass = ($row['status_kamar'] == 'TERSEDIA') ? 'bg-light-green' : 'bg-light-red';
                 ?>
                   <tr>

@@ -1,13 +1,34 @@
 <?php
 session_start();
-require '../inc/koneksi.php';
+require '../inc/koneksi.php'; // Class Database
 require '../inc/guard.php';
+
 if (!is_admin() && !is_owner()) die('Forbidden');
 
-// Hitung Ringkasan Sederhana (Contoh)
+$db = new Database();
+
+// --- PROSES GENERATE TAGIHAN ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['act']) && $_POST['act'] == 'generate') {
+    $status = $db->generate_tagihan($_POST['id_kontrak'], $_POST['bulan_tagih']);
+    
+    if ($status === "DUPLIKAT") {
+        echo "<script>alert('Tagihan untuk bulan tersebut sudah ada!'); window.location='laporan.php';</script>";
+    } elseif ($status) {
+        echo "<script>alert('Berhasil membuat tagihan!'); window.location='laporan.php';</script>";
+    } else {
+        echo "<script>alert('Gagal membuat tagihan.'); window.location='laporan.php';</script>";
+    }
+    exit;
+}
+
+// --- DATA UNTUK VIEW ---
+// Hitung Ringkasan (Bisa dipindah ke Class Database jika mau full OOP, tapi di sini query langsung juga oke untuk report)
 $total_masuk = $mysqli->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'")->fetch_row()[0] ?? 0;
 $total_tagihan_lunas = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE status='LUNAS'")->fetch_row()[0] ?? 0;
 $pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0] ?? 0;
+
+// Ambil Data Kontrak untuk Dropdown
+$list_kontrak = $db->get_list_kontrak_aktif();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -19,21 +40,21 @@ $pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='P
 <body class="admin-body">
 
   <nav class="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-icon">🏠</div>
-    <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
-  </div>
-  <ul class="nav-links">
-    <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
-    <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
-    <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
-    <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
-    <li><a href="laporan.php"><span class="nav-icon">📈</span> Laporan</a></li>
-    <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
-    <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
-  </ul>
-</nav>
+    <div class="sidebar-brand">
+      <div class="brand-icon">🏠</div>
+      <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
+      <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
+      <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
+      <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
+      <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
+      <li><a href="laporan.php" class="active"><span class="nav-icon">📈</span> Laporan</a></li>
+      <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
+      <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
+    </ul>
+  </nav>
 
   <main class="main-content">
     <header class="admin-header">
@@ -64,17 +85,11 @@ $pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='P
                 <label class="form-label" style="font-size:0.9rem;">Pilih Kontrak Aktif</label>
                 <select name="id_kontrak" class="form-input" required>
                     <option value="">-- Pilih Penghuni & Kamar --</option>
-                    <?php 
-                    $res = $mysqli->query("SELECT k.id_kontrak, ka.kode_kamar, p.nama 
-                                          FROM kontrak k 
-                                          JOIN kamar ka ON k.id_kamar=ka.id_kamar
-                                          JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
-                                          JOIN pengguna p ON ph.id_pengguna=p.id_pengguna
-                                          WHERE k.status='AKTIF'");
-                    while($k = $res->fetch_assoc()){
-                        echo "<option value='{$k['id_kontrak']}'>{$k['kode_kamar']} - {$k['nama']}</option>";
-                    }
-                    ?>
+                    <?php foreach($list_kontrak as $k): ?>
+                        <option value="<?= $k['id_kontrak'] ?>">
+                            <?= $k['kode_kamar'] ?> - <?= htmlspecialchars($k['nama']) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div style="flex:1;">
@@ -82,7 +97,7 @@ $pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='P
                 <input type="month" name="bulan_tagih" class="form-input" required>
             </div>
             <input type="hidden" name="act" value="generate">
-            <button type="submit" class="btn-primary" style="height:45px;">+ Buat Tagihan</button>
+            <button type="submit" class="btn-solid btn-green" style="height:48px;">+ Buat Tagihan</button>
         </form>
     </div>
 
@@ -91,7 +106,7 @@ $pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='P
             <h3>Riwayat Pembayaran Terakhir</h3>
         </div>
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="custom-table">
                 <thead>
                     <tr>
                         <th>Tanggal</th>
@@ -105,10 +120,12 @@ $pending_verif = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='P
                     <?php
                     $pay = $mysqli->query("SELECT * FROM pembayaran ORDER BY id_pembayaran DESC LIMIT 5");
                     while($p = $pay->fetch_assoc()){
-                        $st = $p['status']=='DITERIMA' ? 'badge-active' : ($p['status']=='PENDING' ? 'badge-pending' : 'badge-filled');
+                        $st = 'badge-pending';
+                        if($p['status']=='DITERIMA') $st = 'badge-active';
+                        if($p['status']=='DITOLAK') $st = 'badge-filled';
                     ?>
                     <tr>
-                        <td><?= $p['tanggal_bayar'] ?? '-' ?></td>
+                        <td><?= date('d M Y H:i', strtotime($p['created_at'] ?? 'now')) ?></td>
                         <td><?= $p['ref_type'] ?> #<?= $p['ref_id'] ?></td>
                         <td>Rp <?= number_format($p['jumlah'],0,',','.') ?></td>
                         <td><?= $p['metode'] ?></td>
