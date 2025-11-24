@@ -46,6 +46,8 @@ $list_kontrak = $db->get_list_kontrak_aktif();
     </div>
     <ul class="nav-links">
       <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
+      
+      <li><a href="pembayaran_data.php"><span class="nav-icon">💰</span> Pembayaran</a></li>
       <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
       <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
       <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>

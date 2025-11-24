@@ -208,7 +208,21 @@ class Database {
         $stmt->bind_param('isis', $id_tagihan, $metode, $jumlah, $bukti);
         return $stmt->execute();
     }
-} 
+    // ... method lain sebelumnya ...
+
+    // Cek status pembayaran terakhir untuk tagihan tertentu
+    function cek_status_pembayaran_terakhir($id_tagihan) {
+        // Ambil status pembayaran terakhir berdasarkan ID Tagihan
+        $stmt = $this->koneksi->prepare("SELECT status FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id=? ORDER BY id_pembayaran DESC LIMIT 1");
+        $stmt->bind_param('i', $id_tagihan);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        
+        // Jika ada data, kembalikan statusnya (misal: PENDING, DITERIMA, DITOLAK)
+        // Jika tidak ada, kembalikan null
+        return $res ? $res['status'] : null;
+    }
+} // Akhir Class Database
 // Penutup Class Database
 
 // Global Instance (Wajib ada agar $db bisa dipakai di semua file)

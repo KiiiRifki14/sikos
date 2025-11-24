@@ -23,21 +23,23 @@ $pendapatan = $mysqli->query("SELECT SUM(harga) FROM kamar WHERE status_kamar='T
 <body class="admin-body">
 
   <nav class="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-icon">🏠</div>
-    <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
-  </div>
-  <ul class="nav-links">
-    <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
-    <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
-    <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
-    <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
-    <li><a href="laporan.php"><span class="nav-icon">📈</span> Laporan</a></li>
-    <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
-    <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
-  </ul>
-</nav>
+    <div class="sidebar-brand">
+      <div class="brand-icon">🏠</div>
+      <div class="brand-text"><h1>SIKOS</h1><p>ADMIN PANEL</p></div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.php"><span class="nav-icon">📊</span> Dashboard</a></li>
+      
+      <li><a href="pembayaran_data.php"><span class="nav-icon">💰</span> Pembayaran</a></li>
+      <li><a href="kamar_data.php"><span class="nav-icon">🛏️</span> Data Kamar</a></li>
+      <li><a href="booking_data.php"><span class="nav-icon">📝</span> Booking</a></li>
+      <li><a href="penghuni_data.php"><span class="nav-icon">👥</span> Penghuni</a></li>
+      <li><a href="keluhan_data.php"><span class="nav-icon">🔧</span> Komplain</a></li>
+      <li><a href="laporan.php" class="active"><span class="nav-icon">📈</span> Laporan</a></li>
+      <li><a href="settings.php"><span class="nav-icon">⚙️</span> Settings</a></li>
+      <li style="margin-top: 2rem;"><a href="../logout.php"><span class="nav-icon">🚪</span> Logout</a></li>
+    </ul>
+  </nav>
   <main class="main-content">
     
     <header class="admin-header">
