@@ -294,3 +294,34 @@ a { text-decoration: none; color: inherit; transition: 0.2s; }
     .admin-container { grid-template-columns: 1fr; }
     .sidebar-card { display: none; } /* Mobile menu logic needed separate */
 }
+/* Card base */
+.card-white {
+  background-color: #fff;
+  border: 1px solid #e2e8f0; /* slate-200 */
+  border-radius: 0.75rem;     /* rounded-xl */
+  overflow: hidden;
+}
+
+/* Hero container */
+.hero-container .hero-box {
+  max-width: 72rem; /* 7xl */
+  margin: 0 auto;
+}
+
+/* Prefer-reduced-motion: hormati pengguna */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Form filter spacing & focus */
+input[type="number"], select {
+  outline: none;
+}
+input[type="number"]:focus, select:focus {
+  border-color: #93c5fd; /* blue-300 */
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, .25);
+}
