@@ -5,32 +5,23 @@ require '../inc/guard.php';
 if (!is_admin() && !is_owner()) { header('Location: ../login.php'); exit; }
 
 // --- LOGIKA STATISTIK ---
-// 1. Hitung Total & Terisi untuk Occupancy Rate
 $total_kamar = $mysqli->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
 $terisi = $mysqli->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
 $occupancy_rate = ($total_kamar > 0) ? round(($terisi / $total_kamar) * 100) : 0;
 
-// 2. Hitung Pendapatan (Format Jt)
-// Ambil bulan dan tahun sekarang
+// Hitung Pendapatan
 $bulan_ini = date('m');
 $tahun_ini = date('Y');
-
-// Hitung jumlah uang REAL yang masuk ke tabel pembayaran bulan ini (hanya yang DITERIMA)
-$query_omset = "SELECT SUM(jumlah) FROM pembayaran 
-                WHERE status='DITERIMA' 
-                AND MONTH(waktu_verifikasi) = '$bulan_ini' 
-                AND YEAR(waktu_verifikasi) = '$tahun_ini'";
-
+$query_omset = "SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = '$bulan_ini' AND YEAR(waktu_verifikasi) = '$tahun_ini'";
 $omset_raw = $mysqli->query($query_omset)->fetch_row()[0] ?? 0;
 
-// Format tampilan angka (tetap sama seperti style sebelumnya)
 if ($omset_raw >= 1000000) {
     $omset_display = number_format($omset_raw / 1000000, 1) . " Jt";
 } else {
     $omset_display = number_format($omset_raw);
 }
 
-// 3. Data Pending
+// Data Pending
 $booking = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
 $tagihan_pending = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0];
 ?>
@@ -44,35 +35,12 @@ $tagihan_pending = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status=
 </head>
 <body class="dashboard-body">
 
-    <aside class="sidebar">
-        <div class="mb-8 px-2 flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">A</div>
-            <div>
-                <h1 class="font-bold text-slate-800 text-lg">SIKOS Admin</h1>
-                <p class="text-xs text-slate-400">Management Panel</p>
-            </div>
-        </div>
-
-        <nav style="flex:1; overflow-y:auto;">
-            <a href="index.php" class="sidebar-link active"><i class="fa-solid fa-chart-pie w-6 text-blue-500"></i> Dashboard</a>
-            <a href="kamar_data.php" class="sidebar-link"><i class="fa-solid fa-house-chimney w-6 text-orange-500"></i> Kelola Kamar</a>
-            <a href="booking_data.php" class="sidebar-link"><i class="fa-solid fa-clipboard-list w-6 text-pink-500"></i> Booking <span style="margin-left:auto; background:#fee2e2; color:#dc2626; font-size:10px; padding:2px 8px; border-radius:99px;"><?= $booking ?></span></a>
-            <a href="pembayaran_data.php" class="sidebar-link"><i class="fa-solid fa-sack-dollar w-6 text-yellow-500"></i> Pembayaran <span style="margin-left:auto; background:#fef3c7; color:#d97706; font-size:10px; padding:2px 8px; border-radius:99px;"><?= $tagihan_pending ?></span></a>
-            <a href="penghuni_data.php" class="sidebar-link"><i class="fa-solid fa-users w-6 text-purple-500"></i> Penghuni</a>
-            <a href="keluhan_data.php" class="sidebar-link"><i class="fa-solid fa-triangle-exclamation w-6 text-red-500"></i> Komplain</a>
-            <a href="laporan.php" class="sidebar-link"><i class="fa-solid fa-chart-line w-6 text-teal-500"></i> Laporan</a>
-            <a href="settings.php" class="sidebar-link"><i class="fa-solid fa-sliders w-6 text-slate-500"></i> Pengaturan</a>
-        </nav>
-
-        <a href="../logout.php" class="sidebar-link text-red-600 hover:bg-red-50 mt-4">
-            <i class="fa-solid fa-right-from-bracket w-6"></i> Logout
-        </a>
-    </aside>
+    <?php include '../components/sidebar_admin.php'; ?>
 
     <main class="main-content">
         <div style="margin-bottom:32px;">
             <h1 style="font-size:24px; font-weight:700; color:#1e293b;">Dashboard Owner</h1>
-            </div>
+        </div>
 
         <div class="grid-stats">
             <div class="card-white p-6">

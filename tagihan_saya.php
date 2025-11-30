@@ -95,9 +95,11 @@ if (isset($_GET['status']) && $_GET['status'] == 'sukses') {
                         <td style="padding:16px 12px; font-weight:600;"><?= date('F Y', strtotime($row['bulan_tagih'])) ?></td>
                         <td style="padding:16px 12px;">Rp <?= number_format($row['nominal'], 0, ',', '.') ?></td>
                         <td style="padding:16px 12px; color:#64748b;"><?= date('d M Y', strtotime($row['jatuh_tempo'])) ?></td>
+                        
                         <td style="padding:16px 12px;">
                             <span style="padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; <?= $badgeStyle ?>"><?= $text ?></span>
                         </td>
+
                         <td style="padding:16px 12px;">
                             <?php if($row['status'] == 'BELUM' && $statusBayar != 'PENDING'): ?>
                                 <form method="post" action="pembayaran_tagihan.php" enctype="multipart/form-data" style="display:flex; gap:8px;">
@@ -110,10 +112,27 @@ if (isset($_GET['status']) && $_GET['status'] == 'sukses') {
                                         <input type="file" name="bukti" required style="display:none;" onchange="this.form.submit()">
                                     </label>
                                 </form>
+
                             <?php elseif($statusBayar == 'PENDING'): ?>
                                 <span style="font-size:12px; color:#ca8a04;">⏳ Menunggu</span>
+
                             <?php else: ?>
-                                <span style="font-size:12px; color:#166534;">✔ Selesai</span>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <span style="font-size:12px; color:#166534; font-weight:bold;">✔ Selesai</span>
+                                    
+                                    <?php
+                                        // Cari ID Pembayaran sukses untuk tagihan ini
+                                        $q_lunas = $mysqli->query("SELECT id_pembayaran FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id={$row['id_tagihan']} AND status='DITERIMA' ORDER BY id_pembayaran DESC LIMIT 1");
+                                        $data_lunas = $q_lunas->fetch_row();
+                                        $id_pay = $data_lunas[0] ?? 0;
+
+                                        if($id_pay > 0):
+                                    ?>
+                                        <a href="cetak_kuitansi.php?id=<?= $id_pay ?>" target="_blank" style="font-size:11px; color:#2563eb; text-decoration:none; background:#eff6ff; padding:2px 6px; border-radius:4px; border:1px solid #bfdbfe; text-align:center;">
+                                            🖨️ Kuitansi
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
                         </td>
                     </tr>

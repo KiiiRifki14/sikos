@@ -16,18 +16,7 @@ $data_tipe = $db->tampil_tipe_kamar();
 </head>
 <body class="dashboard-body">
 
-  <aside class="sidebar">
-        <div class="mb-8 px-2 flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">A</div>
-            <div>
-                <h1 class="font-bold text-slate-800 text-lg">SIKOS Admin</h1>
-            </div>
-        </div>
-        <nav style="flex:1;">
-            <a href="kamar_data.php" class="sidebar-link"><i class="fa-solid fa-arrow-left w-6"></i> Kembali</a>
-        </nav>
-  </aside>
-
+  <?php include '../components/sidebar_admin.php'; ?>
   <main class="main-content">
     <h1 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:32px;">Tambah Kamar Baru</h1>
 
@@ -70,8 +59,23 @@ $data_tipe = $db->tampil_tipe_kamar();
             </div>
 
             <div style="margin-bottom:32px;">
-                <label class="form-label">Catatan / Fasilitas</label>
-                <textarea name="catatan" class="form-input" rows="3" placeholder="Tulis fasilitas kamar..."></textarea>
+                <label class="form-label">Pilih Fasilitas Kamar</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <?php
+                    $fas = $mysqli->query("SELECT * FROM fasilitas_master ORDER BY nama_fasilitas ASC");
+                    while($f = $fas->fetch_assoc()):
+                    ?>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer;">
+                        <input type="checkbox" name="fasilitas[]" value="<?= $f['id_fasilitas'] ?>" style="width:16px; height:16px;">
+                        <span><i class="fa-solid <?= $f['icon'] ?> text-slate-400"></i> <?= $f['nama_fasilitas'] ?></span>
+                    </label>
+                    <?php endwhile; ?>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label class="form-label">Catatan Tambahan (Opsional)</label>
+                <textarea name="catatan" class="form-input" rows="2" placeholder="Contoh: Kamar pojok, view taman..."></textarea>
             </div>
 
             <button type="submit" class="btn-primary" style="width:100%; justify-content:center;">Simpan Kamar</button>

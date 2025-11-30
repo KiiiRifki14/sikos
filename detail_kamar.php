@@ -216,31 +216,32 @@ try {
             </p>
 
             <div class="facility-section-title"><i class="fa-solid fa-wand-magic-sparkles" style="color:#eab308;"></i> Fasilitas Kamar</div>
+            
             <div class="facility-grid">
-                <div class="facility-item">
-                    <i class="fa-regular fa-snowflake"></i> AC Unit
-                </div>
-                <div class="facility-item">
-                    <i class="fa-solid fa-wifi"></i> Wi-Fi Cepat
-                </div>
-                <div class="facility-item">
-                    <i class="fa-solid fa-bed"></i> Kasur Queen
-                </div>
-                <div class="facility-item">
-                    <i class="fa-solid fa-door-closed"></i> Lemari Besar
-                </div>
-                <div class="facility-item">
-                    <i class="fa-solid fa-shower"></i> K. Mandi Dalam
-                </div>
-                <div class="facility-item">
-                    <i class="fa-solid fa-bolt"></i> Listrik 1300W
-                </div>
+                <?php
+                // Ambil fasilitas dari database berdasarkan ID Kamar ini
+                $q_fas = $mysqli->query("SELECT f.nama_fasilitas, f.icon 
+                                         FROM kamar_fasilitas kf 
+                                         JOIN fasilitas_master f ON kf.id_fasilitas = f.id_fasilitas 
+                                         WHERE kf.id_kamar = $id_kamar");
+                
+                if($q_fas->num_rows > 0) {
+                    while($f = $q_fas->fetch_assoc()) {
+                ?>
+                    <div class="facility-item">
+                        <i class="fa-solid <?= $f['icon'] ?>"></i> <?= htmlspecialchars($f['nama_fasilitas']) ?>
+                    </div>
+                <?php 
+                    } 
+                } else {
+                    echo '<div style="color:#64748b; font-size:14px; grid-column: span 2;">Belum ada data fasilitas.</div>';
+                }
+                ?>
             </div>
-
             <div class="facility-section-title"><i class="fa-regular fa-clipboard"></i> Peraturan Kos</div>
             <ul class="rules-list">
                 <?php 
-                    // Jika ada catatan dari DB, tampilkan. Jika tidak, tampilkan default seperti gambar
+                    // Jika ada catatan dari DB, tampilkan. Jika tidak, tampilkan default
                     $catatan = trim($row['catatan'] ?? '');
                     if(!empty($catatan)) {
                         echo "<li>".nl2br(htmlspecialchars($catatan))."</li>";

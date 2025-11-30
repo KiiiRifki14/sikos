@@ -38,12 +38,12 @@ ul { list-style: none; }
 }
 .btn-social:hover { background: #f8fafc; border-color: #cbd5e1; }
 
-/* === 3. DASHBOARD LAYOUT (FIX ANCUR) === */
-/* Kita gunakan struktur Grid yang kuat */
+/* === 3. DASHBOARD LAYOUT (Sistem Flexbox) === */
 .dashboard-body {
-    background-color: #f8fafc; /* Pastikan background dashboard abu muda */
-    display: flex;             /* Gunakan Flexbox untuk wrapper utama */
+    background-color: #f8fafc;
+    display: flex;             /* Wajib Flexbox agar Sidebar kiri & Konten kanan */
     min-height: 100vh;
+    width: 100%;
 }
 
 .sidebar {
@@ -60,10 +60,10 @@ ul { list-style: none; }
 }
 
 .main-content {
-    margin-left: 280px; /* Geser konten agar tidak tertutup sidebar */
-    flex: 1;            /* Isi sisa ruang */
+    margin-left: 280px; /* Geser konten ke kanan sebesar lebar sidebar */
+    flex: 1;
     padding: 32px;
-    width: calc(100% - 280px); /* Lebar sisa */
+    width: calc(100% - 280px);
 }
 
 /* Menu Item di Sidebar */
@@ -94,7 +94,7 @@ ul { list-style: none; }
     margin-bottom: 32px;
 }
 
-/* === 4. LANDING PAGE STYLES === */
+/* === 4. LANDING PAGE & TENANT STYLES (Dipertahankan) === */
 .nav {
     background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
     border-bottom: 1px solid #e2e8f0; position: fixed; top: 0; width: 100%; z-index: 1000; height: 80px; display: flex; align-items: center;
@@ -123,9 +123,8 @@ ul { list-style: none; }
     border: 1px solid #e2e8f0;
 }
 .form-input {
-    width: 100%; padding: 12px 16px; border-radius: 10px;
-    border: 1px solid #e2e8f0; font-size: 14px; margin-bottom: 16px;
-    transition: 0.2s;
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid #e2e8f0; font-size: 14px; transition: 0.2s;
 }
 .form-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 .form-label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
@@ -136,192 +135,35 @@ ul { list-style: none; }
     .sidebar { display: none; }
     .main-content { margin-left: 0; width: 100%; padding: 20px; }
     .grid-stats { grid-template-columns: 1fr; }
-}
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    /* === TAMBAHAN DI PALING BAWAH FILE CSS === */
 
-/* === 1. GLOBAL === */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #f3f4f6; /* Abu-abu muda seperti gambar */
-    color: #1f2937;
-}
-a { text-decoration: none; color: inherit; transition: 0.2s; }
+@media print {
+    /* Sembunyikan Sidebar, Tombol, dan Navigasi saat Print */
+    .sidebar, .no-print, .tab-btn, .mb-8, form {
+        display: none !important;
+    }
 
-/* === 2. LAYOUT UTAMA (GRID) === */
-.admin-container {
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 24px;
-    display: grid;
-    grid-template-columns: 260px 1fr; /* Kiri Sidebar, Kanan Konten */
-    gap: 32px;
-    min-height: 100vh;
-    align-items: start;
-}
+    /* Reset Layout Dashboard agar Full Width di Kertas */
+    .dashboard-body {
+        display: block !important;
+        background: white !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
 
-/* === 3. SIDEBAR CARD (MIRIP GAMBAR) === */
-.sidebar-card {
-    background: white;
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-    position: sticky;
-    top: 24px;
-}
+    /* Mempercantik Tampilan Tabel saat Print */
+    .card-white {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        margin-bottom: 20px !important;
+    }
 
-.brand-header {
-    text-align: center;
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #f3f4f6;
+    body {
+        -webkit-print-color-adjust: exact; /* Agar warna background tercetak */
+    }
 }
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    border-radius: 12px;
-    color: #6b7280;
-    font-weight: 500;
-    font-size: 14px;
-    margin-bottom: 8px;
-    transition: all 0.2s;
-}
-
-.nav-item:hover {
-    background-color: #f9fafb;
-    color: #374151;
-}
-
-/* Active State mirip gambar (Biru Muda) */
-.nav-item.active {
-    background-color: #eff6ff;
-    color: #2563eb;
-    font-weight: 600;
-}
-
-/* === 4. DASHBOARD CARDS === */
-.stat-card {
-    background: white;
-    padding: 24px;
-    border-radius: 16px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-}
-
-.stat-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
-}
-
-.stat-value {
-    font-size: 36px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 4px;
-    line-height: 1;
-}
-
-.stat-desc {
-    font-size: 13px;
-    color: #6b7280;
-}
-
-/* Warna Text Khusus */
-.text-green-500 { color: #10b981; }
-.text-orange-500 { color: #f59e0b; }
-.text-blue-500 { color: #3b82f6; }
-
-/* === 5. TABLE SECTION === */
-.table-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    margin-top: 32px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-}
-
-.table-header {
-    background: #f3f4f6;
-    border-radius: 8px;
-    padding: 12px;
-    display: grid;
-    grid-template-columns: 2fr 2fr 2fr 1.5fr 2fr;
-    font-size: 12px;
-    font-weight: 700;
-    color: #6b7280;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-}
-
-.table-row {
-    display: grid;
-    grid-template-columns: 2fr 2fr 2fr 1.5fr 2fr;
-    padding: 16px 12px;
-    align-items: center;
-    font-size: 14px;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.badge-pending {
-    background: #fef3c7;
-    color: #d97706;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 12px;
-}
-
-/* Tombol Aksi */
-.btn-accept {
-    background: #2563eb; color: white;
-    padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
-    border: none; cursor: pointer;
-}
-.btn-reject {
-    background: white; color: #4b5563; border: 1px solid #e5e7eb;
-    padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
-    cursor: pointer;
-}
-
-/* Responsif */
-@media (max-width: 1024px) {
-    .admin-container { grid-template-columns: 1fr; }
-    .sidebar-card { display: none; } /* Mobile menu logic needed separate */
-}
-/* Card base */
-.card-white {
-  background-color: #fff;
-  border: 1px solid #e2e8f0; /* slate-200 */
-  border-radius: 0.75rem;     /* rounded-xl */
-  overflow: hidden;
-}
-
-/* Hero container */
-.hero-container .hero-box {
-  max-width: 72rem; /* 7xl */
-  margin: 0 auto;
-}
-
-/* Prefer-reduced-motion: hormati pengguna */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-/* Form filter spacing & focus */
-input[type="number"], select {
-  outline: none;
-}
-input[type="number"]:focus, select:focus {
-  border-color: #93c5fd; /* blue-300 */
-  box-shadow: 0 0 0 3px rgba(147, 197, 253, .25);
 }
