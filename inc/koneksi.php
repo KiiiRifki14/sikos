@@ -14,7 +14,6 @@ class Database {
             die("Database Error: " . $this->koneksi->connect_error);
         }
     }
-
     // ==========================================
     // 1. AUTHENTICATION (Login & Register)
     // ==========================================
@@ -222,12 +221,56 @@ class Database {
         // Jika tidak ada, kembalikan null
         return $res ? $res['status'] : null;
     }
-} // Akhir Class Database
-// Penutup Class Database
+// ==========================================
+    // FUNGSI PERBAIKAN: HAPUS LOGIKA FOTO_KTP
+    // ==========================================
+    function setujui_booking_dan_buat_kontrak($id_booking) {
+        // 1. Ambil Data Booking
+        $q_booking = $this->koneksi->query("SELECT * FROM booking WHERE id_booking = $id_booking");
+        $booking = $q_booking->fetch_assoc();
+        
+        if (!$booking) return false;
 
-// Global Instance (Wajib ada agar $db bisa dipakai di semua file)
+        $id_pengguna = $booking['id_pengguna'];
+        $id_kamar    = $booking['id_kamar'];
+        $tgl_mulai   = $booking['checkin_rencana'];
+        $durasi      = $booking['durasi_bulan_rencana'];
+        
+        // Hitung Tanggal Selesai
+        $tgl_selesai = date('Y-m-d', strtotime("+$durasi months", strtotime($tgl_mulai)));
+
+        // 2. Cek apakah user ini sudah ada di tabel PENGHUNI?
+        $q_penghuni = $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna = $id_pengguna");
+        
+        if ($q_penghuni->num_rows > 0) {
+            // Jika sudah ada, ambil ID-nya
+            $d_penghuni = $q_penghuni->fetch_object();
+            $id_penghuni = $d_penghuni->id_penghuni;
+        } else {
+            // PERBAIKAN DISINI: Hapus 'foto_ktp' dari query INSERT
+            // Kita hanya memasukkan id_pengguna saja.
+            $this->koneksi->query("INSERT INTO penghuni (id_pengguna) VALUES ($id_pengguna)");
+            $id_penghuni = $this->koneksi->insert_id;
+        }
+
+        // 3. Matikan kontrak lama user ini (jika ada) agar tidak double
+        $this->koneksi->query("UPDATE kontrak SET status='SELESAI' WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
+
+        // 4. BUAT KONTRAK BARU
+        $stmt_kontrak = $this->koneksi->prepare("INSERT INTO kontrak (id_penghuni, id_kamar, tanggal_mulai, tanggal_selesai, durasi_bulan, status) VALUES (?, ?, ?, ?, ?, 'AKTIF')");
+        $stmt_kontrak->bind_param('iisss', $id_penghuni, $id_kamar, $tgl_mulai, $tgl_selesai, $durasi);
+        $sukses_kontrak = $stmt_kontrak->execute();
+
+        // 5. Update Status Kamar jadi TERISI
+        $this->koneksi->query("UPDATE kamar SET status_kamar='TERISI' WHERE id_kamar = $id_kamar");
+
+        // 6. Update Status Booking jadi SELESAI
+        $this->koneksi->query("UPDATE booking SET status='SELESAI' WHERE id_booking = $id_booking");
+
+        return $sukses_kontrak;
+    }
+}
+
 $db = new Database();
-$mysqli = $db->koneksi; // Backward compatibility untuk file yang belum diubah total
-
-
+$mysqli = $db->koneksi;
 ?>

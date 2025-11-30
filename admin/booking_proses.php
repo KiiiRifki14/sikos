@@ -1,22 +1,29 @@
 <?php
 session_start();
 require '../inc/koneksi.php';
-require '../inc/guard.php';
 
-if (!is_admin()) die('Forbidden');
-
-$db = new Database();
-$id = intval($_GET['id']);
-$act = $_GET['act'];
-
-if ($act == 'approve') {
-    // Logika approve (bisa dikembangkan lebih kompleks di dalam Class Database)
-    $db->verifikasi_booking($id, 'SELESAI');
-    // Tambahan: Update status kamar jadi TERISI (sebaiknya dibuat method juga)
-    // $db->update_status_kamar_by_booking($id, 'TERISI'); 
-} elseif ($act == 'reject') {
-    $db->verifikasi_booking($id, 'BATAL');
+// Cek Admin
+if (!isset($_SESSION['peran']) || ($_SESSION['peran']!='ADMIN' && $_SESSION['peran']!='PEMILIK')) {
+    header("Location: ../login.php"); exit;
 }
 
-header('Location: booking_data.php');
+$act = $_GET['act'] ?? '';
+$id  = $_GET['id'] ?? 0;
+
+if ($act == 'approve' && $id) {
+    // Panggil fungsi sakti yang sama
+    // Jadi mau lewat menu Booking atau Pembayaran, kontrak tetap terbuat!
+    $sukses = $db->setujui_booking_dan_buat_kontrak($id);
+
+    if ($sukses) {
+        echo "<script>alert('Booking Diterima & Kontrak Aktif!'); window.location='booking_data.php';</script>";
+    } else {
+        echo "<script>alert('Gagal memproses kontrak.'); window.location='booking_data.php';</script>";
+    }
+}
+else if ($act == 'batal' && $id) {
+    // Update jadi BATAL
+    $mysqli->query("UPDATE booking SET status='BATAL' WHERE id_booking=$id");
+    echo "<script>alert('Booking Dibatalkan.'); window.location='booking_data.php';</script>";
+}
 ?>

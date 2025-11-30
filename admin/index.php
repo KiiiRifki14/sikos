@@ -11,7 +11,19 @@ $terisi = $mysqli->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'
 $occupancy_rate = ($total_kamar > 0) ? round(($terisi / $total_kamar) * 100) : 0;
 
 // 2. Hitung Pendapatan (Format Jt)
-$omset_raw = $mysqli->query("SELECT SUM(harga) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0] ?? 0;
+// Ambil bulan dan tahun sekarang
+$bulan_ini = date('m');
+$tahun_ini = date('Y');
+
+// Hitung jumlah uang REAL yang masuk ke tabel pembayaran bulan ini (hanya yang DITERIMA)
+$query_omset = "SELECT SUM(jumlah) FROM pembayaran 
+                WHERE status='DITERIMA' 
+                AND MONTH(waktu_verifikasi) = '$bulan_ini' 
+                AND YEAR(waktu_verifikasi) = '$tahun_ini'";
+
+$omset_raw = $mysqli->query($query_omset)->fetch_row()[0] ?? 0;
+
+// Format tampilan angka (tetap sama seperti style sebelumnya)
 if ($omset_raw >= 1000000) {
     $omset_display = number_format($omset_raw / 1000000, 1) . " Jt";
 } else {
