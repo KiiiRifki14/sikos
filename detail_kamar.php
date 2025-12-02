@@ -4,14 +4,16 @@ require 'inc/koneksi.php';
 
 // Ambil id_kamar dari GET
 $id_kamar = intval($_GET['id'] ?? 0);
-if ($id_kamar <= 0) die("Kamar tidak ditemukan!");
+// KODE BARU (Sudah diperbaiki)
+if ($id_kamar <= 0) pesan_error("index.php", "Kamar tidak ditemukan atau URL salah!");
 
 // 1. Ambil detail kamar utama
 $stmt = $mysqli->prepare("SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe WHERE k.id_kamar=?");
 $stmt->bind_param('i', $id_kamar);
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
-if (!$row) die("Kamar tidak ditemukan!");
+
+if (!$row) pesan_error("index.php", "Maaf, data kamar tersebut tidak ditemukan.");
 
 // 2. Ambil Galeri Foto
 $gallery = [];

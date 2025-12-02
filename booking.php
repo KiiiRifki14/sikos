@@ -8,13 +8,16 @@ if (!isset($_SESSION['id_pengguna'])) {
     exit;
 }
 $id_kamar = intval($_GET['id_kamar'] ?? 0);
-if ($id_kamar < 1) die("Kamar tidak valid!");
+// KODE BARU (Sudah diperbaiki)
+if ($id_kamar <= 0) pesan_error("index.php", "Kamar tidak ditemukan atau URL salah!");
 
-$res = $mysqli->prepare("SELECT * FROM kamar WHERE id_kamar=? AND status_kamar='TERSEDIA'");
-$res->bind_param('i', $id_kamar);
-$res->execute();
-$row = $res->get_result()->fetch_assoc();
-if (!$row) die('Kamar tidak tersedia!');
+// 1. Ambil detail kamar utama
+$stmt = $mysqli->prepare("SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe WHERE k.id_kamar=?");
+$stmt->bind_param('i', $id_kamar);
+$stmt->execute();
+$row = $stmt->get_result()->fetch_assoc();
+
+if (!$row) pesan_error("index.php", "Maaf, data kamar tersebut tidak ditemukan.");
 
 ?>
 <!DOCTYPE html>

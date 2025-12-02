@@ -371,4 +371,10 @@ class Database {
 
 $db = new Database();
 $mysqli = $db->koneksi;
+
+// FUNGSI TAMBAHAN UNTUK ERROR HANDLING
+function pesan_error($url, $pesan) {
+    echo "<script>alert('$pesan'); window.location.href='$url';</script>";
+    exit;
+}
 ?>
