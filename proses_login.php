@@ -13,11 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_check($_POST['csrf'])) {
 $user = $db->login($_POST['email'], $_POST['password']);
 
 if ($user) {
+    session_start();
     session_regenerate_id(true);
     $_SESSION['id_pengguna'] = $user['id_pengguna'];
     $_SESSION['peran'] = $user['peran'];
     
-    // --- LOGIKA PENYEDERHANAAN ---
+    // --- LOG LOGIN (BARU) ---
+    $db->catat_log($user['id_pengguna'], 'LOGIN', "User berhasil login ke sistem.");
+    // ------------------------
+
     // Jika Admin atau Owner, masuk ke Admin Panel
     if ($user['peran'] == 'ADMIN' || $user['peran'] == 'OWNER') {
         header('Location: admin/index.php');

@@ -1,29 +1,41 @@
 <?php
 session_start();
-require '../inc/koneksi.php';
+require '../inc/koneksi.php'; 
+require '../inc/guard.php';
 
-// Cek Admin
-if (!isset($_SESSION['peran']) || ($_SESSION['peran']!='ADMIN' && $_SESSION['peran']!='PEMILIK')) {
-    header("Location: ../login.php"); exit;
+if (!is_admin() && !is_owner()) {
+    pesan_error("../login.php", "Akses Ditolak.");
 }
 
+$db = new Database(); // Pastikan DB di-init
 $act = $_GET['act'] ?? '';
-$id  = $_GET['id'] ?? 0;
+$id  = intval($_GET['id'] ?? 0);
 
-if ($act == 'approve' && $id) {
-    // Panggil fungsi sakti yang sama
-    // Jadi mau lewat menu Booking atau Pembayaran, kontrak tetap terbuat!
+if ($id == 0) pesan_error("booking_data.php", "ID Booking tidak valid.");
+
+// Ambil info booking dulu untuk log yang detail
+$info = $mysqli->query("SELECT u.nama, k.kode_kamar FROM booking b JOIN pengguna u ON b.id_pengguna=u.id_pengguna JOIN kamar k ON b.id_kamar=k.id_kamar WHERE b.id_booking=$id")->fetch_assoc();
+$ket_log = $info ? "Booking: {$info['nama']} - Kamar {$info['kode_kamar']}" : "Booking ID $id";
+
+if ($act == 'approve') {
     $sukses = $db->setujui_booking_dan_buat_kontrak($id);
 
     if ($sukses) {
-        echo "<script>alert('Booking Diterima & Kontrak Aktif!'); window.location='booking_data.php';</script>";
+        // Log Sukses
+        $db->catat_log($_SESSION['id_pengguna'], 'APPROVE BOOKING', "Menyetujui $ket_log");
+        pesan_error("booking_data.php", "✅ Booking Diterima! Kontrak otomatis aktif & Tagihan dibuat.");
     } else {
-        echo "<script>alert('Gagal memproses kontrak.'); window.location='booking_data.php';</script>";
+        pesan_error("booking_data.php", "❌ Gagal memproses kontrak. Cek apakah kamar sudah terisi?");
     }
 }
-else if ($act == 'batal' && $id) {
-    // Update jadi BATAL
+else if ($act == 'batal' || $act == 'reject') { 
     $mysqli->query("UPDATE booking SET status='BATAL' WHERE id_booking=$id");
-    echo "<script>alert('Booking Dibatalkan.'); window.location='booking_data.php';</script>";
+    $mysqli->query("UPDATE pembayaran SET status='DITOLAK' WHERE ref_type='BOOKING' AND ref_id=$id");
+
+    // Log Batal
+    $db->catat_log($_SESSION['id_pengguna'], 'REJECT BOOKING', "Menolak $ket_log");
+    pesan_error("booking_data.php", "Booking telah dibatalkan/ditolak.");
+} else {
+    pesan_error("booking_data.php", "Aksi tidak dikenali.");
 }
 ?>
