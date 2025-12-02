@@ -1,19 +1,27 @@
 <?php
 session_start();
 require 'inc/koneksi.php';
-require 'inc/utils.php'; // Pastikan utils ada is_admin()
+require 'inc/utils.php'; 
 
-if (!isset($_SESSION['id_pengguna'])) die("Akses ditolak.");
+// Cek Login Dasar
+if (!isset($_SESSION['id_pengguna'])) {
+    // Karena ini file cetak, kalau belum login langsung tutup atau redirect login
+    echo "<script>alert('Anda harus login!'); window.close();</script>";
+    exit;
+}
 
 $id_pembayaran = intval($_GET['id'] ?? 0);
-if ($id_pembayaran == 0) die("ID Pembayaran tidak valid.");
+$url_redirect = ($_SESSION['peran'] == 'PENGHUNI') ? 'tagihan_saya.php' : 'admin/keuangan_index.php';
+
+// Validasi ID
+if ($id_pembayaran == 0) pesan_error($url_redirect, "ID Pembayaran tidak valid.");
 
 // 1. Ambil Data Pembayaran Dasar
 $q = "SELECT * FROM pembayaran WHERE id_pembayaran = $id_pembayaran AND status = 'DITERIMA'";
 $res = $mysqli->query($q);
 $pembayaran = $res->fetch_assoc();
 
-if (!$pembayaran) die("Data pembayaran tidak ditemukan atau belum diverifikasi.");
+if (!$pembayaran) pesan_error($url_redirect, "Data pembayaran tidak ditemukan atau belum diverifikasi.");
 
 // 2. Logika Detil Berdasarkan Tipe (Booking / Tagihan)
 $judul = "";
@@ -58,6 +66,9 @@ if ($pembayaran['ref_type'] == 'TAGIHAN') {
         $kamar_kode = $d_book['kode_kamar'];
         $id_user_terkait = $d_book['id_pengguna'];
     }
+} elseif ($pembayaran['metode'] == 'CASH') {
+    // Handle manual cash payment logic if ref missing (fallback)
+    $judul = "PEMBAYARAN TUNAI";
 }
 
 // 3. Validasi Keamanan: Hanya Admin atau Pemilik Data yang boleh lihat
@@ -65,7 +76,7 @@ $is_admin = (isset($_SESSION['peran']) && ($_SESSION['peran']=='ADMIN' || $_SESS
 $is_owner_data = ($_SESSION['id_pengguna'] == $id_user_terkait);
 
 if (!$is_admin && !$is_owner_data) {
-    die("Anda tidak memiliki hak akses untuk kuitansi ini.");
+    pesan_error("index.php", "Anda tidak memiliki hak akses untuk kuitansi ini.");
 }
 ?>
 
@@ -103,6 +114,11 @@ if (!$is_admin && !$is_owner_data) {
             transform: rotate(-15deg); border-radius: 10px;
             text-transform: uppercase; pointer-events: none;
         }
+        
+        /* Tambahan styling untuk info check-in */
+        .info-checkin {
+            margin-top: 20px; border-top: 4px solid #2563eb; padding-top: 20px;
+        }
 
         @media print {
             body { background: white; padding: 0; }
@@ -111,16 +127,6 @@ if (!$is_admin && !$is_owner_data) {
         }
     </style>
 </head>
-<div class="kuitansi" style="margin-top: 20px; border-top: 4px solid #2563eb; padding-top: 20px;">
-        <h3 style="margin-top:0; color:#2563eb;">ℹ️ INSTRUKSI CHECK-IN & PENGAMBILAN KUNCI</h3>
-        <ol style="font-size: 14px; line-height: 1.6; color: #333; padding-left: 20px;">
-            <li>Harap simpan bukti pembayaran (kuitansi) ini sebagai dokumen sah.</li>
-            <li>Saat hari kedatangan (Check-in), silakan menuju ke <b>Pos Penjaga Kos</b> atau <b>Rumah Pengelola</b> (Ibu Kost) di Lantai 1.</li>
-            <li>Tunjukkan Kuitansi ini dan KTP Asli untuk verifikasi data.</li>
-            <li><b>Penyerahan Kunci Kamar</b> akan dilakukan setelah verifikasi selesai.</li>
-            <li>Jika ada kendala saat kedatangan, hubungi pengelola di WhatsApp: <b>0812-3456-7890</b>.</li>
-        </ol>
-    </div>
 <body>
 
     <div class="kuitansi">
@@ -162,6 +168,19 @@ if (!$is_admin && !$is_owner_data) {
             <div class="ttd"></div>
             <p><b>Admin Keuangan</b></p>
         </div>
+
+        <?php if ($pembayaran['ref_type'] == 'BOOKING'): ?>
+        <div class="info-checkin">
+            <h3 style="margin-top:0; color:#2563eb;">ℹ️ INSTRUKSI CHECK-IN & PENGAMBILAN KUNCI</h3>
+            <ol style="font-size: 14px; line-height: 1.6; color: #333; padding-left: 20px;">
+                <li>Harap simpan bukti pembayaran (kuitansi) ini sebagai dokumen sah.</li>
+                <li>Saat hari kedatangan (Check-in), silakan menuju ke <b>Pos Penjaga Kos</b> atau <b>Rumah Pengelola</b> (Ibu Kost) di Lantai 1.</li>
+                <li>Tunjukkan Kuitansi ini dan KTP Asli untuk verifikasi data.</li>
+                <li><b>Penyerahan Kunci Kamar</b> akan dilakukan setelah verifikasi selesai.</li>
+                <li>Jika ada kendala saat kedatangan, hubungi pengelola di WhatsApp: <b>0812-3456-7890</b>.</li>
+            </ol>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div style="text-align:center; margin-top:20px;" class="no-print">
@@ -169,7 +188,7 @@ if (!$is_admin && !$is_owner_data) {
             🖨️ Cetak Kuitansi
         </button>
         <button onclick="window.close()" style="padding:10px 20px; background:#64748b; color:white; border:none; border-radius:5px; cursor:pointer; margin-left:10px;">
-            Tutup
+            Tutup Tab
         </button>
     </div>
 

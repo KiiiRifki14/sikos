@@ -3,21 +3,22 @@ session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
 
-// Pastikan hanya Admin/Owner yang bisa akses
-if (!is_admin() && !is_owner()) die('Forbidden');
+// Validasi Akses DULUAN sebelum set header
+if (!is_admin() && !is_owner()) {
+    pesan_error("../login.php", "Akses Ditolak: Anda tidak memiliki izin export laporan.");
+}
 
 // Ambil parameter bulan dari URL (default ke bulan ini jika tidak ada)
 $bulan = $_GET['bulan'] ?? date('Y-m');
 $nama_bulan = date('F Y', strtotime($bulan));
 
-// Header ini yang bikin file didownload sebagai Excel
+// SET HEADER EXCEL (Hanya jika lolos validasi)
 header("Content-Type: application/vnd.ms-excel");
 header("Content-Disposition: attachment; filename=Laporan_Keuangan_SIKOS_$bulan.xls");
 header("Pragma: no-cache");
 header("Expires: 0");
 
 // Query Data Pemasukan (Hanya yang DITERIMA)
-// Mengambil data Booking Fee + Tagihan Bulanan
 $sql = "SELECT p.waktu_verifikasi, p.jumlah, p.metode, 
                CASE 
                    WHEN p.ref_type = 'TAGIHAN' THEN CONCAT('Tagihan Bulanan - ', u.nama, ' (', k.kode_kamar, ')')

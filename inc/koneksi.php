@@ -1,19 +1,22 @@
 <?php
+// Panggil file config.php yang ada di folder luar (satu level di atas folder inc)
+require_once __DIR__ . '/../config.php';
+
 class Database {
-    // Properties
-    var $host = "localhost";
-    var $user = "root";
-    var $pass = "";
-    var $db   = "sikos";
     public $koneksi;
 
-    // Constructor
+    // Constructor Baru: Menggunakan Konstanta dari config.php
     function __construct() {
-        $this->koneksi = new mysqli($this->host, $this->user, $this->pass, $this->db);
+        // Suppress error warning dengan @ agar tidak bocor path di browser jika error
+        $this->koneksi = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        
         if ($this->koneksi->connect_errno) {
-            die("Database Error: " . $this->koneksi->connect_error);
+            // Tampilkan pesan error umum yang aman bagi user
+            die("Maaf, sistem sedang mengalami gangguan koneksi database. Silakan hubungi admin.");
         }
     }
+
+// ... LANJUTKAN KODE DI BAWAHNYA SEPERTI BIASA (function login, register, dll) ...
     // ==========================================
     // 1. AUTHENTICATION (Login & Register)
     // ==========================================

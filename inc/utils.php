@@ -7,9 +7,5 @@ function is_admin() {
 function is_owner() {
     return isset($_SESSION['peran']) && $_SESSION['peran'] == 'OWNER';
 }
-// FUNGSI TAMBAHAN UNTUK ERROR HANDLING
-function pesan_error($url, $pesan) {
-    echo "<script>alert('$pesan'); window.location.href='$url';</script>";
-    exit;
-}
+
 ?>

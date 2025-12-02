@@ -2,7 +2,10 @@
 session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
-if (!is_admin() && !is_owner()) die('Forbidden');
+
+if (!is_admin() && !is_owner()) {
+    pesan_error("../login.php", "Akses Ditolak.");
+}
 
 // Query Data Penghuni Lengkap
 $sql = "SELECT p.id_penghuni, u.nama, u.no_hp, p.alamat, p.pekerjaan, k.kode_kamar, ko.tanggal_mulai, ko.tanggal_selesai
@@ -23,13 +26,18 @@ $res = $mysqli->query($sql);
         th, td { border: 1px solid #000; padding: 8px; font-size: 12px; }
         th { background: #f0f0f0; }
         .header { text-align: center; margin-bottom: 30px; }
-        .no-print { margin-bottom: 20px; }
+        .no-print { margin-bottom: 20px; text-align: right; }
+        .btn-print {
+            padding: 10px 20px; background: #2563eb; color: white; 
+            border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
         @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
     <div class="no-print">
-        <button onclick="window.print()">🖨️ Cetak Data</button>
+        <button class="btn-print" onclick="window.print()">🖨️ Cetak Data</button>
+        <button class="btn-print" style="background: #64748b; margin-left: 10px;" onclick="window.close()">Tutup</button>
     </div>
 
     <div class="header">
@@ -55,10 +63,10 @@ $res = $mysqli->query($sql);
                 <td align="center"><?= $no++ ?></td>
                 <td><?= htmlspecialchars($row['nama']) ?></td>
                 <td><?= htmlspecialchars($row['no_hp']) ?></td>
-                <td align="center"><?= $row['kode_kamar'] ?? '-' ?></td>
+                <td align="center"><b><?= $row['kode_kamar'] ?? '-' ?></b></td>
                 <td>
                     <?php if($row['tanggal_mulai']): ?>
-                        <?= date('d/m/y', strtotime($row['tanggal_mulai'])) ?> - <?= date('d/m/y', strtotime($row['tanggal_selesai'])) ?>
+                        <?= date('d/m/y', strtotime($row['tanggal_mulai'])) ?> s/d <?= date('d/m/y', strtotime($row['tanggal_selesai'])) ?>
                     <?php else: ?> - <?php endif; ?>
                 </td>
                 <td><?= htmlspecialchars($row['pekerjaan']) ?></td>
