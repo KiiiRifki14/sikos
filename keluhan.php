@@ -10,19 +10,45 @@ $user = $mysqli->query("SELECT nama FROM pengguna WHERE id_pengguna=$id_pengguna
 
 // Proses Tambah
 $msg = '';
+// --- KODE BARU: START ---
 if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=='tambah') {
-    $judul = htmlspecialchars($_POST['judul']);
-    $desk = htmlspecialchars($_POST['deskripsi']);
-    $prioritas = $_POST['prioritas'];
+    require 'inc/upload.php'; // Panggil fungsi upload
     
-    $row_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-    if ($row_penghuni) {
-        $stmt = $mysqli->prepare("INSERT INTO keluhan (id_penghuni, judul, deskripsi, prioritas, status) VALUES (?, ?, ?, ?, 'BARU')");
-        $stmt->bind_param('isss', $row_penghuni['id_penghuni'], $judul, $desk, $prioritas);
-        $stmt->execute();
-        $msg = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:24px; font-size:14px;">✅ Keluhan berhasil dikirim!</div>';
+    if (!csrf_check($_POST['csrf'])) {
+        $msg = '<div class="alert-red">Token tidak valid! Refresh halaman.</div>';
+    } else {
+        $judul = htmlspecialchars($_POST['judul']);
+        $desk = htmlspecialchars($_POST['deskripsi']);
+        $prioritas = $_POST['prioritas'];
+        
+        // 1. Proses Upload Foto
+        $foto_path = null;
+        if (!empty($_FILES['foto']['name'])) {
+            $foto_path = upload_process($_FILES['foto'], 'keluhan'); 
+        }
+
+        // 2. Ambil ID Penghuni
+        $row_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_assoc();
+        
+        if ($row_penghuni) {
+            // 3. Ambil ID Kamar dari Kontrak Aktif (Otomatis)
+            $id_penghuni = $row_penghuni['id_penghuni'];
+            $q_kamar = $mysqli->query("SELECT id_kamar FROM kontrak WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
+            $id_kamar = ($q_kamar->num_rows > 0) ? $q_kamar->fetch_object()->id_kamar : null;
+
+            // 4. Simpan ke Database
+            $stmt = $mysqli->prepare("INSERT INTO keluhan (id_penghuni, id_kamar, judul, deskripsi, prioritas, status, foto_path) VALUES (?, ?, ?, ?, ?, 'BARU', ?)");
+            $stmt->bind_param('iissss', $id_penghuni, $id_kamar, $judul, $desk, $prioritas, $foto_path);
+            
+            if ($stmt->execute()) {
+                $msg = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:24px;">✅ Keluhan berhasil dikirim!</div>';
+            } else {
+                $msg = '<div style="background:#fee2e2; color:#dc2626; padding:12px; border-radius:8px; margin-bottom:24px;">Gagal menyimpan data.</div>';
+            }
+        }
     }
 }
+// --- KODE BARU: END ---
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -61,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 
     <div class="card-white" style="margin-bottom:32px;">
         <h3 style="font-weight:700; color:#1e293b; margin-bottom:16px;">Ajukan Keluhan Baru</h3>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
             <input type="hidden" name="act" value="tambah">
             
@@ -84,7 +110,11 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
                     <input type="text" name="deskripsi" class="form-input" placeholder="Jelaskan detailnya...">
                 </div>
             </div>
-            
+            <div style="margin-bottom:24px;">
+            <label class="form-label">Foto Bukti (Opsional)</label>
+            <input type="file" name="foto" class="form-input" accept="image/*" style="padding:10px;">
+            <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Max 2MB (JPG, PNG, WEBP)</p>
+            </div>
             <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
                 <i class="fa-solid fa-paper-plane"></i> Kirim Laporan
             </button>

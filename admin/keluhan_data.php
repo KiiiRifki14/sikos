@@ -92,13 +92,17 @@ $nomor = $halaman_awal + 1;
                     <span style="padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; <?= $badge ?>"><?= $row['status'] ?></span>
                 </td>
                 <td style="padding:16px;">
-                    <?php if($row['status'] == 'BARU'): ?>
-                        <a href="keluhan_proses.php?act=proses&id=<?= $row['id_keluhan'] ?>" class="btn-primary" style="padding:6px 12px; font-size:11px; text-decoration:none;">Proses</a>
-                    <?php elseif($row['status'] == 'PROSES'): ?>
-                        <a href="keluhan_proses.php?act=selesai&id=<?= $row['id_keluhan'] ?>" class="btn-primary" style="background:#16a34a; padding:6px 12px; font-size:11px; text-decoration:none;">Selesai</a>
-                    <?php else: ?>
-                        <span style="font-size:12px; color:#16a34a; font-weight:bold;">✔ Tuntas</span>
-                    <?php endif; ?>
+                    <button class="btn-primary open-modal" 
+                    data-id="<?= $row['id_keluhan'] ?>"
+                    data-judul="<?= htmlspecialchars($row['judul']) ?>"
+                    data-penghuni="<?= htmlspecialchars($row['nama_penghuni']) ?>"
+                    data-deskripsi="<?= htmlspecialchars($row['deskripsi']) ?>"
+                    data-status="<?= $row['status'] ?>"
+                    data-tanggapan="<?= htmlspecialchars($row['tanggapan_admin'] ?? '') ?>"
+                    data-foto="<?= $row['foto_path'] ? '../assets/uploads/keluhan/' . $row['foto_path'] : '' ?>"
+                    style="padding:6px 12px; font-size:12px;">
+                <i class="fa-solid fa-eye"></i> Detail & Respon
+            </button>
                 </td>
             </tr>
             <?php 
@@ -131,5 +135,84 @@ $nomor = $halaman_awal + 1;
         </div>
     </div>
   </main>
+  <div id="modalKeluhan" style="display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.5); backdrop-filter:blur(2px);">
+    <div style="background-color:#fff; margin:5% auto; padding:24px; width:90%; max-width:600px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <span class="close" style="float:right; font-size:28px; cursor:pointer;" onclick="document.getElementById('modalKeluhan').style.display='none'">&times;</span>
+        <h2 style="font-size:20px; font-weight:700; margin-bottom:16px;">Detail Keluhan</h2>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div>
+                <div style="margin-bottom:10px;"><b>Pelapor:</b> <span id="m_penghuni"></span></div>
+                <div style="margin-bottom:10px;"><b>Masalah:</b> <div id="m_judul"></div></div>
+                <div style="margin-bottom:10px;"><b>Deskripsi:</b> <div id="m_deskripsi" style="background:#f8fafc; p:8px; font-size:13px;"></div></div>
+                
+                <div id="m_foto_container" style="display:none; margin-top:10px;">
+                    <b>Bukti Foto:</b><br>
+                    <a id="m_foto_link" href="#" target="_blank">
+                        <img id="m_foto_img" src="" style="width:100%; height:100px; object-fit:cover; border-radius:8px; margin-top:5px;">
+                    </a>
+                </div>
+            </div>
+
+            <div style="background:#f0f9ff; padding:15px; border-radius:8px;">
+                <form action="keluhan_proses.php" method="POST">
+                    <input type="hidden" name="id_keluhan" id="m_id">
+                    
+                    <label style="font-size:12px; font-weight:bold;">Update Status</label>
+                    <select name="status" id="m_status" style="width:100%; padding:8px; margin-bottom:10px; border-radius:4px;">
+                        <option value="BARU">Baru</option>
+                        <option value="PROSES">Sedang Diproses</option>
+                        <option value="SELESAI">Selesai</option>
+                    </select>
+
+                    <label style="font-size:12px; font-weight:bold;">Balasan Admin</label>
+                    <textarea name="tanggapan" style="width:100%; padding:8px; height:80px; border-radius:4px;" placeholder="Tulis pesan untuk penghuni..."></textarea>
+
+                    <button type="submit" class="btn-primary" style="width:100%; margin-top:10px;">Simpan</button>
+                </form>
+                <div style="text-align:center; margin-top:10px;">
+                    <a id="btn_hapus" href="#" onclick="return confirm('Hapus permanen?')" style="color:red; font-size:12px;">Hapus Keluhan</a>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
+            <b>Riwayat Chat:</b>
+            <div id="m_history" style="font-size:12px; color:#555; background:#eee; padding:10px; margin-top:5px; border-radius:5px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Script untuk mengisi data Modal saat tombol diklik
+document.querySelectorAll('.open-modal').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('m_id').value = this.getAttribute('data-id');
+        document.getElementById('m_penghuni').textContent = this.getAttribute('data-penghuni');
+        document.getElementById('m_judul').textContent = this.getAttribute('data-judul');
+        document.getElementById('m_deskripsi').textContent = this.getAttribute('data-deskripsi');
+        document.getElementById('m_status').value = this.getAttribute('data-status');
+        
+        // Handle History Chat
+        let history = this.getAttribute('data-tanggapan');
+        document.getElementById('m_history').innerHTML = history ? history : '- Belum ada balasan -';
+
+        // Handle Foto
+        let foto = this.getAttribute('data-foto');
+        if(foto) {
+            document.getElementById('m_foto_container').style.display = 'block';
+            document.getElementById('m_foto_img').src = foto;
+            document.getElementById('m_foto_link').href = foto;
+        } else {
+            document.getElementById('m_foto_container').style.display = 'none';
+        }
+
+        // Handle Tombol Hapus
+        document.getElementById('btn_hapus').href = 'keluhan_proses.php?act=hapus&id=' + this.getAttribute('data-id');
+
+        document.getElementById('modalKeluhan').style.display = 'block';
+    });
+});
+</script>
 </body>
 </html>
