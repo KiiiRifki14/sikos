@@ -3,60 +3,77 @@ session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
 
-// Cek Admin
-if (!isset($_SESSION['peran']) || ($_SESSION['peran']!='ADMIN' && $_SESSION['peran']!='OWNER')) {
-    header("Location: ../login.php"); exit;
+if (!is_admin() && !is_owner()) {
+    pesan_error("../login.php", "Akses Ditolak.");
 }
 
-$db = new Database(); // Pastikan instansiasi objek DB
+$db = new Database();
 $act = $_GET['act'] ?? '';
-$id  = $_GET['id'] ?? 0;
+$id  = intval($_GET['id'] ?? 0);
 
-// 1. TERIMA PEMBAYARAN (Verifikasi)
+// 1. TERIMA PEMBAYARAN
 if ($act == 'terima' && $id) {
     $cek = $mysqli->query("SELECT * FROM pembayaran WHERE id_pembayaran=$id")->fetch_assoc();
-    if ($cek) {
-        $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+    
+    if (!$cek) pesan_error("keuangan_index.php?tab=verifikasi", "Data pembayaran tidak ditemukan.");
 
-        if ($cek['ref_type'] == 'BOOKING') {
-            $id_booking = $cek['ref_id'];
-            $db->setujui_booking_dan_buat_kontrak($id_booking);
-            echo "<script>alert('Booking Diterima & Kontrak Aktif!'); window.location='keuangan_index.php?tab=verifikasi';</script>";
-        } 
-        else if ($cek['ref_type'] == 'TAGIHAN') {
-            $id_tagihan = $cek['ref_id'];
-            $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan=$id_tagihan");
-            echo "<script>alert('Pembayaran Tagihan diterima!'); window.location='keuangan_index.php?tab=verifikasi';</script>";
+    // Update Status Pembayaran
+    $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+
+    // LOGIKA LANJUTAN: Apa efeknya setelah diterima?
+    if ($cek['ref_type'] == 'BOOKING') {
+        // Jika ini DP Booking -> Aktifkan Kontrak
+        $id_booking = $cek['ref_id'];
+        $sukses = $db->setujui_booking_dan_buat_kontrak($id_booking);
+        
+        if($sukses) {
+            pesan_error("keuangan_index.php?tab=verifikasi", "✅ Pembayaran Booking Diterima & Kontrak Aktif!");
+        } else {
+            pesan_error("keuangan_index.php?tab=verifikasi", "⚠️ Pembayaran diterima, TAPI gagal aktivasi kontrak (Kamar penuh/Error). Cek data booking.");
         }
+    } 
+    else if ($cek['ref_type'] == 'TAGIHAN') {
+        // Jika ini Tagihan Bulanan -> Lunaskan Tagihan
+        $id_tagihan = $cek['ref_id'];
+        $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan=$id_tagihan");
+        pesan_error("keuangan_index.php?tab=verifikasi", "✅ Pembayaran Tagihan Diterima & Status LUNAS.");
     }
 } 
+
 // 2. TOLAK PEMBAYARAN
 else if ($act == 'tolak' && $id) {
     $mysqli->query("UPDATE pembayaran SET status='DITOLAK', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
-    echo "<script>alert('Pembayaran ditolak.'); window.location='keuangan_index.php?tab=verifikasi';</script>";
+    pesan_error("keuangan_index.php?tab=verifikasi", "🚫 Pembayaran telah ditolak.");
 }
 
-// 3. GENERATE TAGIHAN MASAL (BARU)
+// 3. GENERATE TAGIHAN MASAL
 else if ($act == 'generate_masal' && $_SERVER['REQUEST_METHOD'] == 'POST') {
     $bulan = $_POST['bulan_tagih'];
     $jumlah = $db->generate_tagihan_masal($bulan);
     
     if ($jumlah > 0) {
-        echo "<script>alert('Berhasil membuat $jumlah tagihan baru untuk bulan $bulan.'); window.location='keuangan_index.php?tab=tagihan&bulan=$bulan';</script>";
+        pesan_error("keuangan_index.php?tab=tagihan&bulan=$bulan", "✅ Sukses membuat $jumlah tagihan baru untuk bulan $bulan.");
     } else {
-        echo "<script>alert('Tidak ada tagihan baru yang dibuat. Mungkin semua kontrak sudah ditagih untuk bulan ini?'); window.location='keuangan_index.php?tab=tagihan&bulan=$bulan';</script>";
+        pesan_error("keuangan_index.php?tab=tagihan&bulan=$bulan", "ℹ️ Tidak ada tagihan baru yang dibuat. (Mungkin semua sudah ditagih?)");
     }
 }
 
-// 4. BAYAR CASH (BARU)
+// 4. BAYAR CASH (Manual)
 else if ($act == 'bayar_cash' && $id) {
     $sukses = $db->bayar_tagihan_cash($id);
+    
+    // Ambil bulan untuk redirect
+    $q_bln = $mysqli->query("SELECT bulan_tagih FROM tagihan WHERE id_tagihan=$id");
+    $tgl = ($q_bln && $q_bln->num_rows > 0) ? $q_bln->fetch_object()->bulan_tagih : date('Y-m');
+
     if($sukses) {
-        // Ambil bulan dari tagihan agar redirectnya enak
-        $tgl = $mysqli->query("SELECT bulan_tagih FROM tagihan WHERE id_tagihan=$id")->fetch_object()->bulan_tagih;
-        echo "<script>alert('Pembayaran Tunai Berhasil Dicatat! Tagihan Lunas.'); window.location='keuangan_index.php?tab=tagihan&bulan=$tgl';</script>";
+        pesan_error("keuangan_index.php?tab=tagihan&bulan=$tgl", "💰 Pembayaran Tunai Berhasil Dicatat! Tagihan Lunas.");
     } else {
-        echo "<script>alert('Gagal mencatat pembayaran.'); window.history.back();</script>";
+        pesan_error("keuangan_index.php?tab=tagihan&bulan=$tgl", "❌ Gagal mencatat pembayaran.");
     }
+}
+else {
+    // Fallback jika tidak ada aksi yang cocok
+    header("Location: keuangan_index.php");
 }
 ?>

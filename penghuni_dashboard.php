@@ -1,14 +1,37 @@
 <?php
 session_start();
 require 'inc/koneksi.php';
-if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') { header('Location: login.php'); exit; }
+require 'inc/utils.php';
+
+// Cek Login & Peran
+if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') { 
+    header('Location: login.php'); exit; 
+}
 
 $id_pengguna = $_SESSION['id_pengguna'];
+// Ambil data user
 $user = $mysqli->query("SELECT * FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
+// Ambil data penghuni & kontrak aktif
 $id_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
+
 $kontrak = null;
 if($id_penghuni) {
     $kontrak = $mysqli->query("SELECT k.*, km.kode_kamar, km.harga FROM kontrak k JOIN kamar km ON k.id_kamar=km.id_kamar WHERE k.id_penghuni=$id_penghuni AND k.status='AKTIF'")->fetch_assoc();
+}
+
+// LOGIKA NOTIFIKASI (BANNER)
+$notif_banner = '';
+if (isset($_GET['msg'])) {
+    if ($_GET['msg'] == 'pembayaran_berhasil') {
+        $notif_banner = '
+        <div style="background-color: #dcfce7; border: 1px solid #22c55e; color: #15803d; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-circle-check" style="font-size:20px;"></i>
+            <div>
+                <strong style="display:block; margin-bottom:2px;">Pembayaran Berhasil Diupload!</strong>
+                <span style="font-size:14px;">Bukti transfer Anda sudah masuk. Mohon tunggu verifikasi admin 1x24 jam.</span>
+            </div>
+        </div>';
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -45,6 +68,8 @@ if($id_penghuni) {
     </aside>
 
     <main class="main-content">
+        <?= $notif_banner ?>
+
         <h1 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:8px;">Selamat Datang!</h1>
         <p style="color:#64748b; margin-bottom:32px; font-size:14px;">Berikut ringkasan status sewa Anda hari ini.</p>
 
@@ -71,7 +96,13 @@ if($id_penghuni) {
                 <div style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Tagihan Pending</div>
                 <?php 
                     $tagihan = 0;
-                    if($kontrak) $tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} AND status='BELUM'")->fetch_row()[0];
+                    // Hitung tagihan yang statusnya BELUM, tapi KECUALIKAN yang sudah diupload dan sedang diverifikasi (PENDING)
+                    // Logika: Cari tagihan ID yang TIDAK ADA di tabel pembayaran dengan status PENDING/DITERIMA
+                    if($kontrak) {
+                        $id_k = $kontrak['id_kontrak'];
+                        // Query sederhana: Hitung tagihan status BELUM
+                        $tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=$id_k AND status='BELUM'")->fetch_row()[0];
+                    }
                 ?>
                 <div style="font-size:28px; font-weight:700; color: <?= $tagihan>0 ? '#f59e0b' : '#2563eb' ?>;">
                     <?= $tagihan ?>
