@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
         
         if ($row_penghuni) {
             $id_penghuni = $row_penghuni['id_penghuni'];
+            // Ambil ID Kamar dari Kontrak Aktif
             $q_kamar = $mysqli->query("SELECT id_kamar FROM kontrak WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
             $id_kamar = ($q_kamar->num_rows > 0) ? $q_kamar->fetch_object()->id_kamar : null;
 
@@ -56,9 +57,11 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
       .modal-content { background-color: #fff; margin: 5% auto; padding: 0; border: none; width: 90%; max-width: 600px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideDown 0.3s ease-out; overflow: hidden; }
       @keyframes slideDown { from {transform: translateY(-20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
       
-      .step-circle { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; position: relative; z-index: 10; transition: all 0.3s; font-size: 10px; }
+      /* Base Stepper */
+      .step-circle { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; position: relative; z-index: 10; transition: all 0.3s; }
       .step-line { flex: 1; height: 3px; background-color: #e2e8f0; margin: 0 -2px; z-index: 0; transition: all 0.3s; }
       
+      /* Status Colors */
       .step-active-red { background-color: #ef4444; border: 2px solid #fca5a5; }
       .step-active-yellow { background-color: #eab308; border: 2px solid #fde047; }
       .step-active-green { background-color: #22c55e; border: 2px solid #86efac; }
@@ -84,8 +87,9 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
         <a href="penghuni_dashboard.php" class="sidebar-link"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
         <a href="kamar_saya.php" class="sidebar-link"><i class="fa-solid fa-bed w-6"></i> Kamar Saya</a>
         <a href="tagihan_saya.php" class="sidebar-link"><i class="fa-solid fa-credit-card w-6"></i> Tagihan</a>
-        <a href="keluhan.php" class="sidebar-link active"><i class="fa-solid fa-triangle-exclamation w-6"></i> Keluhan</a>
+        <a href="keluhan.php" class="sidebar-link"><i class="fa-solid fa-triangle-exclamation w-6"></i> Keluhan</a>
         <a href="pengumuman.php" class="sidebar-link"><i class="fa-solid fa-bullhorn w-6"></i> Info</a>
+        <a href="profil.php" class="sidebar-link active"><i class="fa-solid fa-user-gear w-6"></i> Profil Saya</a>
     </nav>
     <a href="logout.php" class="sidebar-link" style="color:#dc2626; margin-top:auto;">
         <i class="fa-solid fa-right-from-bracket w-6"></i> Logout
@@ -98,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
     </div>
     <?= $msg ?>
 
-    <div class="card-white mb-8">
+    <div class="card-white mb-8">       
         <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Ajukan Keluhan Baru</h3>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
@@ -195,11 +199,11 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
                         
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center w-full px-2">
-                                <div class="step-circle <?= $s1_cls ?> w-5 h-5">1</div>
+                                <div class="step-circle <?= $s1_cls ?> w-5 h-5 text-[10px]">1</div>
                                 <div class="step-line <?= $l1_cls ?> h-1"></div>
-                                <div class="step-circle <?= $s2_cls ?> w-5 h-5">2</div>
+                                <div class="step-circle <?= $s2_cls ?> w-5 h-5 text-[10px]">2</div>
                                 <div class="step-line <?= $l2_cls ?> h-1"></div>
-                                <div class="step-circle <?= $s3_cls ?> w-5 h-5">3</div>
+                                <div class="step-circle <?= $s3_cls ?> w-5 h-5 text-[10px]">3</div>
                             </div>
                             <div class="mt-1"><?= $status_text ?></div>
                         </td>

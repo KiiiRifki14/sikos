@@ -34,7 +34,7 @@ $nomor = $halaman_awal + 1;
   <style>
       /* Modal Styles */
       .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
-      .modal-content { background-color: #fff; margin: 3% auto; padding: 0; border: none; width: 90%; max-width: 700px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideDown 0.3s ease-out; overflow: hidden; }
+      .modal-content { background-color: #fff; margin: 3% auto; padding: 0; border: none; width: 90%; max-width: 700px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideDown 0.3s ease-out; overflow: hidden; }
       @keyframes slideDown { from {transform: translateY(-20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
       
       /* Stepper Styles (Modal & Table) */

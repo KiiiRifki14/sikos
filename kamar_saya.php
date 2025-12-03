@@ -34,10 +34,11 @@ $row_kontrak = $mysqli->query("SELECT * FROM kontrak WHERE id_penghuni=$id_pengh
     </div>
     <nav style="flex:1;">
         <a href="penghuni_dashboard.php" class="sidebar-link"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
-        <a href="kamar_saya.php" class="sidebar-link active"><i class="fa-solid fa-bed w-6"></i> Kamar Saya</a>
+        <a href="kamar_saya.php" class="sidebar-link"><i class="fa-solid fa-bed w-6"></i> Kamar Saya</a>
         <a href="tagihan_saya.php" class="sidebar-link"><i class="fa-solid fa-credit-card w-6"></i> Tagihan</a>
         <a href="keluhan.php" class="sidebar-link"><i class="fa-solid fa-triangle-exclamation w-6"></i> Keluhan</a>
         <a href="pengumuman.php" class="sidebar-link"><i class="fa-solid fa-bullhorn w-6"></i> Info</a>
+        <a href="profil.php" class="sidebar-link active"><i class="fa-solid fa-user-gear w-6"></i> Profil Saya</a>
     </nav>
     <a href="logout.php" class="sidebar-link" style="color:#dc2626; margin-top:auto;">
         <i class="fa-solid fa-right-from-bracket w-6"></i> Logout

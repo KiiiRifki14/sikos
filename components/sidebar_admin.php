@@ -44,4 +44,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <a href="fasilitas_data.php" class="sidebar-link">
     <i class="fa-solid fa-list-check w-6"></i> Master Fasilitas
     </a>
+    <a href="pengeluaran_data.php" class="sidebar-link <?= ($current_page == 'pengeluaran_data.php') ? 'active' : '' ?>">
+    <i class="fa-solid fa-wallet w-6 text-red-500"></i> Pengeluaran
+    </a>
 </aside>
