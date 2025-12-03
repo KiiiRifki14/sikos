@@ -274,3 +274,189 @@ tr:last-child td { border-bottom: none; }
 @media (max-width: 600px) {
     .pagination-btn { padding: 6px 10px; font-size: 12px; }
 }
+/* ==============================
+   TAMBAHAN: FRONTEND STYLES
+   ============================== */
+
+/* --- NAVBAR --- */
+.navbar {
+    position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+    display: flex; align-items: center;
+}
+.navbar-container {
+    width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-main); }
+.nav-brand-logo { 
+    width: 40px; height: 40px; background: var(--primary); color: white; 
+    border-radius: 10px; display: flex; align-items: center; justify-content: center; 
+    font-weight: bold; font-size: 20px; 
+}
+.nav-menu { display: flex; gap: 32px; align-items: center; }
+.nav-link { font-weight: 600; color: var(--text-muted); font-size: 14px; transition: 0.2s; }
+.nav-link:hover { color: var(--primary); }
+
+/* Mobile Menu */
+.mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); }
+.mobile-menu { 
+    display: none; position: absolute; top: 80px; left: 0; width: 100%; 
+    background: white; border-bottom: 1px solid var(--border); 
+    padding: 20px; flex-direction: column; gap: 16px; 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+.mobile-menu.active { display: flex; }
+
+/* --- HERO SECTION --- */
+.hero {
+    /* Ganti dengan gambar kamu */
+    background-image: url('../img/hero-bg.jpg'); 
+    background-size: cover; background-position: center; background-color: #e2e8f0;
+    
+    /* KURANGI TINGGI MINIMAL AGAR TIDAK TERLALU BOROS TEMPAT */
+    min-height: 400px; /* Dulu 50vh, sekarang fix pixel biar stabil */
+    
+    display: flex; 
+    align-items: center; /* Kembalikan ke center biar rapi secara vertikal di area yang lebih kecil */
+    justify-content: center;
+    
+    /* Padding disesuaikan agar tidak terlalu jauh dari navbar */
+    padding: 40px 20px; 
+    margin-top: 80px; /* Offset navbar tetap */
+}
+
+.hero-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px 50px; border-radius: 16px; text-align: center;
+    max-width: 750px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    
+    /* Hapus margin-top manual yang tadi */
+    margin-top: 0; 
+}
+.hero-title { font-size: 3rem; font-weight: 800; color: var(--text-main); margin-bottom: 16px; line-height: 1.2; }
+.hero-text { font-size: 1.125rem; color: var(--text-muted); margin-bottom: 32px; }
+
+/* --- SECTION & GRID --- */
+.section { padding: 60px 24px; max-width: 1280px; margin: 0 auto; }
+.section-title { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+.section-subtitle { color: var(--text-muted); margin-bottom: 32px; }
+
+.grid-rooms {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px; margin-bottom: 40px;
+}
+
+/* --- FILTER BOX --- */
+.filter-box {
+    background: white; border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin-bottom: 40px;
+}
+.filter-grid { 
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 16px; align-items: end; 
+}
+
+/* --- FOOTER --- */
+/* --- FOOTER --- */
+.footer { 
+    background: #0f172a; 
+    color: #cbd5e1; 
+    padding: 64px 70px 32px; 
+    margin-top: 80px; 
+}
+
+.footer-grid { 
+    display: grid; 
+    grid-template-columns: 2fr 1fr 1fr; 
+    gap: 48px; 
+    max-width: 1280px; 
+    margin: 0 auto; 
+}
+
+.footer h4 { 
+    color: white; 
+    font-weight: 700; 
+    margin-bottom: 16px; 
+    font-size: 16px; 
+    letter-spacing: 0.5px; /* Tambahan biar lebih elegan */
+}
+
+.footer ul li { 
+    margin-bottom: 12px; 
+    font-size: 14px; 
+}
+
+.footer a:hover { 
+    color: white; 
+    text-decoration: underline;
+}
+
+.footer-bottom { 
+    border-top: 1px solid #334155; 
+    margin-top: 40px; 
+    padding-top: 32px; 
+    text-align: center; 
+    font-size: 12px; 
+    color: #64748b; 
+}
+
+/* --- RESPONSIVE FRONTEND (FIXED) --- */
+/* 2. Hero Section (Mobile) */
+    .hero {
+        min-height: auto; /* Biarkan tinggi menyesuaikan konten */
+        padding: 100px 20px 60px; /* Tambah padding bawah jadi 60px */
+        text-align: center;
+        align-items: flex-start;
+        margin-bottom: 40px; /* Tambah jarak ke elemen berikutnya (Kamar Tersedia) */
+    }
+    
+    .hero-content {
+        padding: 30px 20px; 
+        width: 100%; 
+        max-width: 100%;
+        margin-top: 0; /* Reset margin top */
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
+    
+    .hero-title { font-size: 1.75rem; margin-bottom: 12px; }
+    .hero-text { font-size: 0.9rem; margin-bottom: 24px; }
+    
+    /* Tombol di Hero biar stack (atas-bawah) di HP */
+    .hero-content .flex {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .hero-content .btn {
+        width: 100%;
+        justify-content: center;
+    
+    
+    /* 3. Filter Box (Pencarian) */
+    .filter-box { padding: 20px; }
+    .filter-grid { 
+        grid-template-columns: 1fr; /* Stack jadi 1 kolom */
+        gap: 12px; 
+    }
+    
+    /* 4. Grid Kamar */
+    .section { padding: 40px 15px; }
+    .grid-rooms { 
+        grid-template-columns: 1fr; /* 1 Kartu per baris */
+        gap: 24px; 
+    }
+    .card-white { margin-bottom: 0; } /* Reset margin bottom default */
+
+    /* 5. Footer */
+    .footer { padding: 40px 20px 20px; margin-top: 40px; }
+    .footer-grid { 
+        grid-template-columns: 1fr; /* Stack vertikal */
+        gap: 32px; 
+        text-align: center; 
+    }
+    /* Rata tengah untuk elemen di footer mobile */
+    .footer-grid > div:first-child > div { justify-content: center; } 
+}

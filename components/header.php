@@ -1,50 +1,45 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-?>
-<nav class="fixed top-0 left-0 w-full bg-white/95 backdrop-blur border-b border-slate-100 z-50 h-20 flex items-center">
-  <div class="w-full max-w-7xl mx-auto px-6 flex justify-between items-center">
-    <a href="index.php" class="flex items-center gap-2 group">
-      <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl" aria-label="Logo SIKOS">S</div>
-      <div class="flex flex-col">
-        <span class="text-xl font-bold text-slate-800 leading-none">SIKOS</span>
-        <span class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Paadaasih</span>
+<nav class="navbar">
+  <div class="navbar-container">
+    <a href="index.php" class="nav-brand">
+      <div class="nav-brand-logo">S</div>
+      <div style="display:flex; flex-direction:column;">
+        <span style="font-weight:800; font-size:20px; line-height:1;">SIKOS</span>
+        <span style="font-size:10px; font-weight:bold; color:var(--text-muted); letter-spacing:1px;">PAADAASIH</span>
       </div>
     </a>
 
-    <div class="hidden md:flex items-center gap-8">
-      <a href="#beranda" class="text-sm font-medium text-slate-600 hover:text-blue-600">Beranda</a>
-      <a href="#kamar" class="text-sm font-medium text-slate-600 hover:text-blue-600">Kamar</a>
-      <a href="#fasilitas" class="text-sm font-medium text-slate-600 hover:text-blue-600">Fasilitas</a>
+    <div class="nav-menu">
+      <a href="index.php#beranda" class="nav-link">Beranda</a>
+      <a href="index.php#kamar" class="nav-link">Kamar</a>
+      <a href="index.php#fasilitas" class="nav-link">Fasilitas</a>
 
-      <div class="h-6 w-px bg-slate-200 mx-2"></div>
+      <div style="height:24px; width:1px; background:var(--border);"></div>
 
       <?php if (isset($_SESSION['id_pengguna'])): ?>
         <?php $dash = ($_SESSION['peran'] == 'PENGHUNI') ? 'penghuni_dashboard.php' : 'admin/index.php'; ?>
-        <a href="<?= $dash ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-lg shadow-blue-200 transition">Dashboard</a>
-        <a href="logout.php" class="border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 px-5 py-2.5 rounded-lg text-sm font-semibold transition">Logout</a>
+        <a href="<?= $dash ?>" class="btn btn-primary" style="padding: 8px 20px;">Dashboard</a>
+        <a href="logout.php" class="btn btn-danger" style="padding: 8px 16px;">Logout</a>
       <?php else: ?>
-        <a href="login.php" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-6 py-2.5 rounded-lg text-sm font-bold transition">Login</a>
+        <a href="login.php" class="btn btn-secondary" style="padding: 8px 20px;">Login</a>
       <?php endif; ?>
     </div>
 
-    <!-- Mobile: hamburger -->
-    <button class="md:hidden text-slate-700 hover:text-blue-600 text-2xl" aria-label="Buka menu" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">☰</button>
+    <button class="mobile-menu-btn" onclick="document.getElementById('mobileMenu').classList.toggle('active')">
+        <i class="fa-solid fa-bars"></i>
+    </button>
   </div>
 
-  <!-- Mobile menu -->
-  <div id="mobileMenu" class="md:hidden hidden bg-white border-t border-slate-100">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-3">
-      <a href="#beranda" class="text-sm font-medium text-slate-700 hover:text-blue-600">Beranda</a>
-      <a href="#kamar" class="text-sm font-medium text-slate-700 hover:text-blue-600">Kamar</a>
-      <a href="#fasilitas" class="text-sm font-medium text-slate-700 hover:text-blue-600">Fasilitas</a>
-      <div class="h-px w-full bg-slate-200 my-2"></div>
+  <div id="mobileMenu" class="mobile-menu">
+      <a href="index.php#beranda" class="nav-link" onclick="this.parentElement.classList.remove('active')">Beranda</a>
+      <a href="index.php#kamar" class="nav-link" onclick="this.parentElement.classList.remove('active')">Kamar</a>
+      <a href="index.php#fasilitas" class="nav-link" onclick="this.parentElement.classList.remove('active')">Fasilitas</a>
+      <div style="height:1px; width:100%; background:var(--border);"></div>
+      
       <?php if (isset($_SESSION['id_pengguna'])): ?>
-        <?php $dash = ($_SESSION['peran'] == 'PENGHUNI') ? 'penghuni_dashboard.php' : 'admin/index.php'; ?>
-        <a href="<?= $dash ?>" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold">Dashboard</a>
-        <a href="logout.php" class="border border-red-200 bg-red-50 text-red-600 px-5 py-2 rounded-lg text-sm font-semibold">Logout</a>
+        <a href="<?= $dash ?>" class="btn btn-primary w-full text-center">Dashboard</a>
+        <a href="logout.php" class="btn btn-danger w-full text-center">Logout</a>
       <?php else: ?>
-        <a href="login.php" class="bg-blue-50 text-blue-600 px-5 py-2 rounded-lg text-sm font-bold">Login</a>
+        <a href="login.php" class="btn btn-primary w-full text-center">Login Member</a>
       <?php endif; ?>
-    </div>
   </div>
 </nav>

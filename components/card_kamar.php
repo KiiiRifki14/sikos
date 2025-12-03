@@ -3,46 +3,67 @@
  * Props: $row (assoc kamar + tipe)
  */
 ?>
-<div class="card-white group hover:shadow-xl hover:-translate-y-1 transition duration-300">
-  <div class="h-60 bg-slate-100 relative overflow-hidden">
+<div class="card-white" style="padding:0; overflow:hidden; display:flex; flex-direction:column; height:100%; transition: transform 0.2s;">
+  
+  <div style="position:relative; height:220px; background-color:#f1f5f9; overflow:hidden;">
     <?php if(!empty($row['foto_cover'])): ?>
-      <img src="assets/uploads/kamar/<?= htmlspecialchars($row['foto_cover']) ?>" alt="Foto Kamar <?= htmlspecialchars($row['kode_kamar']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+      <img src="assets/uploads/kamar/<?= htmlspecialchars($row['foto_cover']) ?>" 
+           alt="Kamar <?= htmlspecialchars($row['kode_kamar']) ?>" 
+           style="width:100%; height:100%; object-fit:cover;">
     <?php else: ?>
-      <div class="w-full h-full flex items-center justify-center text-4xl text-slate-300" aria-label="Ikon kamar">🏠</div>
+      <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#cbd5e1;">
+        <i class="fa-solid fa-house"></i>
+      </div>
     <?php endif; ?>
 
-    <div class="absolute top-4 right-4">
+    <div style="position:absolute; top:10px; right:10px;">
       <?php if($row['status_kamar'] === 'TERSEDIA'): ?>
-        <span class="px-2 py-1 text-xs rounded-full font-semibold bg-green-100 text-green-700">✓ Tersedia</span>
+        <span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold; border:1px solid #bbf7d0;">
+          ✓ Tersedia
+        </span>
       <?php else: ?>
-        <span class="px-2 py-1 text-xs rounded-full font-semibold bg-red-100 text-red-700">✕ Terisi</span>
+        <span style="background:#fee2e2; color:#991b1b; padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold; border:1px solid #fecaca;">
+          ✕ Terisi
+        </span>
       <?php endif; ?>
     </div>
   </div>
 
-  <div class="p-6">
-    <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1"><?= htmlspecialchars($row['nama_tipe']) ?></div>
-    <h3 class="text-xl font-bold text-slate-900 mb-2">Kamar <?= htmlspecialchars($row['kode_kamar']) ?></h3>
+  <div style="padding:20px; flex:1; display:flex; flex-direction:column;">
+    <div style="font-size:10px; font-weight:bold; color:var(--primary); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
+        <?= htmlspecialchars($row['nama_tipe']) ?>
+    </div>
+    
+    <h3 style="font-size:18px; font-weight:bold; margin-bottom:8px; color:var(--text-main);">
+        Kamar <?= htmlspecialchars($row['kode_kamar']) ?>
+    </h3>
 
-    <div class="flex items-baseline gap-1 mb-4">
-      <span class="text-2xl font-bold text-blue-600">Rp <?= number_format((int)$row['harga'], 0, ',', '.') ?></span>
-      <span class="text-sm text-slate-400">/bulan</span>
+    <div style="margin-bottom:16px;">
+      <span style="font-size:20px; font-weight:800; color:var(--primary);">
+        Rp <?= number_format((int)$row['harga'], 0, ',', '.') ?>
+      </span>
+      <span style="font-size:12px; color:var(--text-muted);">/bulan</span>
     </div>
 
-    <div class="flex gap-3 text-xs text-slate-600 mb-6">
-      <span class="bg-slate-50 px-2 py-1 rounded border border-slate-100">📐 <?= htmlspecialchars($row['luas_m2']) ?> m²</span>
-      <span class="bg-slate-50 px-2 py-1 rounded border border-slate-100">⚡ Listrik</span>
-      <span class="bg-slate-50 px-2 py-1 rounded border border-slate-100">🚿 Dalam</span>
+    <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+      <span style="background:#f8fafc; border:1px solid var(--border); padding:4px 8px; border-radius:6px; font-size:11px; color:var(--text-muted);">
+        <i class="fa-solid fa-ruler-combined"></i> <?= htmlspecialchars($row['luas_m2']) ?> m²
+      </span>
+      <span style="background:#f8fafc; border:1px solid var(--border); padding:4px 8px; border-radius:6px; font-size:11px; color:var(--text-muted);">
+        <i class="fa-solid fa-stairs"></i> Lt. <?= htmlspecialchars($row['lantai']) ?>
+      </span>
     </div>
 
-    <?php if($row['status_kamar'] === 'TERSEDIA'): ?>
-      <a href="detail_kamar.php?id=<?= (int)$row['id_kamar'] ?>" class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-xl font-bold transition">
-        Lihat Detail & Pesan
-      </a>
-    <?php else: ?>
-      <button disabled class="block w-full bg-slate-100 text-slate-400 text-center py-3 rounded-xl font-bold cursor-not-allowed">
-        Tidak Tersedia
-      </button>
-    <?php endif; ?>
+    <div style="margin-top:auto;">
+        <?php if($row['status_kamar'] === 'TERSEDIA'): ?>
+          <a href="detail_kamar.php?id=<?= (int)$row['id_kamar'] ?>" class="btn btn-primary" style="width:100%; text-align:center; justify-content:center;">
+            Lihat Detail & Pesan  
+          </a>
+        <?php else: ?>
+          <button disabled class="btn" style="width:100%; background:#f1f5f9; color:#94a3b8; cursor:not-allowed; justify-content:center;">
+            Tidak Tersedia
+          </button>
+        <?php endif; ?>
+    </div>
   </div>
 </div>
