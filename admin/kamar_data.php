@@ -7,9 +7,10 @@ if (!is_admin() && !is_owner()) die('Forbidden');
 // PAGINATION
 $batas = 10;
 $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+if ($halaman < 1) $halaman = 1;
 $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
 $total_data = $mysqli->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
-$total_halaman = ceil($total_data / $batas);
+$total_halaman = $total_data > 0 ? ceil($total_data / $batas) : 1;
 
 $sql = "SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe ORDER BY k.kode_kamar ASC LIMIT $halaman_awal, $batas";
 $res = $mysqli->query($sql);
@@ -56,7 +57,7 @@ $nomor = $halaman_awal + 1;
                         <td class="text-center" style="color:var(--text-muted);"><?= $nomor++ ?></td>
                         <td>
                             <span class="font-bold"><?= htmlspecialchars($row['kode_kamar']) ?></span>
-                            <div class="text-xs" style="color:var(--text-muted);">Lantai <?= $row['lantai'] ?></div>
+                            <div class="text-xs" style="color:var(--text-muted);">Lantai <?= htmlspecialchars($row['lantai']) ?></div>
                         </td>
                         <td><?= htmlspecialchars($row['nama_tipe']) ?></td>
                         <td class="font-bold">Rp <?= number_format($row['harga'], 0, ',', '.') ?></td>
@@ -68,8 +69,8 @@ $nomor = $halaman_awal + 1;
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a href="kamar_edit.php?id=<?= $row['id_kamar'] ?>" class="btn btn-secondary text-xs" style="padding: 6px 10px;">Edit</a>
-                            <a href="kamar_proses.php?act=hapus&id=<?= $row['id_kamar'] ?>" class="btn btn-danger text-xs" style="padding: 6px 10px;" onclick="return confirm('Hapus?')">Hapus</a>
+                            <a href="kamar_edit.php?id=<?= htmlspecialchars($row['id_kamar']) ?>" class="btn btn-secondary text-xs" style="padding: 6px 10px;">Edit</a>
+                            <a href="kamar_proses.php?act=hapus&id=<?= htmlspecialchars($row['id_kamar']) ?>" class="btn btn-danger text-xs" style="padding: 6px 10px;" onclick="return confirm('Hapus?')">Hapus</a>
                         </td>
                     </tr>
                 <?php } ?>
@@ -77,10 +78,36 @@ $nomor = $halaman_awal + 1;
             </table>
         </div>
 
+        <!-- Pagination -->
+        <?php
+            // Pastikan total_halaman minimal 1
+            $total_halaman = max(1, (int)$total_halaman);
+            $prev = max(1, $halaman - 1);
+            $next = min($total_halaman, $halaman + 1);
+        ?>
         <div class="flex justify-center mt-6 gap-2">
-            <?php for($x = 1; $x <= $total_halaman; $x++): ?>
-                <a href="?halaman=<?= $x ?>" class="btn btn-secondary text-xs <?= ($halaman == $x) ? 'btn-primary' : '' ?>" style="padding: 6px 12px;"><?= $x ?></a>
+            <?php
+                // Previous
+                $qs = $_GET;
+                $qs['halaman'] = $prev;
+                $href_prev = '?'.http_build_query($qs);
+            ?>
+            <a href="<?= $href_prev ?>" class="btn btn-secondary text-xs" style="<?= ($halaman <= 1) ? 'pointer-events:none; opacity:0.6;' : '' ?> padding: 6px 12px;">Previous</a>
+
+            <?php for($x = 1; $x <= $total_halaman; $x++):
+                $qs = $_GET;
+                $qs['halaman'] = $x;
+                $href_page = '?'.http_build_query($qs);
+            ?>
+                <a href="<?= $href_page ?>" class="btn btn-secondary text-xs <?= ($halaman == $x) ? 'btn-primary' : '' ?>" style="padding: 6px 12px;"><?= $x ?></a>
             <?php endfor; ?>
+
+            <?php
+                $qs = $_GET;
+                $qs['halaman'] = $next;
+                $href_next = '?'.http_build_query($qs);
+            ?>
+            <a href="<?= $href_next ?>" class="btn btn-secondary text-xs" style="<?= ($halaman >= $total_halaman) ? 'pointer-events:none; opacity:0.6;' : '' ?> padding: 6px 12px;">Next</a>
         </div>
     </div>
   </main>

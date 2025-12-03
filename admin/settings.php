@@ -8,11 +8,9 @@ if (!is_admin() && !is_owner()) {
     header("Location: ../login.php"); exit; 
 }
 
-// 1. TENTUKAN LOKASI FILE PENYIMPANAN DATA
-// Kita simpan di folder 'inc' agar aman
 $file_settings = __DIR__ . '/../inc/settings_data.json';
 
-// 2. DATA DEFAULT (Dipakai jika file belum ada)
+// DATA DEFAULT
 $data = [
     'nama_kos'   => 'SIKOS PAADAASIH',
     'alamat'     => 'Jl. Paadaasih No. 123, Cimahi, Jawa Barat',
@@ -22,17 +20,16 @@ $data = [
     'pemilik'    => 'Ibu Kost'
 ];
 
-// 3. LOAD DATA LAMA (Jika ada)
+// LOAD DATA
 if (file_exists($file_settings)) {
     $json = file_get_contents($file_settings);
     $data_saved = json_decode($json, true);
     if ($data_saved) $data = array_merge($data, $data_saved);
 }
 
-// 4. PROSES SIMPAN (Jika tombol ditekan)
+// PROSES SIMPAN
 $pesan = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Update data array dari input form
     $data['nama_kos'] = htmlspecialchars($_POST['nama_kos']);
     $data['alamat']   = htmlspecialchars($_POST['alamat']);
     $data['no_hp']    = htmlspecialchars($_POST['no_hp']);
@@ -40,11 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data['rek_bank'] = htmlspecialchars($_POST['rek_bank']);
     $data['pemilik']  = htmlspecialchars($_POST['pemilik']);
 
-    // Simpan ke file JSON
     if (file_put_contents($file_settings, json_encode($data, JSON_PRETTY_PRINT))) {
-        $pesan = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">✅ Pengaturan berhasil disimpan dan diterapkan ke seluruh sistem!</div>';
+        $pesan = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid #bbf7d0;">✅ Pengaturan berhasil disimpan dan diterapkan ke seluruh sistem!</div>';
     } else {
-        $pesan = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">❌ Gagal menyimpan. Pastikan folder inc memiliki izin tulis (writable).</div>';
+        $pesan = '<div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid #fecaca;">❌ Gagal menyimpan. Pastikan folder inc memiliki izin tulis (writable).</div>';
     }
 }
 ?>
@@ -52,21 +48,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="id">
 <head>
   <title>Pengaturan Sistem</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="../assets/js/main.js"></script>
+  <style>
+      /* Custom Grid untuk Form */
+      .form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
+      }
+      /* Responsif di HP jadi 1 kolom */
+      @media (max-width: 768px) {
+          .form-grid { grid-template-columns: 1fr; }
+      }
+  </style>
 </head>
 <body class="dashboard-body">
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <?php include '../components/sidebar_admin.php'; ?>
+  
   <main class="main-content">
-     </main>
-</body>
-    <h1 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:32px;">Pengaturan Sistem</h1>
+    <div class="mb-8">
+        <h1 class="font-bold text-xl">Pengaturan Sistem</h1>
+    </div>
+    
     <?= $pesan ?>
 
     <div class="card-white" style="max-width:800px;">
         <form method="post">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="form-grid">
                 <div>
                     <label class="form-label">Nama Kost</label>
                     <input type="text" name="nama_kos" class="form-input" value="<?= $data['nama_kos'] ?>" required>
@@ -77,12 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <div class="mb-6">
+            <div class="mb-4">
                 <label class="form-label">Alamat Lengkap (Muncul di Kuitansi)</label>
                 <textarea name="alamat" class="form-input" rows="2" required><?= $data['alamat'] ?></textarea>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="form-grid">
                 <div>
                     <label class="form-label">Nomor WhatsApp Pengelola</label>
                     <input type="text" name="no_hp" class="form-input" value="<?= $data['no_hp'] ?>" required>
@@ -98,8 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="text" name="rek_bank" class="form-input" value="<?= $data['rek_bank'] ?>" placeholder="Contoh: BCA 123456 a.n Budi" required>
             </div>
 
-            <div class="flex justify-end border-t pt-4">
-                <button type="submit" class="btn-primary px-6">
+            <div style="display:flex; justify-content:flex-end; border-top:1px solid var(--border); padding-top:20px;">
+                <button type="submit" class="btn btn-primary">
                     <i class="fa-solid fa-save mr-2"></i> Simpan Perubahan
                 </button>
             </div>

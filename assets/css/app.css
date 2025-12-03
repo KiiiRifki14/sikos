@@ -177,4 +177,57 @@ tr:last-child td { border-bottom: none; }
     .card-white { overflow-x: auto; }
     table { min-width: 600px; } /* Paksa lebar tabel agar bisa di-scroll */
 }
+/* === 10. PAGINATION STYLE === */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    background-color: white;
+    color: var(--text-muted);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    min-width: 36px; /* Agar kotak angka tidak gepeng */
+}
+
+.pagination-btn:hover:not(.disabled) {
+    background-color: #f1f5f9; /* Slate 100 */
+    color: var(--text-main);
+    border-color: #cbd5e1;
+}
+
+.pagination-btn.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.pagination-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8fafc;
+    pointer-events: none; /* Supaya gak bisa diklik */
+}
+
+/* Responsive Pagination (HP) */
+@media (max-width: 600px) {
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
 }
