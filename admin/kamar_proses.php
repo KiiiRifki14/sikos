@@ -41,7 +41,22 @@ if ($act == 'tambah') {
 elseif ($act == 'edit') {
     $id_kamar = intval($_POST['id_kamar']);
     $foto_cover = null;
+    
+    // Cek jika ada upload foto cover baru
     if (!empty($_FILES['foto_cover']['name'])) {
+        // --- LOGIKA BARU: HAPUS FOTO LAMA ---
+        // 1. Cari nama foto lama di database sebelum di-update
+        $q_lama = $mysqli->query("SELECT foto_cover FROM kamar WHERE id_kamar=$id_kamar");
+        $d_lama = $q_lama->fetch_assoc();
+        $file_lama = $d_lama['foto_cover'];
+
+        // 2. Hapus file fisik jika ada
+        if ($file_lama && file_exists("../assets/uploads/kamar/$file_lama")) {
+            unlink("../assets/uploads/kamar/$file_lama");
+        }
+        // -------------------------------------
+
+        // 3. Upload foto baru
         $foto_cover = upload_process($_FILES['foto_cover'], 'kamar');
     }
 

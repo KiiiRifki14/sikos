@@ -3,8 +3,26 @@ session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
 
-// Validasi Admin
-if (!is_admin() && !is_owner()) { header("Location: ../login.php"); exit; }
+// Validasi Admin ATAU Penghuni yang sah
+$akses_ok = false;
+
+if (is_admin() || is_owner()) {
+    $akses_ok = true;
+} 
+// Cek jika penghuni akses kontraknya sendiri (validasi token sederhana)
+else if (isset($_SESSION['peran']) && $_SESSION['peran'] == 'PENGHUNI') {
+    $id_request = intval($_GET['id'] ?? 0);
+    // Cari ID Penghuni dari sesi login saat ini
+    $id_user_login = $_SESSION['id_pengguna'];
+    $cek_p = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_user_login")->fetch_object();
+    
+    // Izinkan hanya jika ID yang diminta sama dengan ID penghuni yang login
+    if ($cek_p && $cek_p->id_penghuni == $id_request) {
+        $akses_ok = true;
+    }
+}
+
+if (!$akses_ok) { header("Location: ../login.php"); exit; }
 
 $id = intval($_GET['id'] ?? 0); // ID Penghuni
 

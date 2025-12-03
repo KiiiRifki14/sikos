@@ -424,6 +424,42 @@ class Database {
         }
         return $jumlah_batal;
     }
+    // ==========================================
+    // 8. SYSTEM AUTOMATION (AUTO CHECKOUT)
+    // ==========================================
+    function auto_cek_kontrak_habis() {
+        $today = date('Y-m-d');
+        
+        // 1. Cari kontrak AKTIF yang tanggal selesainya SUDAH LEWAT hari ini
+        $sql = "SELECT id_kontrak, id_kamar, id_penghuni FROM kontrak 
+                WHERE status='AKTIF' AND tanggal_selesai < '$today'";
+        $res = $this->koneksi->query($sql);
+        
+        $count = 0;
+        if($res && $res->num_rows > 0) {
+            while($row = $res->fetch_assoc()) {
+                $id_k = $row['id_kontrak'];
+                $id_r = $row['id_kamar'];
+                $id_p = $row['id_penghuni']; 
+                
+                // 2. Set Kontrak jadi SELESAI
+                $this->koneksi->query("UPDATE kontrak SET status='SELESAI' WHERE id_kontrak=$id_k");
+                
+                // 3. Set Kamar jadi TERSEDIA (PENTING! Agar bisa disewa lagi)
+                $this->koneksi->query("UPDATE kamar SET status_kamar='TERSEDIA' WHERE id_kamar=$id_r");
+                
+                // 4. Catat Log Sistem
+                // Ambil id_pengguna untuk log
+                $q_u = $this->koneksi->query("SELECT id_pengguna FROM penghuni WHERE id_penghuni=$id_p");
+                $uid = $q_u->fetch_object()->id_pengguna ?? 0;
+                
+                $this->catat_log($uid, 'SYSTEM AUTO END', "Masa sewa habis. Kontrak #$id_k selesai & Kamar tersedia kembali.");
+                
+                $count++;
+            }
+        }
+        return $count;
+    }
 }
 
 $db = new Database();

@@ -27,30 +27,7 @@ $today = date('Y-m-d');
       <i class="fa-solid fa-bars"></i>
   </button>
 
-  <aside class="sidebar">
-    <div class="mb-8 flex items-center gap-3 mt-10 md:mt-0">
-        <div style="width:40px; height:40px; background:#eff6ff; color:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">
-            <?= substr($user['nama'],0,1) ?>
-        </div>
-        <div>
-            <div class="font-bold text-sm"><?= htmlspecialchars($user['nama']) ?></div>
-            <div class="text-xs text-muted">Penghuni</div>
-        </div>
-    </div>
-
-    <nav style="flex:1;">
-        <a href="penghuni_dashboard.php" class="sidebar-link"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
-        <a href="kamar_saya.php" class="sidebar-link"><i class="fa-solid fa-bed w-6"></i> Kamar Saya</a>
-        <a href="tagihan_saya.php" class="sidebar-link"><i class="fa-solid fa-credit-card w-6"></i> Tagihan</a>
-        <a href="keluhan.php" class="sidebar-link"><i class="fa-solid fa-triangle-exclamation w-6"></i> Keluhan</a>
-        <a href="pengumuman.php" class="sidebar-link active"><i class="fa-solid fa-bullhorn w-6"></i> Info</a>
-        <a href="profil.php" class="sidebar-link"><i class="fa-solid fa-user-gear w-6"></i> Profil Saya</a>
-    </nav>
-
-    <a href="logout.php" class="sidebar-link text-red-600 hover:bg-red-50 mt-4">
-        <i class="fa-solid fa-right-from-bracket w-6"></i> Logout
-    </a>
-  </aside>
+  <?php include 'components/sidebar_penghuni.php'; ?>
 
   <main class="main-content">
     <div class="mb-8">

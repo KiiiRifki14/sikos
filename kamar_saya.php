@@ -22,28 +22,7 @@ $row_kontrak = $mysqli->query("SELECT * FROM kontrak WHERE id_penghuni=$id_pengh
 </head>
 <body class="dashboard-body">
 
-  <aside class="sidebar">
-    <div class="mb-8 flex items-center gap-3">
-        <div style="width:40px; height:40px; background:#eff6ff; color:#2563eb; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">
-            <?= substr($user['nama'],0,1) ?>
-        </div>
-        <div>
-            <div style="font-weight:700; color:#1e293b; font-size:14px;"><?= htmlspecialchars($user['nama']) ?></div>
-            <div style="font-size:12px; color:#64748b;">Penghuni</div>
-        </div>
-    </div>
-    <nav style="flex:1;">
-        <a href="penghuni_dashboard.php" class="sidebar-link"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
-        <a href="kamar_saya.php" class="sidebar-link"><i class="fa-solid fa-bed w-6"></i> Kamar Saya</a>
-        <a href="tagihan_saya.php" class="sidebar-link"><i class="fa-solid fa-credit-card w-6"></i> Tagihan</a>
-        <a href="keluhan.php" class="sidebar-link"><i class="fa-solid fa-triangle-exclamation w-6"></i> Keluhan</a>
-        <a href="pengumuman.php" class="sidebar-link"><i class="fa-solid fa-bullhorn w-6"></i> Info</a>
-        <a href="profil.php" class="sidebar-link active"><i class="fa-solid fa-user-gear w-6"></i> Profil Saya</a>
-    </nav>
-    <a href="logout.php" class="sidebar-link" style="color:#dc2626; margin-top:auto;">
-        <i class="fa-solid fa-right-from-bracket w-6"></i> Logout
-    </a>
-  </aside>
+  <?php include 'components/sidebar_penghuni.php'; ?>
 
   <main class="main-content">
     <h2 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:24px;">Informasi Kamar</h2>
@@ -66,8 +45,13 @@ $row_kontrak = $mysqli->query("SELECT * FROM kontrak WHERE id_penghuni=$id_pengh
                     <h4 style="font-size:20px; font-weight:700; color:#1e293b;">Kamar <?= htmlspecialchars($row_kamar['kode_kamar']) ?></h4>
                     <span style="font-size:13px; color:#64748b;"><?= htmlspecialchars($row_kamar['nama_tipe']) ?></span>
                 </div>
-                <span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:99px; font-size:12px; font-weight:700;">AKTIF</span>
-            </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+        <a href="admin/cetak_kontrak.php?id=<?= $id_penghuni ?>&token=<?= md5('kemanan_sederhana'.$id_penghuni) ?>" target="_blank" class="btn-secondary text-xs" style="padding:6px 12px;">
+            <i class="fa-solid fa-print"></i> Cetak Kontrak
+        </a>
+        <span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:99px; font-size:12px; font-weight:700;">AKTIF</span>
+    </div>
+</div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:32px;">
                 <div style="border-radius:12px; overflow:hidden; height:350px; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">

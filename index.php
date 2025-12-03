@@ -5,7 +5,7 @@ require 'inc/koneksi.php';
 // --- TRIGGER AUTO CANCEL ---
 // Jalankan pengecekan setiap kali halaman beranda dibuka
 $db->auto_batal_booking();
-
+$db->auto_cek_kontrak_habis(); // Lepas kamar yang kontraknya habis
 // --- LOGIC FILTER & URUTAN ---
 $where = [];
 $params = [];
