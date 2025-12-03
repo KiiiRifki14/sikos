@@ -151,4 +151,30 @@ tr:last-child td { border-bottom: none; }
     .dashboard-body { display: block !important; background: white !important; }
     .main-content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
     .card-white { box-shadow: none !important; border: 1px solid #ccc !important; }
+    /* === 9. RESPONSIVE & MOBILE SIDEBAR === */
+.sidebar-toggle {
+    display: none; /* Sembunyi di desktop */
+    position: fixed; top: 15px; left: 15px; z-index: 100;
+    background: var(--primary); color: white;
+    padding: 8px 12px; border-radius: 6px; border: none;
+    cursor: pointer; font-size: 20px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%); /* Sembunyikan sidebar */
+        transition: transform 0.3s ease-in-out;
+    }
+    .sidebar.active {
+        transform: translateX(0); /* Munculkan sidebar */
+    }
+    .main-content {
+        margin-left: 0; width: 100%; padding: 20px; padding-top: 60px; /* Beri jarak untuk tombol menu */
+    }
+    .sidebar-toggle { display: block; } /* Munculkan tombol menu */
+    
+    /* Tabel Responsif (Scroll Samping) */
+    .card-white { overflow-x: auto; }
+    table { min-width: 600px; } /* Paksa lebar tabel agar bisa di-scroll */
+}
 }

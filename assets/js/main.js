@@ -1,4 +1,6 @@
-// assets/js/main.js
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('active');
+}// assets/js/main.js
 document.addEventListener('DOMContentLoaded', function(){
     console.log('SIKOS App Loaded');
     
