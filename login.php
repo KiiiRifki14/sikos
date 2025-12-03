@@ -9,12 +9,10 @@ if (isset($_SESSION['id_pengguna'])) { header('Location: penghuni_dashboard.php'
 <html lang="id">
 <head>
   <title>Login - SIKOS</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="assets/css/app.css"/>
 </head>
-<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
-
-<div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+<body class="auth-container">
+<div class="auth-box">
     <div class="text-center mb-8">
         <div class="w-12 h-12 bg-blue-600 rounded-xl text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">S</div>
         <h1 class="text-2xl font-bold text-slate-800">Selamat Datang Kembali</h1>

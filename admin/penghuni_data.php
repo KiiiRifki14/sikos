@@ -40,7 +40,7 @@ $nomor = $halaman_awal + 1;
 <html lang="id">
 <head>
   <title>Data Penghuni</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -97,10 +97,10 @@ $nomor = $halaman_awal + 1;
   </style>
 </head>
 <body class="dashboard-body">
-
   <?php include '../components/sidebar_admin.php'; ?>
-  
   <main class="main-content">
+     </main>
+</body>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
         <h1 style="font-size:24px; font-weight:700; color:#1e293b;">Data Penghuni</h1>
         
@@ -159,7 +159,15 @@ $nomor = $halaman_awal + 1;
                 </td>
                 <td style="padding:16px;"><?= $statusBadge ?></td>
                 <td style="padding:16px;">
-                    <a href="penghuni_edit.php?id=<?= $row['id_penghuni'] ?>" class="btn-secondary" style="padding:6px 12px; font-size:12px; text-decoration:none;">Edit</a>
+                    <a href="penghuni_edit.php?id=<?= $row['id_penghuni'] ?>" class="btn-secondary" style="padding:6px 10px; font-size:11px; text-decoration:none; margin-right:4px;">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </a>
+                    
+                    <?php if($row['status'] == 'AKTIF'): ?>
+                        <a href="cetak_kontrak.php?id=<?= $row['id_penghuni'] ?>" target="_blank" class="btn-primary" style="padding:6px 10px; font-size:11px; text-decoration:none; background-color:#4f46e5;">
+                            <i class="fa-solid fa-file-contract"></i> Kontrak
+                        </a>
+                    <?php endif; ?>
                 </td>
             </tr>
             <?php 

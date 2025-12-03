@@ -26,15 +26,15 @@ if ($id > 0) {
 <html lang="id">
 <head>
   <title><?= $title ?> - SIKOS Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="dashboard-body">
-
   <?php include '../components/sidebar_admin.php'; ?>
-
   <main class="main-content">
+     </main>
+</body>
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800"><?= $title ?></h1>
         <a href="fasilitas_data.php" class="btn-secondary">Kembali</a>

@@ -10,14 +10,15 @@ $data_tipe = $db->tampil_tipe_kamar();
 <html lang="id">
 <head>
   <title>Tambah Kamar</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="dashboard-body">
-
   <?php include '../components/sidebar_admin.php'; ?>
   <main class="main-content">
+     </main>
+</body>
     <h1 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:32px;">Tambah Kamar Baru</h1>
 
     <div class="card-white" style="max-width:600px;">

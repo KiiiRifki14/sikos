@@ -20,23 +20,64 @@ if ($tab == 'laporan') {
 <html lang="id">
 <head>
   <title>Keuangan & Tagihan</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
       .tab-btn { padding: 10px 20px; font-weight: 600; border-bottom: 2px solid transparent; color: #64748b; }
       .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
       .tab-btn:hover { color: #1e293b; }
+
+      /* === TAMBAHAN: CSS KHUSUS PRINT === */
       @media print {
-          .no-print { display: none !important; }
+          /* 1. Sembunyikan elemen yang tidak perlu dicetak */
+          .sidebar, 
+          .tab-btn, 
+          .no-print, 
+          button, 
+          form,
+          a.btn-primary { 
+              display: none !important; 
+          }
+
+          /* 2. Atur ulang layout agar Full Width (memenuhi kertas) */
+          .dashboard-body {
+              display: block !important;
+              background-color: white !important;
+          }
+
+          .main-content {
+              margin-left: 0 !important; /* Hilangkan margin kiri bekas sidebar */
+              width: 100% !important;
+              padding: 0 !important;
+          }
+
+          /* 3. Rapikan tampilan kartu/tabel */
+          .card-white {
+              box-shadow: none !important;
+              border: 1px solid #ccc !important;
+              break-inside: avoid; /* Mencegah tabel terpotong di tengah halaman */
+          }
+
+          /* 4. Pastikan background warna (seperti header tabel) ikut tercetak */
+          body {
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact;
+          }
+          
+          /* Judul Halaman saat Print */
+          h1 {
+              text-align: center;
+              margin-bottom: 20px;
+          }
       }
   </style>
 </head>
 <body class="dashboard-body">
-
   <?php include '../components/sidebar_admin.php'; ?>
-
   <main class="main-content">
+     </main>
+</body>
     <div style="margin-bottom:24px;">
         <h1 style="font-size:24px; font-weight:700; color:#1e293b;">Keuangan & Tagihan</h1>
     </div>
