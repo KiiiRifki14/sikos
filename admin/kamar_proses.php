@@ -78,20 +78,29 @@ elseif ($act == 'edit') {
     }
 }
 
-// 3. HAPUS KAMAR
+
+// 3. HAPUS KAMAR (DENGAN VALIDASI)
 elseif ($act == 'hapus') {
     $id = intval($_GET['id']);
     
-    // Ambil kode kamar dulu buat log
+    // Ambil kode kamar dulu buat log (sebelum dihapus)
     $k = $mysqli->query("SELECT kode_kamar FROM kamar WHERE id_kamar=$id")->fetch_object();
     $kode = $k ? $k->kode_kamar : 'Unknown';
 
-    $db->hapus_kamar($id);
+    // Panggil fungsi hapus yang sudah kita revisi di koneksi.php
+    $hasil = $db->hapus_kamar($id);
     
-    // LOG (BARU)
-    $db->catat_log($_SESSION['id_pengguna'], 'HAPUS KAMAR', "Menghapus kamar $kode");
-    
-    header('Location: kamar_data.php');
+    if ($hasil == "SUKSES") {
+        // Jika sukses, catat log dan redirect
+        $db->catat_log($_SESSION['id_pengguna'], 'HAPUS KAMAR', "Menghapus kamar $kode");
+        header('Location: kamar_data.php?msg=deleted');
+    } else {
+        // Jika gagal (karena terisi/booking), tampilkan Alert
+        echo "<script>
+            alert('$hasil'); 
+            window.location.href = 'kamar_data.php';
+        </script>";
+    }
 }
 
 // 4. HAPUS FOTO

@@ -110,20 +110,31 @@ class Database {
         return $stmt->execute();
     }
 
-    function hapus_kamar($id) {
-        // Hapus galeri dulu (relasi)
-        $this->koneksi->query("DELETE FROM kamar_foto WHERE id_kamar=$id");
-        // Hapus kamar
-        return $this->koneksi->query("DELETE FROM kamar WHERE id_kamar=$id");
-    }
-
-    function tampil_tipe_kamar() {
-        $data = mysqli_query($this->koneksi, "SELECT id_tipe, nama_tipe FROM tipe_kamar");
-        $hasil = [];
-        while ($row = mysqli_fetch_assoc($data)) {
-            $hasil[] = $row;
+        function hapus_kamar($id) {
+        // 1. Cek apakah ada Booking yang masih PENDING di kamar ini?
+        // Jika ada, jangan dihapus karena ada calon penghuni.
+        $cek_booking = $this->koneksi->query("SELECT 1 FROM booking WHERE id_kamar=$id AND status='PENDING'");
+        if($cek_booking->num_rows > 0) {
+            return "GAGAL: Tidak bisa dihapus! Kamar ini sedang dalam proses Booking (Pending).";
         }
-        return $hasil;
+
+        // 2. Cek apakah ada Kontrak yang masih AKTIF di kamar ini?
+        // Jika ada, jangan dihapus karena masih ada penghuninya.
+        $cek_kontrak = $this->koneksi->query("SELECT 1 FROM kontrak WHERE id_kamar=$id AND status='AKTIF'");
+        if($cek_kontrak->num_rows > 0) {
+            return "GAGAL: Tidak bisa dihapus! Kamar ini sedang terisi (Kontrak Aktif).";
+        }
+
+        // 3. Jika aman, hapus data pendukung dulu (Fasilitas & Foto)
+        $this->koneksi->query("DELETE FROM kamar_fasilitas WHERE id_kamar=$id");
+        $this->koneksi->query("DELETE FROM kamar_foto WHERE id_kamar=$id");
+        
+        // 4. Terakhir, hapus data kamarnya
+        if($this->koneksi->query("DELETE FROM kamar WHERE id_kamar=$id")){
+            return "SUKSES";
+        }
+        
+        return "GAGAL: Terjadi kesalahan database saat menghapus.";
     }
 
     // ==========================================
