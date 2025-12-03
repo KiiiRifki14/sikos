@@ -27,7 +27,7 @@ body {
 a { text-decoration: none; color: inherit; transition: 0.2s; }
 ul { list-style: none; }
 
-/* === 2. UTILITIES (PENGGANTI TAILWIND) === */
+/* === 2. UTILITIES === */
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 .font-bold { font-weight: 700; }
@@ -138,96 +138,139 @@ tr:last-child td { border-bottom: none; }
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
-/* === 8. PRINT & RESPONSIVE === */
-@media (max-width: 768px) {
-    .dashboard-body { display: block; }
-    .sidebar { display: none; } /* Nanti bisa ditambah tombol toggle */
-    .main-content { margin-left: 0; width: 100%; padding: 20px; }
-    .grid-stats { grid-template-columns: 1fr; }
-}
-
+/* === 8. PRINT CSS === */
 @media print {
-    .sidebar, .no-print, .btn, button, form { display: none !important; }
+    .sidebar, .sidebar-toggle, .no-print, .btn, button, form { display: none !important; }
     .dashboard-body { display: block !important; background: white !important; }
     .main-content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
     .card-white { box-shadow: none !important; border: 1px solid #ccc !important; }
-    /* === 9. RESPONSIVE & MOBILE SIDEBAR === */
+} /* <--- INI YANG HILANG SEBELUMNYA (Kurung Tutup Print) */
+
+
+/* === 9. SIDEBAR & RESPONSIVE LOGIC (FIXED) === */
+
+/* Tombol Toggle: Selalu Muncul (Desktop & Mobile) */
 .sidebar-toggle {
-    display: none; /* Sembunyi di desktop */
-    position: fixed; top: 15px; left: 15px; z-index: 100;
-    background: var(--primary); color: white;
-    padding: 8px 12px; border-radius: 6px; border: none;
-    cursor: pointer; font-size: 20px;
+    display: flex !important; /* Pastikan Flex agar icon di tengah */
+    align-items: center;
+    justify-content: center;
+    position: fixed; 
+    top: 15px; 
+    left: 20px; 
+    z-index: 9999; /* Pastikan paling atas */
+    background: var(--primary); 
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px; 
+    border: none;
+    cursor: pointer; 
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    transition: all 0.3s ease;
 }
 
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%); /* Sembunyikan sidebar */
-        transition: transform 0.3s ease-in-out;
-    }
-    .sidebar.active {
-        transform: translateX(0); /* Munculkan sidebar */
-    }
-    .main-content {
-        margin-left: 0; width: 100%; padding: 20px; padding-top: 60px; /* Beri jarak untuk tombol menu */
-    }
-    .sidebar-toggle { display: block; } /* Munculkan tombol menu */
-    
-    /* Tabel Responsif (Scroll Samping) */
-    .card-white { overflow-x: auto; }
-    table { min-width: 600px; } /* Paksa lebar tabel agar bisa di-scroll */
+.sidebar-toggle:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
 }
+
+/* --- DESKTOP (Layar Besar > 768px) --- */
+@media (min-width: 769px) {
+    
+    /* Kondisi Normal (Sidebar Terbuka) */
+    .sidebar {
+        width: 260px;
+        left: 0;
+        transition: left 0.3s ease;
+    }
+
+    .main-content {
+        margin-left: 260px;
+        width: calc(100% - 260px);
+        transition: margin-left 0.3s ease, width 0.3s ease, padding-left 0.3s ease; /* Tambah transisi padding */
+    }
+
+    /* Kondisi Collapsed (Sidebar Tertutup) */
+    body.sidebar-collapsed .sidebar {
+        left: -260px; 
+    }
+
+    body.sidebar-collapsed .main-content {
+        margin-left: 0; 
+        width: 100%;
+        
+        /* === INI YANG HARUS DITAMBAHKAN === */
+        padding-left: 80px; /* Memberi jarak agar tulisan tidak ketutup tombol */
+    }
+    
+    body.sidebar-collapsed .sidebar-toggle {
+        left: 20px; 
+    }
+}
+
+/* --- MOBILE (Layar Kecil <= 768px) --- */
+@media (max-width: 768px) {
+    
+    .grid-stats { grid-template-columns: 1fr; }
+
+    /* Default Mobile: Sidebar Sembunyi */
+    .sidebar {
+        width: 260px;
+        left: -260px; /* Sembunyi di kiri */
+        transition: left 0.3s ease;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding-top: 70px; /* Jarak agar konten tidak ketutup tombol */
+    }
+
+    /* Saat tombol diklik di HP (Class ini ditambahkan oleh JS) */
+    body.sidebar-collapsed .sidebar {
+        left: 0; /* Munculkan sidebar */
+        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Overlay Gelap saat sidebar muncul di HP */
+    body.sidebar-collapsed::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 40;
+    }
+}
+
 /* === 10. PAGINATION STYLE === */
 .pagination-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    margin-top: 24px;
-    flex-wrap: wrap;
+    display: flex; justify-content: center; align-items: center;
+    gap: 6px; margin-top: 24px; flex-wrap: wrap;
 }
 
 .pagination-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 14px;
-    border: 1px solid var(--border);
-    background-color: white;
-    color: var(--text-muted);
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    min-width: 36px; /* Agar kotak angka tidak gepeng */
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 14px; border: 1px solid var(--border);
+    background-color: white; color: var(--text-muted);
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: all 0.2s ease;
+    min-width: 36px;
 }
 
 .pagination-btn:hover:not(.disabled) {
-    background-color: #f1f5f9; /* Slate 100 */
-    color: var(--text-main);
-    border-color: #cbd5e1;
+    background-color: #f1f5f9; color: var(--text-main); border-color: #cbd5e1;
 }
 
 .pagination-btn.active {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
+    background-color: var(--primary); color: white; border-color: var(--primary);
     box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .pagination-btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #f8fafc;
-    pointer-events: none; /* Supaya gak bisa diklik */
+    opacity: 0.5; cursor: not-allowed; background-color: #f8fafc; pointer-events: none;
 }
 
-/* Responsive Pagination (HP) */
 @media (max-width: 600px) {
-    .pagination-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-}
+    .pagination-btn { padding: 6px 10px; font-size: 12px; }
 }

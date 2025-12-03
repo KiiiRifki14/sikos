@@ -1,8 +1,24 @@
+// assets/js/main.js
+
 function toggleSidebar() {
-    document.querySelector('.sidebar').classList.toggle('active');
-}// assets/js/main.js
-document.addEventListener('DOMContentLoaded', function(){
-    console.log('SIKOS App Loaded');
+    // Ambil elemen body
+    const body = document.body;
     
-    // Contoh animasi sederhana atau validasi form bisa ditaruh di sini
+    // Toggle class 'sidebar-collapsed' pada body
+    // Class ini akan kita gunakan di CSS untuk mengatur tampilan
+    body.classList.toggle('sidebar-collapsed');
+    
+    // Simpan preferensi user di LocalStorage (agar saat refresh tetap pada posisi terakhir)
+    const isCollapsed = body.classList.contains('sidebar-collapsed');
+    localStorage.setItem('sidebarState', isCollapsed ? 'collapsed' : 'expanded');
+}
+
+// Saat halaman dimuat, cek status terakhir
+document.addEventListener('DOMContentLoaded', function() {
+    const savedState = localStorage.getItem('sidebarState');
+    
+    // Jika sebelumnya user menutup sidebar, kita terapkan lagi saat loading
+    if (savedState === 'collapsed') {
+        document.body.classList.add('sidebar-collapsed');
+    }
 });
