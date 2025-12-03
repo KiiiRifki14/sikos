@@ -1,26 +1,45 @@
 <?php
-// Panggil file config.php yang ada di folder luar (satu level di atas folder inc)
+// Panggil file konfigurasi (opsional, jika ingin tetap pakai konstanta)
 require_once __DIR__ . '/../config.php';
 
 class Database {
+    // PENERAPAN ENKAPSULASI (Pertemuan 7)
+    // Property dibuat private agar aman dan hanya bisa diakses class ini
+    private $host = DB_HOST; // Mengambil dari config.php
+    private $user = DB_USER;
+    private $pass = DB_PASS;
+    private $db_name = DB_NAME;
+    
+    // Property koneksi dibuat public agar bisa dipakai di file lain (mysqli query)
     public $koneksi;
 
-    // Constructor Baru: Menggunakan Konstanta dari config.php
+    // PENERAPAN CONSTRUCTOR (Pertemuan 6)
     function __construct() {
-        // Suppress error warning dengan @ agar tidak bocor path di browser jika error
-        $this->koneksi = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-        
-        if ($this->koneksi->connect_errno) {
-            // Tampilkan pesan error umum yang aman bagi user
-            die("Maaf, sistem sedang mengalami gangguan koneksi database. Silakan hubungi admin.");
+        // PENERAPAN EXCEPTION HANDLING (Pertemuan 8)
+        // Menggunakan Try-Catch untuk menangkap error koneksi
+        try {
+            // @ sebelum new mysqli berguna untuk menahan error bawaan PHP agar ditangkap catch
+            $this->koneksi = @new mysqli($this->host, $this->user, $this->pass, $this->db_name);
+
+            // Cek manual jika ada error koneksi
+            if ($this->koneksi->connect_error) {
+                throw new Exception("Koneksi Database Gagal: " . $this->koneksi->connect_error);
+            }
+        } catch (Exception $e) {
+            // Jika error, tampilkan pesan rapi (tidak membocorkan path file server)
+            die('<div style="padding: 20px; background: #fee2e2; color: #991b1b; border: 1px solid #f87171; border-radius: 8px; font-family: sans-serif; margin: 20px;">
+                    <strong>⚠️ Terjadi Kesalahan Sistem:</strong><br>
+                    Tidak dapat terhubung ke database. Silakan hubungi administrator.<br>
+                    <small style="color: #7f1d1d;">Error Detail: ' . $e->getMessage() . '</small>
+                 </div>');
         }
     }
 
-// ... LANJUTKAN KODE DI BAWAHNYA SEPERTI BIASA (function login, register, dll) ...
     // ==========================================
-    // 1. AUTHENTICATION (Login & Register)
+    // 1. AUTHENTICATION (Login)
     // ==========================================
     function login($email, $password) {
+        // Menggunakan Prepared Statement untuk keamanan (SQL Injection)
         $stmt = $this->koneksi->prepare("SELECT id_pengguna, password_hash, peran, status FROM pengguna WHERE email=?");
         $stmt->bind_param('s', $email);
         $stmt->execute();
@@ -31,9 +50,7 @@ class Database {
         }
         return false; 
     }
-
     function register($nama, $email, $hp, $password) {
-        // Cek Email Duplikat
         $cek = $this->koneksi->prepare("SELECT id_pengguna FROM pengguna WHERE email=?");
         $cek->bind_param('s', $email);
         $cek->execute();
@@ -44,8 +61,7 @@ class Database {
         $stmt->bind_param('ssss', $nama, $email, $hp, $hash);
         return $stmt->execute();
     }
-
-    // ==========================================
+    // =========================================
     // 2. MANAJEMEN KAMAR (CRUD)
     // ==========================================
     function tampil_kamar() {
@@ -375,7 +391,7 @@ class Database {
 $db = new Database();
 $mysqli = $db->koneksi;
 
-// FUNGSI TAMBAHAN UNTUK ERROR HANDLING
+// FUNGSI HELPER GLOBAL
 function pesan_error($url, $pesan) {
     echo "<script>alert('$pesan'); window.location.href='$url';</script>";
     exit;
