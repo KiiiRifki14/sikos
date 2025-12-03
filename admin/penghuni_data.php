@@ -7,13 +7,14 @@ if (!is_admin() && !is_owner()) die('Forbidden');
 $db = new Database();
 
 // --- 1. LOGIKA PENCARIAN & PAGINATION ---
-$batas = 10; 
+$batas = 10;
 $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+if ($halaman < 1) $halaman = 1;
 $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
 
 $cari = isset($_GET['cari']) ? $_GET['cari'] : "";
 
-// Query Dasar 
+// Query Dasar
 $sql_base = "SELECT p.id_penghuni, u.nama, u.no_hp, k.kode_kamar, ko.tanggal_mulai, ko.tanggal_selesai, ko.status
              FROM penghuni p
              JOIN pengguna u ON p.id_pengguna = u.id_pengguna
@@ -21,14 +22,22 @@ $sql_base = "SELECT p.id_penghuni, u.nama, u.no_hp, k.kode_kamar, ko.tanggal_mul
              LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar";
 
 // Filter WHERE
+$where = [];
 if (!empty($cari)) {
-    $sql_base .= " WHERE u.nama LIKE '%$cari%' OR k.kode_kamar LIKE '%$cari%'";
+    // escape sederhana (idealnya prepared statements)
+    $escaped = $mysqli->real_escape_string($cari);
+    $where[] = "u.nama LIKE '%$escaped%'";
+    $where[] = "k.kode_kamar LIKE '%$escaped%'";
+}
+if (!empty($where)) {
+    $sql_base .= " WHERE (" . implode(" OR ", $where) . ")";
 }
 
 // Hitung Total Data
-$sql_count = str_replace("SELECT p.id_penghuni, u.nama, u.no_hp, k.kode_kamar, ko.tanggal_mulai, ko.tanggal_selesai, ko.status", "SELECT COUNT(*) as total", $sql_base);
-$total_data = $mysqli->query($sql_count)->fetch_assoc()['total'];
-$total_halaman = ceil($total_data / $batas);
+$sql_count = "SELECT COUNT(*) as total FROM (" . $sql_base . ") AS subcount";
+$total_data_res = $mysqli->query($sql_count);
+$total_data = ($total_data_res && $total_data_res->num_rows) ? (int)$total_data_res->fetch_assoc()['total'] : 0;
+$total_halaman = $total_data > 0 ? (int)ceil($total_data / $batas) : 1;
 
 // Query Final
 $sql_final = $sql_base . " ORDER BY u.nama ASC LIMIT $halaman_awal, $batas";
@@ -61,6 +70,9 @@ $nomor = $halaman_awal + 1;
       .ui-state-active, .ui-widget-content .ui-state-active {
         background: #eff6ff !important; border: 1px solid #bfdbfe !important; color: var(--primary) !important;
       }
+
+      /* Pagination small adjustments (optional) */
+      .pagination-wrapper .btn { margin: 0 4px; }
   </style>
 </head>
 <body class="dashboard-body">
@@ -122,7 +134,7 @@ $nomor = $halaman_awal + 1;
                         <div class="font-bold"><?= htmlspecialchars($row['nama']) ?></div>
                         <div class="text-xs" style="color:var(--text-muted);">📞 <?= htmlspecialchars($row['no_hp']) ?></div>
                     </td>
-                    <td class="font-bold" style="color:var(--primary);"><?= $row['kode_kamar'] ?? '-' ?></td>
+                    <td class="font-bold" style="color:var(--primary);"><?= htmlspecialchars($row['kode_kamar'] ?? '-') ?></td>
                     <td>
                         <?php if($row['tanggal_mulai']): ?>
                             <div class="text-sm"><?= date('d M Y', strtotime($row['tanggal_mulai'])) ?></div>
@@ -132,12 +144,12 @@ $nomor = $halaman_awal + 1;
                     <td><?= $statusBadge ?></td>
                     <td>
                         <div class="flex gap-2">
-                            <a href="penghuni_edit.php?id=<?= $row['id_penghuni'] ?>" class="btn btn-secondary text-xs" style="padding:6px 10px;">
+                            <a href="penghuni_edit.php?id=<?= htmlspecialchars($row['id_penghuni']) ?>" class="btn btn-secondary text-xs" style="padding:6px 10px;">
                                 <i class="fa-solid fa-pen"></i> Edit
                             </a>
                             
                             <?php if($row['status'] == 'AKTIF'): ?>
-                                <a href="cetak_kontrak.php?id=<?= $row['id_penghuni'] ?>" target="_blank" class="btn btn-primary text-xs" style="padding:6px 10px; background-color:#4f46e5;">
+                                <a href="cetak_kontrak.php?id=<?= htmlspecialchars($row['id_penghuni']) ?>" target="_blank" class="btn btn-primary text-xs" style="padding:6px 10px; background-color:#4f46e5;">
                                     <i class="fa-solid fa-file-contract"></i> Kontrak
                                 </a>
                             <?php endif; ?>
@@ -154,20 +166,40 @@ $nomor = $halaman_awal + 1;
             </table>
         </div>
 
-        <div class="flex justify-center mt-6 gap-2">
-            <a href="<?= ($halaman > 1) ? "?halaman=".($halaman-1)."&cari=$cari" : '#' ?>" 
-               class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>" 
-               style="<?= ($halaman <= 1) ? 'opacity:0.5; pointer-events:none;' : '' ?>">Previous</a>
+        <!-- Pagination (robust, mempertahankan query string lain seperti cari) -->
+        <?php
+            $total_halaman = max(1, (int)$total_halaman);
+            $prev = max(1, $halaman - 1);
+            $next = min($total_halaman, $halaman + 1);
+        ?>
+        <div class="flex justify-center mt-6 gap-2 pagination-wrapper">
+            <?php
+                $qs = $_GET;
+                $qs['halaman'] = $prev;
+                $href_prev = '?'.http_build_query($qs);
+            ?>
+            <a href="<?= $href_prev ?>" 
+               class="btn btn-secondary text-xs" 
+               style="<?= ($halaman <= 1) ? 'opacity:0.5; pointer-events:none;' : '' ?> padding:6px 12px;">Previous</a>
 
-            <?php for($x = 1; $x <= $total_halaman; $x++): ?>
-                <a href="?halaman=<?= $x ?>&cari=<?= $cari ?>" 
+            <?php for($x = 1; $x <= $total_halaman; $x++):
+                $qs = $_GET;
+                $qs['halaman'] = $x;
+                $href_page = '?'.http_build_query($qs);
+            ?>
+                <a href="<?= $href_page ?>" 
                    class="btn btn-secondary text-xs <?= ($halaman == $x) ? 'btn-primary' : '' ?>" 
-                   style="padding: 6px 12px;"><?= $x ?></a>
+                   style="padding:6px 12px;"><?= $x ?></a>
             <?php endfor; ?>
 
-            <a href="<?= ($halaman < $total_halaman) ? "?halaman=".($halaman+1)."&cari=$cari" : '#' ?>" 
-               class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>"
-               style="<?= ($halaman >= $total_halaman) ? 'opacity:0.5; pointer-events:none;' : '' ?>">Next</a>
+            <?php
+                $qs = $_GET;
+                $qs['halaman'] = $next;
+                $href_next = '?'.http_build_query($qs);
+            ?>
+            <a href="<?= $href_next ?>" 
+               class="btn btn-secondary text-xs" 
+               style="<?= ($halaman >= $total_halaman) ? 'opacity:0.5; pointer-events:none;' : '' ?> padding:6px 12px;">Next</a>
         </div>
         
         <div class="text-center mt-4 text-xs text-muted">

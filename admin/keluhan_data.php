@@ -7,11 +7,12 @@ if (!is_admin() && !is_owner()) die('Forbidden');
 // PAGINATION
 $batas = 10;
 $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+if ($halaman < 1) $halaman = 1;
 $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
 
 // Hitung Total Data
 $total_data = $mysqli->query("SELECT COUNT(*) FROM keluhan")->fetch_row()[0];
-$total_halaman = ceil($total_data / $batas);
+$total_halaman = $total_data > 0 ? (int)ceil($total_data / $batas) : 1;
 
 // Query Data Keluhan (SESUAI STRUKTUR ASLI)
 $sql = "SELECT k.*, p.nama AS nama_penghuni, km.kode_kamar 
@@ -38,6 +39,7 @@ $nomor = $halaman_awal + 1;
   <style>
     .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
     .modal-content { background-color: #fff; margin: 10% auto; padding: 24px; border: none; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+    .pagination-nav a { margin: 0 6px; }
   </style>
 </head>
 <body class="dashboard-body">
@@ -82,7 +84,7 @@ $nomor = $halaman_awal + 1;
                         </td>
                         <td>
                             <div class="font-bold"><?= htmlspecialchars($row['nama_penghuni']) ?></div>
-                            <div class="text-xs text-muted">Kamar <?= $row['kode_kamar'] ?? '-' ?></div>
+                            <div class="text-xs text-muted">Kamar <?= htmlspecialchars($row['kode_kamar'] ?? '-') ?></div>
                         </td>
                         <td>
                             <div class="font-bold" style="font-size:14px;"><?= htmlspecialchars($row['judul']) ?></div>
@@ -90,24 +92,24 @@ $nomor = $halaman_awal + 1;
                                 <?= htmlspecialchars($row['deskripsi']) ?>
                             </div>
                             
-                            <?php if($row['foto_path']): ?>
-                                <a href="../assets/uploads/keluhan/<?= $row['foto_path'] ?>" target="_blank" class="text-xs" style="color:var(--primary); text-decoration:underline;">
+                            <?php if(!empty($row['foto_path'])): ?>
+                                <a href="../assets/uploads/keluhan/<?= htmlspecialchars($row['foto_path']) ?>" target="_blank" class="text-xs" style="color:var(--primary); text-decoration:underline;">
                                     <i class="fa-solid fa-paperclip"></i> Lihat Foto
                                 </a>
                             <?php endif; ?>
                         </td>
                         <td>
                             <span style="<?= $statusBg ?> padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; text-transform:uppercase;">
-                                <?= $row['status'] ?>
+                                <?= htmlspecialchars($row['status']) ?>
                             </span>
                         </td>
                         <td>
                             <div class="flex gap-2">
-                                <button onclick="openModal(<?= $row['id_keluhan'] ?>, '<?= $row['status'] ?>')" class="btn btn-primary text-xs" style="padding:6px 10px;">
+                                <button onclick="openModal(<?= htmlspecialchars($row['id_keluhan']) ?>, '<?= htmlspecialchars($row['status']) ?>')" class="btn btn-primary text-xs" style="padding:6px 10px;">
                                     <i class="fa-solid fa-pen-to-square"></i> Update
                                 </button>
 
-                                <a href="keluhan_proses.php?act=hapus&id=<?= $row['id_keluhan'] ?>" class="btn btn-danger text-xs" style="padding:6px 10px;" onclick="return confirm('Hapus data keluhan ini permanen?')">
+                                <a href="keluhan_proses.php?act=hapus&id=<?= htmlspecialchars($row['id_keluhan']) ?>" class="btn btn-danger text-xs" style="padding:6px 10px;" onclick="return confirm('Hapus data keluhan ini?')">
                                     <i class="fa-solid fa-trash"></i>
                                 </a>
                             </div>
@@ -123,20 +125,24 @@ $nomor = $halaman_awal + 1;
             </table>
         </div>
 
+        <!-- Pagination (mempertahankan query string lain jika ada) -->
+        <?php
+            $total_halaman = max(1, (int)$total_halaman);
+            $prev = max(1, $halaman - 1);
+            $next = min($total_halaman, $halaman + 1);
+        ?>
         <div class="flex justify-center mt-6 gap-2">
-            <a href="<?= ($halaman > 1) ? "?halaman=".($halaman-1)."&cari=$cari" : '#' ?>" 
-               class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>" 
-               style="<?= ($halaman <= 1) ? 'opacity:0.5; pointer-events:none;' : '' ?>">Previous</a>
+            <?php $qs = $_GET; $qs['halaman'] = $prev; ?>
+            <a href="?<?= http_build_query($qs) ?>" class="btn btn-secondary text-xs" style="<?= ($halaman <= 1) ? 'opacity:0.5; pointer-events:none;' : '' ?> padding:6px 12px;">Previous</a>
 
-            <?php for($x = 1; $x <= $total_halaman; $x++): ?>
-                <a href="?halaman=<?= $x ?>&cari=<?= $cari ?>" 
-                   class="btn btn-secondary text-xs <?= ($halaman == $x) ? 'btn-primary' : '' ?>" 
-                   style="padding: 6px 12px;"><?= $x ?></a>
+            <?php for($x = 1; $x <= $total_halaman; $x++):
+                $qs = $_GET; $qs['halaman'] = $x;
+            ?>
+                <a href="?<?= http_build_query($qs) ?>" class="btn btn-secondary text-xs <?= ($halaman == $x) ? 'btn-primary' : '' ?>" style="padding:6px 12px;"><?= $x ?></a>
             <?php endfor; ?>
 
-            <a href="<?= ($halaman < $total_halaman) ? "?halaman=".($halaman+1)."&cari=$cari" : '#' ?>" 
-               class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>"
-               style="<?= ($halaman >= $total_halaman) ? 'opacity:0.5; pointer-events:none;' : '' ?>">Next</a>
+            <?php $qs = $_GET; $qs['halaman'] = $next; ?>
+            <a href="?<?= http_build_query($qs) ?>" class="btn btn-secondary text-xs" style="<?= ($halaman >= $total_halaman) ? 'opacity:0.5; pointer-events:none;' : '' ?> padding:6px 12px;">Next</a>
         </div>
 
     <div id="modalUpdate" class="modal">

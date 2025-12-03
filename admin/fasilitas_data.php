@@ -8,31 +8,34 @@ if (!is_admin()) { die('Forbidden'); }
 <html lang="id">
 <head>
   <title>Master Fasilitas - SIKOS Admin</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="../assets/js/main.js"></script>
 </head>
 <body class="dashboard-body">
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
   <?php include '../components/sidebar_admin.php'; ?>
+
   <main class="main-content">
-     </main>
-</body>
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-slate-800">Master Fasilitas</h1>
-        <a href="fasilitas_form.php" class="btn-primary">
-            <i class="fa-solid fa-plus mr-2"></i> Tambah Baru
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="font-bold text-xl">Master Fasilitas</h1>
+        <a href="fasilitas_form.php" class="btn btn-primary text-xs">
+            <i class="fa-solid fa-plus"></i> Tambah Baru
         </a>
     </div>
 
     <div class="card-white">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-slate-600">
-                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+        <div style="overflow-x: auto;">
+            <table style="width:100%;">
+                <thead>
                     <tr>
-                        <th class="px-6 py-3">Icon</th>
-                        <th class="px-6 py-3">Nama Fasilitas</th>
-                        <th class="px-6 py-3">Kode Icon (FontAwesome)</th>
-                        <th class="px-6 py-3 text-center">Aksi</th>
+                        <th class="text-center">ICON</th>
+                        <th>NAMA FASILITAS</th>
+                        <th>KODE ICON (FONTAWESOME)</th>
+                        <th class="text-center">AKSI</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,29 +44,32 @@ if (!is_admin()) { die('Forbidden'); }
                 if ($q->num_rows > 0) {
                     while ($row = $q->fetch_assoc()) {
                 ?>
-                    <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="px-6 py-4 text-center">
-                            <i class="fa-solid <?= $row['icon'] ?> text-2xl text-blue-600"></i>
+                    <tr>
+                        <td class="text-center" style="font-size: 24px; color: var(--primary);">
+                            <i class="fa-solid <?= htmlspecialchars($row['icon']) ?>"></i>
                         </td>
-                        <td class="px-6 py-4 font-bold text-slate-800">
+                        <td class="font-bold">
                             <?= htmlspecialchars($row['nama_fasilitas']) ?>
                         </td>
-                        <td class="px-6 py-4 font-mono text-xs text-slate-500">
-                            <?= $row['icon'] ?>
+                        <td style="font-family: monospace; color: var(--text-muted);">
+                            <?= htmlspecialchars($row['icon']) ?>
                         </td>
-                        <td class="px-6 py-4 text-center space-x-2">
-                            <a href="fasilitas_form.php?id=<?= $row['id_fasilitas'] ?>" 
-                               class="text-blue-600 hover:text-blue-800 font-medium">Edit</a>
-                            
-                            <a href="fasilitas_proses.php?act=hapus&id=<?= $row['id_fasilitas'] ?>" 
-                               class="text-red-600 hover:text-red-800 font-medium ml-2"
-                               onclick="return confirm('Yakin hapus fasilitas ini? Semua kamar yang punya fasilitas ini akan kehilangan data fasilitas ini.')">Hapus</a>
+                        <td class="text-center">
+                            <div class="flex justify-center gap-2">
+                                <a href="fasilitas_form.php?id=<?= $row['id_fasilitas'] ?>" 
+                                   class="btn btn-secondary text-xs" style="padding: 6px 10px;">Edit</a>
+                                
+                                <a href="fasilitas_proses.php?act=hapus&id=<?= $row['id_fasilitas'] ?>" 
+                                   class="btn btn-danger text-xs" 
+                                   style="padding: 6px 10px;"
+                                   onclick="return confirm('Yakin hapus fasilitas ini? Semua kamar yang punya fasilitas ini akan kehilangan data fasilitas ini.')">Hapus</a>
+                            </div>
                         </td>
                     </tr>
                 <?php 
                     }
                 } else {
-                    echo "<tr><td colspan='4' class='text-center py-4'>Belum ada data fasilitas.</td></tr>";
+                    echo "<tr><td colspan='4' class='text-center p-8 text-muted'>Belum ada data fasilitas.</td></tr>";
                 }
                 ?>
                 </tbody>
