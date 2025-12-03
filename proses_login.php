@@ -1,7 +1,7 @@
 <?php
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
-
+require 'inc/utils.php';
 // Panggil Object Database
 $db = new Database();
 
@@ -33,6 +33,9 @@ if ($user) {
     exit;
 
 } else {
-    header('Location: login.php?error=auth');
+    // Set pesan error ke session
+    set_flash_message('error', 'Email atau password salah!');
+    header('Location: login.php'); // Tidak perlu pakai ?error=auth lagi
+    exit;
 }
 ?>

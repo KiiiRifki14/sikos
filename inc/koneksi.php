@@ -4,12 +4,7 @@ require_once __DIR__ . '/../config.php';
 
 class Database {
     // PENERAPAN ENKAPSULASI (Pertemuan 7)
-    // Property dibuat private agar aman dan hanya bisa diakses class ini
-    private $host = DB_HOST; // Mengambil dari config.php
-    private $user = DB_USER;
-    private $pass = DB_PASS;
-    private $db_name = DB_NAME;
-    
+    // Property dibuat private agar aman dan hanya bisa diakses class ini    
     // Property koneksi dibuat public agar bisa dipakai di file lain (mysqli query)
     public $koneksi;
 
@@ -19,7 +14,7 @@ class Database {
         // Menggunakan Try-Catch untuk menangkap error koneksi
         try {
             // @ sebelum new mysqli berguna untuk menahan error bawaan PHP agar ditangkap catch
-            $this->koneksi = @new mysqli($this->host, $this->user, $this->pass, $this->db_name);
+            $this->koneksi = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
             // Cek manual jika ada error koneksi
             if ($this->koneksi->connect_error) {

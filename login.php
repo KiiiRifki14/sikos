@@ -2,6 +2,7 @@
 session_start();
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
+require 'inc/utils.php'; // Load fungsi flash message
 if (isset($_SESSION['id_pengguna'])) { header('Location: penghuni_dashboard.php'); exit; }
 ?>
 <!DOCTYPE html>
@@ -20,17 +21,7 @@ if (isset($_SESSION['id_pengguna'])) { header('Location: penghuni_dashboard.php'
         <p class="text-slate-500 text-sm mt-2">Masuk untuk mengelola akun kost Anda</p>
     </div>
 
-    <?php if(!empty($_GET['error'])): ?>
-        <div class="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-100">
-            Email atau password salah!
-        </div>
-    <?php endif; ?>
-
-    <?php if(!empty($_GET['info'])): ?>
-        <div class="bg-green-50 text-green-600 p-3 rounded-lg text-sm mb-6 text-center border border-green-100">
-            <?= htmlspecialchars($_GET['info']) ?>
-        </div>
-    <?php endif; ?>
+    <?php display_flash_message(); ?>
 
     <form method="POST" action="proses_login.php" class="space-y-5">
         <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
