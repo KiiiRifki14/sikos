@@ -41,8 +41,14 @@ if ($order_param === 'harga_asc') {
 }
 
 // Query Utama dengan LIMIT & OFFSET
-$sql = "SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe";
-if ($where) $sql .= " WHERE " . implode(" AND ", $where);
+// Query Utama dengan LIMIT & OFFSET
+// MODIFIKASI: Filter kamar yang sedang PENDING booking
+$sql = "SELECT k.*, t.nama_tipe 
+        FROM kamar k 
+        JOIN tipe_kamar t ON k.id_tipe=t.id_tipe
+        WHERE k.id_kamar NOT IN (SELECT id_kamar FROM booking WHERE status='PENDING')";
+
+if ($where) $sql .= " AND " . implode(" AND ", $where); // Ganti WHERE jadi AND
 $sql .= " ORDER BY " . $order_sql;
 $sql .= " LIMIT ? OFFSET ?";
 

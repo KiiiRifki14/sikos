@@ -34,7 +34,7 @@ if (!$row) pesan_error("index.php", "Maaf, data kamar tersebut tidak ditemukan."
   <input type="hidden" name="id_kamar" value="<?= $id_kamar ?>">
   KTP (jpg/png/webp): <input type="file" name="ktp_opt" required><br>
   Check-in Rencana: <input type="date" name="checkin_rencana" required><br>
-  Durasi (bulan): <input type="number" name="durasi_bulan_rencana" min="1" value="12" required><br>
+  Durasi (bulan): <input type="number" name="durasi_bulan_rencana" min="1" value="12" required oninput="this.value = !!this.value && Math.abs(this.value) >= 1 ? Math.abs(this.value) : 1"><br>
   <button type="submit">Booking</button>
 </form>
 </div>

@@ -30,7 +30,6 @@ if ($result_cek['booking_pending'] > 0) {
     pesan_error("index.php", "Maaf, kamar ini baru saja dibooking orang lain dan sedang menunggu konfirmasi admin. Silakan pilih kamar lain.");
 }
 // ------------------------------------------
-
 // Proses Upload KTP
 $ktp_path = null;
 if(!empty($_FILES['ktp_opt']['name'])){

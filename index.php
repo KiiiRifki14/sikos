@@ -2,6 +2,10 @@
 session_start();
 require 'inc/koneksi.php';
 
+// --- TRIGGER AUTO CANCEL ---
+// Jalankan pengecekan setiap kali halaman beranda dibuka
+$db->auto_batal_booking();
+
 // --- LOGIC FILTER & URUTAN ---
 $where = [];
 $params = [];
@@ -33,9 +37,14 @@ elseif ($order_param === 'harga_desc') $order_sql = "k.harga DESC";
 elseif ($order_param === 'terbaru') $order_sql = "k.id_kamar DESC";
 
 // 1. QUERY DATA (Hanya 6 Pertama)
-$sql = "SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe";
-if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-$sql .= " ORDER BY " . $order_sql . " LIMIT 6"; // LIMIT DISINI
+// MODIFIKASI: Tambahkan pengecekan agar kamar yang sedang di-booking (PENDING) tidak muncul/dianggap tersedia
+$sql = "SELECT k.*, t.nama_tipe 
+        FROM kamar k 
+        JOIN tipe_kamar t ON k.id_tipe=t.id_tipe 
+        WHERE k.id_kamar NOT IN (SELECT id_kamar FROM booking WHERE status='PENDING')"; // Filter tambahan
+
+if ($where) $sql .= " AND " . implode(" AND ", $where); // Perhatikan ganti WHERE jadi AND karena WHERE sudah dipakai di atas
+$sql .= " ORDER BY " . $order_sql . " LIMIT 6";
 
 $stmt = $mysqli->prepare($sql);
 if ($params) $stmt->bind_param($types, ...$params);

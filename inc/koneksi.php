@@ -392,6 +392,38 @@ class Database {
         while($row = $res->fetch_assoc()) { $hasil[] = $row; }
         return $hasil;
     }
+    // ==========================================
+    // 7. SYSTEM AUTOMATION (AUTO CANCEL)
+    // ==========================================
+    function auto_batal_booking() {
+        // Batas waktu: 24 Jam yang lalu dari sekarang
+        $batas_waktu = date('Y-m-d H:i:s', strtotime('-24 hours'));
+
+        // 1. Cari booking yang sudah expired (Status PENDING & Tanggal < Batas Waktu)
+        $query_cek = "SELECT id_booking, id_pengguna FROM booking 
+                      WHERE status='PENDING' AND tanggal_booking < '$batas_waktu'";
+        $res = $this->koneksi->query($query_cek);
+
+        $jumlah_batal = 0;
+        if ($res && $res->num_rows > 0) {
+            while ($row = $res->fetch_assoc()) {
+                $id_b = $row['id_booking'];
+                $id_u = $row['id_pengguna'];
+
+                // 2. Update Status Booking jadi BATAL
+                $this->koneksi->query("UPDATE booking SET status='BATAL' WHERE id_booking=$id_b");
+                
+                // 3. Update Status Pembayaran jadi DITOLAK (Jika user sempat upload bukti tapi admin lupa cek)
+                $this->koneksi->query("UPDATE pembayaran SET status='DITOLAK' WHERE ref_type='BOOKING' AND ref_id=$id_b");
+
+                // 4. Catat Log Sistem (Penting agar Admin tidak bingung kenapa data berubah sendiri)
+                $this->catat_log($id_u, 'SYSTEM AUTO CANCEL', "Booking ID $id_b dibatalkan otomatis oleh sistem (Timeout 24 Jam).");
+                
+                $jumlah_batal++;
+            }
+        }
+        return $jumlah_batal;
+    }
 }
 
 $db = new Database();

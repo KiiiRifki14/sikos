@@ -29,6 +29,7 @@ if (!$row) die("Data booking tidak ditemukan!");
     <input type="hidden" name="id_pembayaran" value="<?= $row['id_pembayaran'] ?>">
     Upload Bukti Transfer (jpg/png/webp, max 2MB): <input type="file" name="bukti_tf" required><br><br>
     <button type="submit">Upload Bukti</button>
+    <button type="submit" onclick="this.innerHTML='Sedang Mengupload...'; this.disabled=true; this.form.submit();" class="btn-primary">Upload Bukti</button>
   </form>
   <br>
   <a href="penghuni_dashboard.php">Kembali ke Dashboard</a>
