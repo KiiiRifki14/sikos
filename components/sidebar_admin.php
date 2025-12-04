@@ -3,11 +3,11 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 
-<button class="sidebar-toggle" onclick="toggleSidebar()">
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="false">
     <i class="fa-solid fa-bars"></i>
 </button>
 
-<aside class="sidebar">
+<aside id="sidebar" class="sidebar">
     <div class="mb-8 px-2 flex items-center gap-3" style="margin-top: 40px;"> 
         <div>
             <h1 class="font-bold text-slate-800 text-lg">SIKOS Admin</h1>

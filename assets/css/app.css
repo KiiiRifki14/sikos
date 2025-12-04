@@ -12,6 +12,7 @@
     --danger: #ef4444;
     --success: #22c55e;
     --warning: #eab308;
+    --radius: 8px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,8 +25,12 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-a { text-decoration: none; color: inherit; transition: 0.2s; }
-ul { list-style: none; }
+/* Accessibility focus helper */
+:focus { outline: none; }
+a:focus, button:focus, input:focus, select:focus, textarea:focus {
+  outline: 3px solid rgba(37,99,235,0.14);
+  outline-offset: 2px;
+}
 
 /* === 2. UTILITIES === */
 .text-center { text-align: center; }
@@ -50,11 +55,12 @@ ul { list-style: none; }
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px;
-    cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+    cursor: pointer; transition: all 0.18s ease; border: 1px solid transparent;
+    background: transparent;
 }
 
-.btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
-.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 6px 12px rgba(37,99,235,0.12); }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
 
 .btn-secondary { background: white; color: var(--text-main); border-color: var(--border); }
 .btn-secondary:hover { background: var(--bg-body); }
@@ -71,17 +77,21 @@ ul { list-style: none; }
 }
 .btn-social:hover { background: var(--bg-body); }
 
+/* Button utility sizes */
+.btn.small { padding: 6px 10px; font-size: 13px; }
+.btn.full { width: 100%; }
+
 /* === 4. FORMS (INPUT & SELECT) === */
 .form-group { margin-bottom: 16px; }
 .form-label { display: block; font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
 .form-input {
     width: 100%; padding: 10px 14px; border-radius: 8px;
-    border: 1px solid var(--border); font-size: 14px; transition: 0.2s;
+    border: 1px solid var(--border); font-size: 14px; transition: 0.18s;
     background: white;
 }
 .form-input:focus { 
     outline: none; border-color: var(--primary); 
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); 
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.06); 
 }
 textarea.form-input { resize: vertical; min-height: 80px; }
 
@@ -113,8 +123,9 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 .card-white {
     background: white; border-radius: 12px; padding: 24px;
     border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 24px;
+    margin-bottom: 24px; transition: transform .12s ease, box-shadow .12s ease;
 }
+.card-white:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.08); }
 
 .grid-stats {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -144,8 +155,7 @@ tr:last-child td { border-bottom: none; }
     .dashboard-body { display: block !important; background: white !important; }
     .main-content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
     .card-white { box-shadow: none !important; border: 1px solid #ccc !important; }
-} /* <--- INI YANG HILANG SEBELUMNYA (Kurung Tutup Print) */
-
+} /* print media closed correctly */
 
 /* === 9. SIDEBAR & RESPONSIVE LOGIC (FIXED) === */
 
@@ -199,8 +209,6 @@ tr:last-child td { border-bottom: none; }
     body.sidebar-collapsed .main-content {
         margin-left: 0; 
         width: 100%;
-        
-        /* === INI YANG HARUS DITAMBAHKAN === */
         padding-left: 80px; /* Memberi jarak agar tulisan tidak ketutup tombol */
     }
     
@@ -241,6 +249,18 @@ tr:last-child td { border-bottom: none; }
         background: rgba(0,0,0,0.5);
         z-index: 40;
     }
+
+    /* Mobile menu button visible on small screens */
+    .mobile-menu-btn { display: block; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); }
+
+    /* Mobile menu */
+    .mobile-menu { 
+        display: none; position: absolute; top: 80px; left: 0; width: 100%; 
+        background: white; border-bottom: 1px solid var(--border); 
+        padding: 20px; flex-direction: column; gap: 16px; 
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+    .mobile-menu.active { display: flex; }
 }
 
 /* === 10. PAGINATION STYLE === */
@@ -274,15 +294,29 @@ tr:last-child td { border-bottom: none; }
 @media (max-width: 600px) {
     .pagination-btn { padding: 6px 10px; font-size: 12px; }
 }
+
 /* ==============================
    TAMBAHAN: FRONTEND STYLES
    ============================== */
+/* Ensure mobile menu is hidden by default on desktop */
+.mobile-menu {
+  display: none;
+}
 
+/* Mobile menu visible state (kept for small screens) */
+.mobile-menu.active {
+  display: flex;
+}
+
+/* Mobile menu button hidden by default (visible only on small screens) */
+.mobile-menu-btn {
+  display: none;
+}
 /* --- NAVBAR --- */
 .navbar {
     position: fixed; top: 0; left: 0; width: 100%; height: 80px;
     background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--border);
     z-index: 1000;
     display: flex; align-items: center;
@@ -301,41 +335,23 @@ tr:last-child td { border-bottom: none; }
 .nav-link { font-weight: 600; color: var(--text-muted); font-size: 14px; transition: 0.2s; }
 .nav-link:hover { color: var(--primary); }
 
-/* Mobile Menu */
-.mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); }
-.mobile-menu { 
-    display: none; position: absolute; top: 80px; left: 0; width: 100%; 
-    background: white; border-bottom: 1px solid var(--border); 
-    padding: 20px; flex-direction: column; gap: 16px; 
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-}
-.mobile-menu.active { display: flex; }
-
 /* --- HERO SECTION --- */
 .hero {
-    /* Ganti dengan gambar kamu */
     background-image: url('../img/hero-bg.jpg'); 
     background-size: cover; background-position: center; background-color: #e2e8f0;
-    
-    /* KURANGI TINGGI MINIMAL AGAR TIDAK TERLALU BOROS TEMPAT */
-    min-height: 400px; /* Dulu 50vh, sekarang fix pixel biar stabil */
-    
+    min-height: 400px;
     display: flex; 
-    align-items: center; /* Kembalikan ke center biar rapi secara vertikal di area yang lebih kecil */
+    align-items: center;
     justify-content: center;
-    
-    /* Padding disesuaikan agar tidak terlalu jauh dari navbar */
-    padding: 40px 20px; 
-    margin-top: 80px; /* Offset navbar tetap */
+    padding: 40px 20px;
+    margin-top: 80px;
 }
 
 .hero-content {
     background: rgba(255, 255, 255, 0.95);
     padding: 40px 50px; border-radius: 16px; text-align: center;
     max-width: 750px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    
-    /* Hapus margin-top manual yang tadi */
-    margin-top: 0; 
+    margin-top: 0;
 }
 .hero-title { font-size: 3rem; font-weight: 800; color: var(--text-main); margin-bottom: 16px; line-height: 1.2; }
 .hero-text { font-size: 1.125rem; color: var(--text-muted); margin-bottom: 32px; }
@@ -361,7 +377,6 @@ tr:last-child td { border-bottom: none; }
 }
 
 /* --- FOOTER --- */
-/* --- FOOTER --- */
 .footer { 
     background: #0f172a; 
     color: #cbd5e1; 
@@ -382,7 +397,7 @@ tr:last-child td { border-bottom: none; }
     font-weight: 700; 
     margin-bottom: 16px; 
     font-size: 16px; 
-    letter-spacing: 0.5px; /* Tambahan biar lebih elegan */
+    letter-spacing: 0.5px;
 }
 
 .footer ul li { 
@@ -406,19 +421,20 @@ tr:last-child td { border-bottom: none; }
 
 /* --- RESPONSIVE FRONTEND (FIXED) --- */
 /* 2. Hero Section (Mobile) */
+@media (max-width: 768px) {
     .hero {
-        min-height: auto; /* Biarkan tinggi menyesuaikan konten */
-        padding: 100px 20px 60px; /* Tambah padding bawah jadi 60px */
+        min-height: auto;
+        padding: 100px 20px 60px;
         text-align: center;
         align-items: flex-start;
-        margin-bottom: 40px; /* Tambah jarak ke elemen berikutnya (Kamar Tersedia) */
+        margin-bottom: 40px;
     }
     
     .hero-content {
         padding: 30px 20px; 
         width: 100%; 
         max-width: 100%;
-        margin-top: 0; /* Reset margin top */
+        margin-top: 0;
         box-shadow: 0 10px 20px rgba(0,0,0,0.08);
     }
     
@@ -433,8 +449,8 @@ tr:last-child td { border-bottom: none; }
     .hero-content .btn {
         width: 100%;
         justify-content: center;
-    
-    
+    }
+
     /* 3. Filter Box (Pencarian) */
     .filter-box { padding: 20px; }
     .filter-grid { 

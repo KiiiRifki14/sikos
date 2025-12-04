@@ -24,12 +24,12 @@
       <?php endif; ?>
     </div>
 
-    <button class="mobile-menu-btn" onclick="document.getElementById('mobileMenu').classList.toggle('active')">
+    <button class="mobile-menu-btn" aria-controls="mobileMenu" aria-expanded="false" onclick="document.getElementById('mobileMenu').classList.toggle('active')">
         <i class="fa-solid fa-bars"></i>
     </button>
   </div>
 
-  <div id="mobileMenu" class="mobile-menu">
+  <div id="mobileMenu" class="mobile-menu" role="menu" aria-hidden="true">
       <a href="index.php#beranda" class="nav-link" onclick="this.parentElement.classList.remove('active')">Beranda</a>
       <a href="index.php#kamar" class="nav-link" onclick="this.parentElement.classList.remove('active')">Kamar</a>
       <a href="index.php#fasilitas" class="nav-link" onclick="this.parentElement.classList.remove('active')">Fasilitas</a>
