@@ -38,8 +38,7 @@ if (file_exists($file_settings)) {
       <h4>MENU</h4>
       <ul>
         <li><a href="#">Tentang Kami</a></li>
-        <li><a href="#">Syarat & Ketentuan</a></li>
-        <li><a href="login.php">Login Admin</a></li>
+        <li><a href="#">Syarat & Ketentuan</a></li> 
       </ul>
     </div>
   </div>

@@ -87,7 +87,7 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
     <div class="flex justify-between items-end mb-8">
       <div>
         <h2 class="section-title">Kamar Tersedia</h2>
-        <p class="section-subtitle">Menampilkan kamar terbaik (Total: <?= $totalKamar ?>)</p>
+
       </div>
     </div>
 

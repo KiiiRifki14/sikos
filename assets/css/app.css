@@ -14,7 +14,9 @@
     --warning: #eab308;
     --radius: 8px;
 }
-
+html {
+  scroll-behavior: smooth;
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
