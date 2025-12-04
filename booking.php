@@ -21,22 +21,38 @@ if (!$row) pesan_error("index.php", "Maaf, data kamar tersebut tidak ditemukan."
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Booking Kamar <?= htmlspecialchars($row['kode_kamar']) ?></title>
   <link rel="stylesheet" href="assets/css/app.css"/>
 </head>
 <body>
 <div class="container">
-<h3>Booking Kamar <?= htmlspecialchars($row['kode_kamar']) ?></h3>
-<form method="POST" action="proses_booking.php" enctype="multipart/form-data">
-  <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-  <input type="hidden" name="id_kamar" value="<?= $id_kamar ?>">
-  KTP (jpg/png/webp): <input type="file" name="ktp_opt" required><br>
-  Check-in Rencana: <input type="date" name="checkin_rencana" required><br>
-  Durasi (bulan): <input type="number" name="durasi_bulan_rencana" min="1" value="12" required oninput="this.value = !!this.value && Math.abs(this.value) >= 1 ? Math.abs(this.value) : 1"><br>
-  <button type="submit">Booking</button>
-</form>
+  <h3>Booking Kamar <?= htmlspecialchars($row['kode_kamar']) ?> - <?= htmlspecialchars($row['nama_tipe'] ?? '') ?></h3>
+  <form method="POST" action="proses_booking.php" enctype="multipart/form-data" class="space-y-4" novalidate>
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+    <input type="hidden" name="id_kamar" value="<?= $id_kamar ?>">
+
+    <div>
+      <label for="ktp_opt" class="block text-sm font-medium text-slate-700 mb-1">KTP (jpg/png/webp)</label>
+      <input id="ktp_opt" type="file" name="ktp_opt" accept="image/jpeg,image/png,image/webp" required class="form-input">
+      <p class="text-xs text-slate-400 mt-1">Maks 2MB. Foto KTP harus jelas dan terbaca.</p>
+    </div>
+
+    <div>
+      <label for="checkin_rencana" class="block text-sm font-medium text-slate-700 mb-1">Check-in Rencana</label>
+      <input id="checkin_rencana" type="date" name="checkin_rencana" required class="form-input">
+    </div>
+
+    <div>
+      <label for="durasi_bulan_rencana" class="block text-sm font-medium text-slate-700 mb-1">Durasi (bulan)</label>
+      <input id="durasi_bulan_rencana" type="number" name="durasi_bulan_rencana" min="1" value="12" required oninput="this.value = !!this.value && Math.abs(this.value) >= 1 ? Math.abs(this.value) : 1" class="form-input">
+    </div>
+
+    <button type="submit" class="btn-primary">Booking</button>
+  </form>
 </div>
 </body>
 </html>

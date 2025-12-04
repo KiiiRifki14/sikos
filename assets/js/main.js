@@ -1,5 +1,5 @@
 // assets/js/main.js
-// Single consolidated DOMContentLoaded handler to avoid duplicates
+// Single consolidated DOMContentLoaded handler
 document.addEventListener('DOMContentLoaded', function() {
     // --- SIDEBAR TOGGLE -----------------------
     function applySidebarState(isCollapsed) {
@@ -27,6 +27,52 @@ document.addEventListener('DOMContentLoaded', function() {
             button.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
         });
     });
+
+    // --- SUBMENU (Sidebar Sections) -----------
+    (function setupSidebarSubmenus() {
+        // Attach to all toggles
+        const toggles = document.querySelectorAll('.sidebar-submenu-toggle');
+        toggles.forEach(toggle => {
+            const controls = toggle.getAttribute('aria-controls');
+            const submenu = controls ? document.getElementById(controls) : toggle.nextElementSibling;
+            const key = controls ? ('submenu:' + controls) : null;
+
+            // Initialize state from aria or localStorage
+            let open = toggle.getAttribute('aria-expanded') === 'true';
+            if (key) {
+                const stored = localStorage.getItem(key);
+                if (stored !== null) open = stored === 'true';
+            }
+            if (open) {
+                toggle.classList.add('active');
+                toggle.setAttribute('aria-expanded', 'true');
+                if (submenu) submenu.classList.add('open');
+                // mark parent container for CSS rule
+                if (toggle.parentElement) toggle.parentElement.classList.add('open');
+            } else {
+                toggle.setAttribute('aria-expanded', 'false');
+                if (submenu) submenu.classList.remove('open');
+                if (toggle.parentElement) toggle.parentElement.classList.remove('open');
+            }
+
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const nowOpen = toggle.getAttribute('aria-expanded') !== 'true';
+                toggle.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+                if (nowOpen) {
+                    toggle.classList.add('active');
+                    if (submenu) submenu.classList.add('open');
+                    if (toggle.parentElement) toggle.parentElement.classList.add('open');
+                } else {
+                    toggle.classList.remove('active');
+                    if (submenu) submenu.classList.remove('open');
+                    if (toggle.parentElement) toggle.parentElement.classList.remove('open');
+                }
+                // persist
+                if (key) localStorage.setItem(key, nowOpen ? 'true' : 'false');
+            });
+        });
+    })();
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -62,32 +108,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- SMOOTH SCROLL (Anchor links) ----------
-    // Handles same-page anchors (including nav links like #kamar, #fasilitas)
     (function setupSmoothScroll() {
-        // header offset to avoid content hidden behind fixed navbar
         const header = document.querySelector('.navbar');
-        const headerOffset = header ? header.offsetHeight + 12 : 92; // +12 for breathing space
+        const headerOffset = header ? header.offsetHeight + 12 : 92;
 
-        // select links that point to hashes on the same page
         const anchorLinks = Array.from(document.querySelectorAll('a[href*="#"]'))
             .filter(a => {
                 const href = a.getAttribute('href');
-                // Accept pure hash (#id) or page anchors linking current page (index.php#kamar)
                 return href && href.includes('#') && (href.charAt(0) === '#' || href.indexOf(location.pathname) !== -1);
             });
 
         anchorLinks.forEach(link => {
             link.addEventListener('click', function(e) {
-                // If the href points to an element ID on this page, intercept and smooth-scroll
                 const href = this.getAttribute('href');
                 const hash = href.split('#')[1];
-                if (!hash) return; // no target
+                if (!hash) return;
 
                 const targetEl = document.getElementById(hash);
                 if (targetEl) {
                     e.preventDefault();
 
-                    // compute target top with offset
                     const targetTop = targetEl.getBoundingClientRect().top + window.pageYOffset - headerOffset;
 
                     window.scrollTo({
@@ -95,25 +135,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         behavior: 'smooth'
                     });
 
-                    // Accessibility: focus target without scrolling (preventScroll)
+                    // Accessibility: focus target without scrolling
                     try {
-                        // add temporary tabindex if element not focusable
                         const hadTabindex = targetEl.hasAttribute('tabindex');
                         if (!hadTabindex) targetEl.setAttribute('tabindex', '-1');
                         targetEl.focus({ preventScroll: true });
                         if (!hadTabindex) targetEl.removeAttribute('tabindex');
-                    } catch (err) {
-                        // ignore focus errors on old browsers
-                    }
+                    } catch (err) {}
 
-                    // Close mobile menu if open (mobile-friendly)
                     if (mobileMenu && mobileMenu.classList.contains('active')) {
                         mobileMenu.classList.remove('active');
                         if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'false');
                     }
-
-                    // NOTE: intentionally do NOT modify history/hash here,
-                    // so the URL in address bar remains unchanged.
                 }
             });
         });

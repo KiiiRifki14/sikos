@@ -478,3 +478,101 @@ tr:last-child td { border-bottom: none; }
     /* Rata tengah untuk elemen di footer mobile */
     .footer-grid > div:first-child > div { justify-content: center; } 
 }
+/* --- SIDEBAR SECTION & SUBMENU (Admin) --- */
+/* Sekat judul section */
+.sidebar-section .sidebar-section-title {
+    padding: 10px 6px;
+    margin: 6px 0 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Style dasar link sidebar (pertahankan kompatibilitas) */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s, transform 0.12s;
+}
+
+/* Indent untuk link submenu */
+.sidebar-submenu .sidebar-link {
+    padding-left: 34px;
+    font-size: 13px;
+    gap: 10px;
+    color: var(--text-muted);
+    background: transparent;
+}
+
+/* Container submenu */
+.sidebar-submenu {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    margin-bottom: 8px;
+    padding-right: 6px;
+}
+
+/* When open, show submenu (we'll toggle class via JS) */
+.sidebar-section .open > .sidebar-submenu,
+.sidebar-submenu.open {
+    display: flex;
+}
+
+/* Toggle button style (looks like link with caret) */
+.sidebar-submenu-toggle {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Caret icon */
+.submenu-caret {
+    transition: transform 0.18s ease;
+    color: rgba(15,23,42,0.45);
+    font-size: 12px;
+}
+
+/* Rotate when expanded */
+.sidebar-submenu-toggle[aria-expanded="true"] .submenu-caret {
+    transform: rotate(-180deg);
+}
+
+/* Active states */
+.sidebar-link.active, .sidebar-submenu-toggle.active {
+    background: rgba(14,165,164,0.08);
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+/* Hover micro-interaction */
+.sidebar-link:hover, .sidebar-submenu-toggle:hover {
+    background: rgba(2,6,23,0.03);
+    color: var(--text-main);
+}
+
+/* Ensure submenu visible when screen small or when sidebar is collapsed/open per JS logic */
+@media (max-width: 768px) {
+    .sidebar-submenu { display: none; } /* hidden by default on mobile until toggled */
+    .sidebar-section .open > .sidebar-submenu { display: flex; }
+}
+
+/* Small visual spacer at bottom for logout button separation */
+.sidebar .logout-spacer { margin-top: 12px; }

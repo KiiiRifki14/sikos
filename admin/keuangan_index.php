@@ -9,54 +9,75 @@ $db = new Database();
 // Ambil Tab Aktif (Default: verifikasi)
 $tab = $_GET['tab'] ?? 'verifikasi';
 
-// Data untuk Tab Laporan (Statistik Sederhana)
+// --- LOGIKA DATA LAPORAN ---
 if ($tab == 'laporan') {
     $bulan_ini = date('Y-m');
     $total_masuk = $mysqli->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'")->fetch_row()[0] ?? 0;
     
-    // Filter Bulan Laporan
     $bulan_lap = $_GET['bulan'] ?? date('Y-m');
     
-    // Hitung Total Masuk Bulan Terpilih
-    $q_total_bln = "SELECT SUM(jumlah) FROM pembayaran 
-                    WHERE status='DITERIMA' 
-                    AND DATE_FORMAT(waktu_verifikasi, '%Y-%m') = '$bulan_lap'";
+    // Total Masuk Bulan Ini
+    $q_total_bln = "SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DATE_FORMAT(waktu_verifikasi, '%Y-%m') = '$bulan_lap'";
     $total_masuk_bln = $mysqli->query($q_total_bln)->fetch_row()[0] ?? 0;
+
+    // Total Keluar Bulan Ini (Untuk Laba Bersih)
+    $q_keluar_bln = "SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = '$bulan_lap'";
+    $total_keluar_bln = $mysqli->query($q_keluar_bln)->fetch_row()[0] ?? 0;
+}
+
+// --- LOGIKA DATA PENGELUARAN (PAGINATION) ---
+if ($tab == 'pengeluaran') {
+    $batas = 10;
+    $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+    $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
+
+    $total_data = $mysqli->query("SELECT COUNT(*) FROM pengeluaran")->fetch_row()[0];
+    $total_halaman = ceil($total_data / $batas);
+
+    // Query Data Pengeluaran
+    $q_pengeluaran = "SELECT * FROM pengeluaran ORDER BY tanggal DESC LIMIT $halaman_awal, $batas";
+    $res_pengeluaran = $mysqli->query($q_pengeluaran);
+    $nomor = $halaman_awal + 1;
+
+    // Hitung Total Pengeluaran Bulan Ini (Statistik)
+    $bulan_ini = date('Y-m');
+    $total_keluar = $mysqli->query("SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = '$bulan_ini'")->fetch_row()[0] ?? 0;
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <title>Keuangan & Tagihan</title>
+  <title>Pusat Keuangan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="../assets/js/main.js"></script>
   <style>
-      /* Styling Tab Menu */
-      .tabs { display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid var(--border); padding-bottom: 1px; }
+      /* Styling Tab Menu Navigasi */
+      .tabs { 
+          display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; 
+          white-space: nowrap; border-bottom: 1px solid var(--border); padding-bottom: 1px; 
+      }
       .tab-btn { 
-          padding: 10px 20px; 
-          font-weight: 600; 
-          color: var(--text-muted); 
-          border-bottom: 2px solid transparent; 
-          text-decoration: none; 
-          transition: 0.2s;
+          padding: 12px 20px; font-weight: 600; color: var(--text-muted); 
+          border-bottom: 2px solid transparent; text-decoration: none; transition: 0.2s; 
+          display: flex; align-items: center; gap: 8px; font-size: 14px; background: none; 
       }
       .tab-btn:hover { color: var(--primary); background: #f8fafc; }
       .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+      .tab-btn span { display: inline-block; }
 
-      /* CSS Khusus Print */
+      /* Modal Style (Khusus Tab Pengeluaran) */
+      .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+      .modal-content { background-color: #fff; margin: 5% auto; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: slideDown 0.3s; }
+      @keyframes slideDown { from {transform: translateY(-20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
+
       @media print {
           .sidebar, .sidebar-toggle, .tabs, .no-print, form, .btn { display: none !important; }
           .dashboard-body { display: block !important; background: white !important; }
           .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
           .card-white { box-shadow: none !important; border: 1px solid #000 !important; }
-          
-          /* Pastikan background warna (seperti header tabel) ikut tercetak */
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          
-          h1 { text-align: center; margin-bottom: 20px; font-size: 18pt; }
       }
   </style>
 </head>
@@ -67,18 +88,23 @@ if ($tab == 'laporan') {
 
   <main class="main-content">
     <div class="mb-8 no-print">
-        <h1 class="font-bold text-xl">Keuangan & Tagihan</h1>
+        <h1 class="font-bold text-xl">Pusat Keuangan</h1>
     </div>
 
     <div class="tabs no-print">
         <a href="?tab=verifikasi" class="tab-btn <?= $tab=='verifikasi'?'active':'' ?>">
-            <i class="fa-solid fa-magnifying-glass"></i> Verifikasi Pembayaran
+            <i class="fa-solid fa-magnifying-glass"></i> <span>Verifikasi Pembayaran</span>
         </a>
         <a href="?tab=tagihan" class="tab-btn <?= $tab=='tagihan'?'active':'' ?>">
-            <i class="fa-solid fa-file-invoice-dollar"></i> Kelola Tagihan Bulanan
+            <i class="fa-solid fa-file-invoice-dollar"></i> <span>Kelola Tagihan</span>
         </a>
+        
+        <a href="?tab=pengeluaran" class="tab-btn <?= $tab=='pengeluaran'?'active':'' ?>">
+            <i class="fa-solid fa-wallet"></i> <span>Pengeluaran Operasional</span>
+        </a>
+        
         <a href="?tab=laporan" class="tab-btn <?= $tab=='laporan'?'active':'' ?>">
-            <i class="fa-solid fa-chart-line"></i> Laporan Keuangan
+            <i class="fa-solid fa-chart-line"></i> <span>Laporan Keuangan</span>
         </a>
     </div>
 
@@ -138,7 +164,6 @@ if ($tab == 'laporan') {
 
     <?php if($tab == 'tagihan'): ?>
         <?php $bulan_filter = $_GET['bulan'] ?? date('Y-m'); ?>
-        
         <div class="card-white mb-6">
             <h3 class="font-bold text-lg mb-4">Generate Tagihan Masal</h3>
             <form method="post" action="pembayaran_proses.php?act=generate_masal" class="flex gap-4 items-end flex-wrap">
@@ -161,7 +186,6 @@ if ($tab == 'laporan') {
                     <input type="month" name="bulan" value="<?= $bulan_filter ?>" onchange="this.form.submit()" class="form-input text-sm" style="padding:6px;">
                 </form>
             </div>
-            
             <div style="overflow-x: auto;">
                 <table style="width:100%;">
                     <thead>
@@ -175,14 +199,12 @@ if ($tab == 'laporan') {
                     </thead>
                     <tbody>
                     <?php
-                    $q_tagihan = "SELECT t.*, u.nama, k.kode_kamar 
-                                  FROM tagihan t 
+                    $q_tagihan = "SELECT t.*, u.nama, k.kode_kamar FROM tagihan t 
                                   JOIN kontrak ko ON t.id_kontrak = ko.id_kontrak
                                   JOIN penghuni p ON ko.id_penghuni = p.id_penghuni
                                   JOIN pengguna u ON p.id_pengguna = u.id_pengguna
                                   JOIN kamar k ON ko.id_kamar = k.id_kamar
-                                  WHERE t.bulan_tagih = '$bulan_filter'
-                                  ORDER BY u.nama ASC";
+                                  WHERE t.bulan_tagih = '$bulan_filter' ORDER BY u.nama ASC";
                     $res_tagihan = $mysqli->query($q_tagihan);
                     
                     if($res_tagihan->num_rows > 0) {
@@ -198,9 +220,7 @@ if ($tab == 'laporan') {
                         <td><?= $statusBadge ?></td>
                         <td>
                             <?php if($t['status'] == 'BELUM'): ?>
-                                <a href="pembayaran_proses.php?act=bayar_cash&id=<?= $t['id_tagihan'] ?>" 
-                                   class="btn btn-secondary text-xs" 
-                                   style="padding:4px 8px;"
+                                <a href="pembayaran_proses.php?act=bayar_cash&id=<?= $t['id_tagihan'] ?>" class="btn btn-secondary text-xs" style="padding:4px 8px;"
                                    onclick="return confirm('Konfirmasi pembayaran TUNAI dari <?= $t['nama'] ?> senilai Rp <?= number_format($t['nominal']) ?>?')">
                                    💰 Terima Cash
                                 </a>
@@ -216,86 +236,259 @@ if ($tab == 'laporan') {
         </div>
     <?php endif; ?>
 
+    <?php if($tab == 'pengeluaran'): ?>
+        
+        <div class="flex justify-between items-center mb-8 flex-wrap gap-4" style="margin-bottom: 32px;">
+            <div>
+                <h3 class="font-bold text-lg">Daftar Pengeluaran</h3>
+                <p class="text-xs text-muted">Catat biaya listrik, air, perbaikan, dll.</p>
+            </div>
+            <button onclick="openModal()" class="btn btn-primary text-xs">
+                <i class="fa-solid fa-plus"></i> Catat Pengeluaran
+            </button>
+        </div>
+
+        <div class="grid-stats" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 32px;">
+            
+            <div class="card-white flex items-center gap-4" style="border-left: 4px solid var(--danger); padding: 24px;">
+                <div class="text-3xl text-red-500"><i class="fa-solid fa-money-bill-wave"></i></div>
+                <div>
+                    <div class="text-xs font-bold text-muted uppercase">Total Keluar (Bulan Ini)</div>
+                    <div class="text-xl font-bold text-main">Rp <?= number_format($total_keluar) ?></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-white">
+            <div style="overflow-x: auto;">
+                <table style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th>NO</th>
+                            <th>TANGGAL</th>
+                            <th>KEPERLUAN</th>
+                            <th>BIAYA</th>
+                            <th class="text-center">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php 
+                    if($res_pengeluaran->num_rows > 0) {
+                        while($row = $res_pengeluaran->fetch_assoc()): 
+                    ?>
+                        <tr>
+                            <td class="text-center text-muted"><?= $nomor++ ?></td>
+                            <td class="font-bold text-sm"><?= date('d M Y', strtotime($row['tanggal'])) ?></td>
+                            <td>
+                                <div class="font-bold"><?= htmlspecialchars($row['judul']) ?></div>
+                                <div class="text-xs text-muted"><?= htmlspecialchars($row['deskripsi']) ?></div>
+                            </td>
+                            <td class="font-bold" style="color:var(--danger);">Rp <?= number_format($row['biaya']) ?></td>
+                            <td class="text-center">
+                                <a href="pengeluaran_proses.php?act=hapus&id=<?= $row['id_pengeluaran'] ?>" onclick="return confirm('Hapus data ini?')" class="btn btn-danger text-xs" style="padding: 6px 10px;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endwhile; } else { echo "<tr><td colspan='5' class='text-center p-8 text-muted'>Belum ada data pengeluaran.</td></tr>"; } ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container" style="margin-top: 20px; display:flex; gap:5px; justify-content:center;">
+                <a href="<?= ($halaman > 1) ? "?tab=pengeluaran&halaman=".($halaman-1) : '#' ?>" 
+                   class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>" style="padding:6px 12px;">
+                   <i class="fa-solid fa-chevron-left"></i> Prev
+                </a>
+                
+                <?php for($x = 1; $x <= $total_halaman; $x++): ?>
+                    <a href="?tab=pengeluaran&halaman=<?= $x ?>" 
+                       class="btn text-xs <?= ($halaman == $x) ? 'btn-primary' : 'btn-secondary' ?>" style="padding:6px 12px;">
+                       <?= $x ?>
+                    </a>
+                <?php endfor; ?>
+
+                <a href="<?= ($halaman < $total_halaman) ? "?tab=pengeluaran&halaman=".($halaman+1) : '#' ?>" 
+                   class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>" style="padding:6px 12px;">
+                   Next <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div id="modalAdd" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4 border-b pb-2" style="border-color: var(--border);">
+                    <h3 class="font-bold text-lg">Catat Pengeluaran Baru</h3>
+                    <span onclick="closeModal()" style="cursor:pointer; font-size:24px; color:var(--text-muted);">&times;</span>
+                </div>
+                <form action="pengeluaran_proses.php" method="POST">
+                    <input type="hidden" name="act" value="tambah">
+                    <input type="hidden" name="redirect" value="keuangan_index.php?tab=pengeluaran">
+                    
+                    <div class="form-group mb-4">
+                        <label class="form-label block mb-1 text-sm font-bold">Judul Keperluan</label>
+                        <input type="text" name="judul" class="form-input w-full" placeholder="Contoh: Bayar Listrik..." required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label class="form-label block mb-1 text-sm font-bold">Tanggal</label>
+                            <input type="date" name="tanggal" class="form-input w-full" value="<?= date('Y-m-d') ?>" required>
+                        </div>
+                        <div>
+                            <label class="form-label block mb-1 text-sm font-bold">Biaya (Rp)</label>
+                            <input type="number" name="biaya" class="form-input w-full" placeholder="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label block mb-1 text-sm font-bold">Catatan Detail (Opsional)</label>
+                        <textarea name="deskripsi" class="form-input w-full" rows="2"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">Simpan Data</button>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php if($tab == 'laporan'): ?>
+        <?php
+        // Hitung Laba Bersih
+        $laba_bersih = $total_masuk_bln - $total_keluar_bln;
+        ?>
+
         <div id="area-print"> 
-            <div class="grid-stats">
-                <div class="card-white text-center">
-                    <div class="text-xs font-bold text-muted mb-2 uppercase">PEMASUKAN <?= date('F Y', strtotime($bulan_lap)) ?></div>
-                    <div class="text-2xl font-bold" style="color:var(--success);">Rp <?= number_format($total_masuk_bln, 0, ',', '.') ?></div>
+            <div class="card-white no-print mb-6 flex justify-between items-center flex-wrap gap-4">
+                <form method="get" class="flex items-center gap-2">
+                    <input type="hidden" name="tab" value="laporan">
+                    <label class="font-bold text-sm text-muted">Periode:</label>
+                    <input type="month" name="bulan" value="<?= $bulan_lap ?>" class="form-input text-sm" style="padding: 8px;" onchange="this.form.submit()">
+                </form>
+                
+                <div class="flex gap-2">
+                    <a href="laporan_export.php?bulan=<?= $bulan_lap ?>" target="_blank" class="btn btn-success text-xs" style="background:#16a34a; color:white; border:none; padding: 8px 12px;">
+                        <i class="fa-solid fa-file-excel"></i> Excel
+                    </a>
+                    <button onclick="window.print()" class="btn btn-secondary text-xs" style="padding: 8px 12px;">
+                        <i class="fa-solid fa-print"></i> Print / PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid-stats" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 32px; gap: 20px;">
+                <div class="card-white text-center" style="border-bottom: 4px solid var(--success); padding: 24px;">
+                    <div class="text-xs font-bold text-muted mb-2 uppercase">Total Pemasukan</div>
+                    <div class="text-2xl font-bold text-green-600">
+                        Rp <?= number_format($total_masuk_bln, 0, ',', '.') ?>
+                    </div>
+                    <div class="text-xs text-muted mt-1"><?= date('F Y', strtotime($bulan_lap)) ?></div>
                 </div>
                 
-                <div class="card-white text-center">
-                    <div class="text-xs font-bold text-muted mb-2 uppercase">TOTAL PENDAPATAN (SEMUA WAKTU)</div>
-                    <div class="text-2xl font-bold" style="color:var(--primary);">Rp <?= number_format($total_masuk, 0, ',', '.') ?></div>
+                <div class="card-white text-center" style="border-bottom: 4px solid var(--danger); padding: 24px;">
+                    <div class="text-xs font-bold text-muted mb-2 uppercase">Total Pengeluaran</div>
+                    <div class="text-2xl font-bold text-red-500">
+                        Rp <?= number_format($total_keluar_bln, 0, ',', '.') ?>
+                    </div>
+                    <div class="text-xs text-muted mt-1"><?= date('F Y', strtotime($bulan_lap)) ?></div>
                 </div>
 
-                <div class="card-white no-print flex flex-col justify-center gap-4">
-                    <form method="get" class="flex justify-center">
-                        <input type="hidden" name="tab" value="laporan">
-                        <input type="month" name="bulan" value="<?= $bulan_lap ?>" class="form-input w-full text-center" onchange="this.form.submit()">
-                    </form>
-                    
-                    <div class="flex gap-2">
-                        <a href="laporan_export.php?bulan=<?= $bulan_lap ?>" target="_blank" class="btn btn-success w-full text-center" style="background:#16a34a; color:white; border:none;">
-                            <i class="fa-solid fa-file-excel"></i> Excel
-                        </a>
-                        <button onclick="window.print()" class="btn btn-secondary w-full">
-                            <i class="fa-solid fa-print"></i> PDF
-                        </button>
+                <div class="card-white text-center" style="border-bottom: 4px solid var(--primary); padding: 24px;">
+                    <div class="text-xs font-bold text-muted mb-2 uppercase">Laba Bersih</div>
+                    <div class="text-2xl font-bold <?= $laba_bersih >= 0 ? 'text-blue-600' : 'text-red-600' ?>">
+                        Rp <?= number_format($laba_bersih, 0, ',', '.') ?>
                     </div>
+                    <div class="text-xs text-muted mt-1">Cash Flow Bulan Ini</div>
                 </div>
             </div>
 
             <div class="card-white">
-                <h3 class="font-bold text-lg mb-4">Rincian Transaksi</h3>
+                <h3 class="font-bold text-lg mb-6">Rincian Arus Kas (Cash Flow)</h3>
                 <div style="overflow-x: auto;">
                     <table style="width:100%;">
                         <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Keterangan</th>
-                                <th>Metode</th>
-                                <th>Jumlah</th>
+                            <tr style="border-bottom: 2px solid #f1f5f9;">
+                                <th style="padding: 12px;">TANGGAL</th>
+                                <th style="padding: 12px;">KETERANGAN</th>
+                                <th style="padding: 12px;">JENIS</th>
+                                <th style="padding: 12px; text-align:right;">NOMINAL</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            // Query Pemasukan
-                            $sql_prev = "SELECT p.id_pembayaran, p.waktu_verifikasi, p.jumlah, p.metode, p.ref_type, u.nama, km.kode_kamar 
-                                         FROM pembayaran p
-                                         LEFT JOIN booking b ON p.ref_id=b.id_booking AND p.ref_type='BOOKING'
-                                         LEFT JOIN tagihan t ON p.ref_id=t.id_tagihan AND p.ref_type='TAGIHAN'
-                                         LEFT JOIN kontrak k ON t.id_kontrak=k.id_kontrak
-                                         LEFT JOIN kamar km ON (b.id_kamar = km.id_kamar OR k.id_kamar = km.id_kamar)
-                                         LEFT JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
-                                         LEFT JOIN pengguna u ON (ph.id_pengguna=u.id_pengguna OR b.id_pengguna=u.id_pengguna)
-                                         WHERE p.status='DITERIMA' 
-                                         AND DATE_FORMAT(p.waktu_verifikasi, '%Y-%m') = '$bulan_lap'
-                                         ORDER BY p.waktu_verifikasi DESC";
-                            $res_prev = $mysqli->query($sql_prev);
+                            // QUERY COMPLEX: Menggabungkan (UNION) Pemasukan dan Pengeluaran
+                            // Bagian 1: Ambil Pemasukan
+                            $q_union = "
+                                SELECT 
+                                    p.waktu_verifikasi as tgl, 
+                                    p.jumlah as nominal, 
+                                    'MASUK' as tipe,
+                                    p.metode as metode,
+                                    CONCAT(
+                                        COALESCE(u.nama, 'User'), ' - ', 
+                                        p.ref_type, 
+                                        IF(km.kode_kamar IS NOT NULL, CONCAT(' (Kamar ', km.kode_kamar, ')'), '')
+                                    ) as deskripsi
+                                FROM pembayaran p
+                                LEFT JOIN booking b ON p.ref_id=b.id_booking AND p.ref_type='BOOKING'
+                                LEFT JOIN tagihan t ON p.ref_id=t.id_tagihan AND p.ref_type='TAGIHAN'
+                                LEFT JOIN kontrak k ON t.id_kontrak=k.id_kontrak
+                                LEFT JOIN kamar km ON (b.id_kamar = km.id_kamar OR k.id_kamar = km.id_kamar)
+                                LEFT JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
+                                LEFT JOIN pengguna u ON (ph.id_pengguna=u.id_pengguna OR b.id_pengguna=u.id_pengguna)
+                                WHERE p.status='DITERIMA' AND DATE_FORMAT(p.waktu_verifikasi, '%Y-%m') = '$bulan_lap'
+
+                                UNION ALL
+
+                                SELECT 
+                                    e.tanggal as tgl, 
+                                    e.biaya as nominal, 
+                                    'KELUAR' as tipe,
+                                    'KAS' as metode,
+                                    CONCAT(e.judul, IF(e.deskripsi != '', CONCAT(' - ', e.deskripsi), '')) as deskripsi
+                                FROM pengeluaran e
+                                WHERE DATE_FORMAT(e.tanggal, '%Y-%m') = '$bulan_lap'
+
+                                ORDER BY tgl DESC
+                            ";
+
+                            $res_union = $mysqli->query($q_union);
                             
-                            if($res_prev->num_rows > 0){
-                                while($d = $res_prev->fetch_assoc()){
+                            if($res_union && $res_union->num_rows > 0){
+                                while($d = $res_union->fetch_assoc()){
+                                    $is_masuk = ($d['tipe'] == 'MASUK');
+                                    $color = $is_masuk ? 'text-green-600' : 'text-red-500';
+                                    $sign = $is_masuk ? '+' : '-';
+                                    $bg_badge = $is_masuk ? '#dcfce7' : '#fee2e2';
+                                    $text_badge = $is_masuk ? '#166534' : '#991b1b';
                             ?>
-                            <tr>
-                                <td><?= date('d/m/Y', strtotime($d['waktu_verifikasi'])) ?></td>
-                                <td>
-                                    <div class="font-bold"><?= htmlspecialchars($d['nama'] ?? 'User') ?></div>
-                                    <div class="text-xs text-muted">
-                                        <?= $d['ref_type'] ?> - Kamar <?= $d['kode_kamar'] ?? '-' ?>
-                                    </div>
+                            <tr style="border-bottom: 1px solid #f8fafc;">
+                                <td style="padding: 12px;"><?= date('d/m/Y', strtotime($d['tgl'])) ?></td>
+                                <td style="padding: 12px;">
+                                    <div class="font-bold text-sm text-slate-700"><?= htmlspecialchars($d['deskripsi']) ?></div>
+                                    <div class="text-xs text-muted"><?= $d['metode'] ?></div>
                                 </td>
-                                <td><?= $d['metode'] ?></td>
-                                <td class="font-bold" style="color:var(--success);">+ Rp <?= number_format($d['jumlah']) ?></td>
+                                <td style="padding: 12px;">
+                                    <span style="background:<?= $bg_badge ?>; color:<?= $text_badge ?>; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:bold;">
+                                        <?= $d['tipe'] ?>
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; text-align:right;" class="font-bold <?= $color ?>">
+                                    <?= $sign ?> Rp <?= number_format($d['nominal']) ?>
+                                </td>
                             </tr>
-                            <?php }} else { echo "<tr><td colspan='4' class='text-center p-4 text-muted'>Belum ada data pemasukan bulan ini.</td></tr>"; } ?>
+                            <?php }} else { echo "<tr><td colspan='4' class='text-center p-8 text-muted'>Belum ada transaksi bulan ini.</td></tr>"; } ?>
                         </tbody>
+                        <tfoot style="background-color: #f8fafc; font-weight: bold;">
+                            <tr>
+                                <td colspan="3" style="padding: 16px; text-align: left;">LABA BERSIH :</td>
+                                <td style="padding: 16px; text-align: right; font-size: 1.1em;" class="<?= $laba_bersih >= 0 ? 'text-blue-600' : 'text-red-600' ?>">
+                                    Rp <?= number_format($laba_bersih) ?>
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
         </div>
     <?php endif; ?>
-
-  </main>
-</body>
-</html>
