@@ -142,11 +142,14 @@ if ($tab == 'pengeluaran') {
                         </td>
                         <td class="font-bold">Rp <?= number_format($row['jumlah']) ?></td>
                         <td>
-                            <?php if($row['bukti_path']): ?>
-                                <a href="../assets/uploads/bukti_tf/<?= $row['bukti_path'] ?>" target="_blank" class="text-xs btn btn-secondary" style="padding:4px 8px;">
-                                    <i class="fa-solid fa-image"></i> Lihat
-                                </a>
-                            <?php else: ?> - <?php endif; ?>
+                            <?php if(!empty($row['ktp_path_opt'])): ?>
+                            <!-- Menggunakan view_file.php dengan parameter type=ktp -->
+                            <a href="../view_file.php?type=ktp&file=<?= htmlspecialchars($row['ktp_path_opt']) ?>" target="_blank" style="color:var(--primary); font-weight:600;">
+                                <i class="fa-solid fa-id-card"></i> Lihat KTP
+                            </a>
+                        <?php else: ?> 
+                            <span class="text-muted">-</span> 
+                        <?php endif; ?>
                         </td>
                         <td>
                             <div class="flex gap-2">

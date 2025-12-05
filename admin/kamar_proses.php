@@ -1,5 +1,6 @@
 <?php
 session_start();
+require '../inc/utils.php';
 require '../inc/koneksi.php';
 require '../inc/guard.php';
 require '../inc/upload.php'; 
@@ -17,7 +18,15 @@ if ($act == 'tambah') {
     }
 
     $stmt = $mysqli->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, 'TERSEDIA', ?, ?)");
-    $stmt->bind_param('siidiss', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $foto_cover, $_POST['catatan']);
+    $kode = bersihkan_input($_POST['kode_kamar']);
+    $lantai = intval($_POST['lantai']); // Angka pakai intval lebih aman
+    $luas = bersihkan_input($_POST['luas_m2']);
+    $harga = intval($_POST['harga']); // Harga pasti angka
+    $catatan = bersihkan_input($_POST['catatan']);
+    $id_tipe = intval($_POST['id_tipe']);
+
+    $stmt = $mysqli->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, 'TERSEDIA', ?, ?)");
+    $stmt->bind_param('siidiss', $kode, $id_tipe, $lantai, $luas, $harga, $foto_cover, $catatan);
     
     if ($stmt->execute()) {
         $id_kamar_baru = $stmt->insert_id;
@@ -40,25 +49,20 @@ if ($act == 'tambah') {
 // 2. EDIT KAMAR
 elseif ($act == 'edit') {
     $id_kamar = intval($_POST['id_kamar']);
+    $kode = bersihkan_input($_POST['kode_kamar']);
+    $lantai = intval($_POST['lantai']);
+    $luas = bersihkan_input($_POST['luas_m2']);
+    $harga = intval($_POST['harga']);
+    $catatan = bersihkan_input($_POST['catatan']);
+    $id_tipe = intval($_POST['id_tipe']);
     $foto_cover = null;
     
     // Cek jika ada upload foto cover baru
-    if (!empty($_FILES['foto_cover']['name'])) {
-        // --- LOGIKA BARU: HAPUS FOTO LAMA ---
-        // 1. Cari nama foto lama di database sebelum di-update
-        $q_lama = $mysqli->query("SELECT foto_cover FROM kamar WHERE id_kamar=$id_kamar");
-        $d_lama = $q_lama->fetch_assoc();
-        $file_lama = $d_lama['foto_cover'];
-
-        // 2. Hapus file fisik jika ada
-        if ($file_lama && file_exists("../assets/uploads/kamar/$file_lama")) {
-            unlink("../assets/uploads/kamar/$file_lama");
-        }
-        // -------------------------------------
-
-        // 3. Upload foto baru
-        $foto_cover = upload_process($_FILES['foto_cover'], 'kamar');
-    }
+    if ($foto_cover) {
+    $stmt->bind_param('siidissi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $foto_cover, $id_kamar);
+} else {
+    $stmt->bind_param('siidisi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $id_kamar);
+}
 
     $query = "UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, catatan=?";
     if ($foto_cover) { $query .= ", foto_cover=?"; }

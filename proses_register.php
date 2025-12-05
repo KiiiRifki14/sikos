@@ -1,4 +1,5 @@
 <?php
+require '/inc/utils.php';
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
 session_start();
@@ -7,10 +8,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_check($_POST['csrf'])) {
     die('Invalid Request');
 }
 
-$email = trim($_POST['email']);
-$password = $_POST['password'];
-$nama = htmlspecialchars($_POST['nama']);
-$no_hp = htmlspecialchars($_POST['no_hp']);
+$email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL); // Khusus email pakai filter bawaan PHP
+$password = $_POST['password']; // Password JANGAN dibersihkan (biarkan apa adanya untuk di-hash)
+$nama = bersihkan_input($_POST['nama']);
+$no_hp = bersihkan_input($_POST['no_hp']);
 
 // Validasi
 if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) {

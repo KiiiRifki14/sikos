@@ -1,5 +1,6 @@
 <?php
 session_start();
+require '../inc/utils.php';
 require '../inc/koneksi.php';
 require '../inc/guard.php';
 
@@ -9,8 +10,8 @@ $act = $_GET['act'] ?? '';
 
 // --- TAMBAH FASILITAS ---
 if ($act == 'tambah') {
-    $nama = $_POST['nama'];
-    $icon = $_POST['icon']; // Contoh: fa-wifi
+    $nama = bersihkan_input($_POST['nama']);
+    $icon = bersihkan_input($_POST['icon']);
 
     $stmt = $mysqli->prepare("INSERT INTO fasilitas_master (nama_fasilitas, icon) VALUES (?, ?)");
     $stmt->bind_param('ss', $nama, $icon);
@@ -25,8 +26,8 @@ if ($act == 'tambah') {
 // --- EDIT FASILITAS ---
 elseif ($act == 'edit') {
     $id = intval($_POST['id_fasilitas']);
-    $nama = $_POST['nama'];
-    $icon = $_POST['icon'];
+    $nama = bersihkan_input($_POST['nama']);
+    $icon = bersihkan_input($_POST['icon']);
 
     $stmt = $mysqli->prepare("UPDATE fasilitas_master SET nama_fasilitas=?, icon=? WHERE id_fasilitas=?");
     $stmt->bind_param('ssi', $nama, $icon, $id);

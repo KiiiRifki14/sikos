@@ -28,4 +28,14 @@ function display_flash_message() {
         </div>';
     }
 }
+// --- FUNGSI SANITASI INPUT ---
+function bersihkan_input($data) {
+    // 1. Hapus spasi di awal/akhir
+    $data = trim($data);
+    // 2. Hapus backslashes (\)
+    $data = stripslashes($data);
+    // 3. Konversi karakter spesial HTML (mencegah XSS saat input)
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return $data;
+}
 ?>

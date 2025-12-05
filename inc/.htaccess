@@ -1,2 +1,2 @@
-# Blokir akses langsung ke semua file di folder ini
+# Blokir akses langsung ke file di folder ini
 Deny from all
