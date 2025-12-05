@@ -5,40 +5,23 @@ require 'inc/csrf.php';
 require 'inc/upload.php'; 
 
 if (!isset($_SESSION['id_pengguna'])) { header('Location: login.php'); exit; }
-
 $id_pengguna = $_SESSION['id_pengguna'];
-$user = $mysqli->query("SELECT nama FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
 
-// Proses Tambah Keluhan
+// Logic Tambah (Sama, disederhanakan tampilannya)
 $msg = '';
 if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=='tambah') {
-    if (!csrf_check($_POST['csrf'])) {
-        $msg = '<div class="bg-red-100 text-red-700 p-3 rounded mb-4">Token tidak valid! Refresh halaman.</div>';
-    } else {
+    if (csrf_check($_POST['csrf'])) {
         $judul = htmlspecialchars($_POST['judul']);
         $desk = htmlspecialchars($_POST['deskripsi']);
         $prioritas = $_POST['prioritas'];
+        $foto_path = !empty($_FILES['foto']['name']) ? upload_process($_FILES['foto'], 'keluhan') : null;
         
-        $foto_path = null;
-        if (!empty($_FILES['foto']['name'])) {
-            $foto_path = upload_process($_FILES['foto'], 'keluhan'); 
-        }
-
-        $row_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-        
-        if ($row_penghuni) {
-            $id_penghuni = $row_penghuni['id_penghuni'];
-            $q_kamar = $mysqli->query("SELECT id_kamar FROM kontrak WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
-            $id_kamar = ($q_kamar->num_rows > 0) ? $q_kamar->fetch_object()->id_kamar : null;
-
-            $stmt = $mysqli->prepare("INSERT INTO keluhan (id_penghuni, id_kamar, judul, deskripsi, prioritas, status, foto_path) VALUES (?, ?, ?, ?, ?, 'BARU', ?)");
-            $stmt->bind_param('iissss', $id_penghuni, $id_kamar, $judul, $desk, $prioritas, $foto_path);
-            
-            if ($stmt->execute()) {
-                $msg = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:24px;">✅ Keluhan berhasil dikirim! Admin akan segera merespon.</div>';
-            } else {
-                $msg = '<div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:24px;">Gagal menyimpan data ke database.</div>';
-            }
+        $row_p = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_assoc();
+        if ($row_p) {
+            $id_penghuni = $row_p['id_penghuni'];
+            $stmt = $mysqli->prepare("INSERT INTO keluhan (id_penghuni, judul, deskripsi, prioritas, status, foto_path) VALUES (?, ?, ?, ?, 'BARU', ?)");
+            $stmt->bind_param('issss', $id_penghuni, $judul, $desk, $prioritas, $foto_path);
+            if($stmt->execute()) echo "<script>alert('Keluhan terkirim!'); window.location='keluhan.php';</script>";
         }
     }
 }
@@ -46,267 +29,112 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <title>Keluhan - SIKOS</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="assets/css/app.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script defer src="assets/js/main.js"></script>
-    <style>
-      /* Modal tweaks */
-      .modal { display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.45); }
-      .modal-content { animation: slideDown 260ms ease; background:#fff; margin: 6% auto; padding:0; border-radius:12px; width: 94%; max-width: 760px; overflow:hidden; }
-      @keyframes slideDown { from { transform: translateY(-8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
-    </style>
+  <meta charset="utf-8">
+  <title>Lapor Keluhan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="assets/css/app.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+      /* Modal Custom Khusus Penghuni */
+      .modal-penghuni {
+          display: none; position: fixed; z-index: 99999; 
+          left: 0; top: 0; width: 100%; height: 100%; 
+          background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
+      }
+      .modal-box {
+          background: white; margin: 10vh auto; padding: 25px; border-radius: 16px;
+          width: 90%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+          animation: slideUp 0.3s ease;
+      }
+      @keyframes slideUp { from {transform: translateY(50px); opacity:0;} to {transform: translateY(0); opacity:1;} }
+  </style>
 </head>
-<body class="dashboard-body">
-
+<body>
   <?php include 'components/sidebar_penghuni.php'; ?>
-
-  <main class="main-content" aria-labelledby="keluhan-heading">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+  <main class="main-content">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <div>
-            <h1 id="keluhan-heading" style="font-size:22px; font-weight:700; color:#1e293b;">Layanan Keluhan</h1>
-            <p style="color:#64748b; margin:0; font-size:14px;">Kirim laporan kerusakan atau gangguan, dan pantau progresnya.</p>
+            <h1 style="font-size:20px; font-weight:700; color:#1e293b;">Layanan Keluhan</h1>
+            <p style="font-size:13px; color:#64748b;">Laporkan kerusakan fasilitas di sini.</p>
         </div>
-        <div>
-            <a href="#form-keluhan" class="btn btn-primary">Ajukan Keluhan</a>
-        </div>
+        <button onclick="document.getElementById('modalTambah').style.display='block'" class="btn btn-primary" style="padding:10px 20px; font-size:13px;">
+            <i class="fa-solid fa-plus mr-2"></i> Buat Laporan
+        </button>
     </div>
 
-    <?= $msg ?>
-
-    <div class="card-white mb-6" id="form-keluhan" aria-labelledby="form-keluhan-title">       
-        <h3 id="form-keluhan-title" class="font-bold text-slate-800 mb-3" style="border-bottom:1px solid #f1f5f9; padding-bottom:10px;">Ajukan Keluhan Baru</h3>
-        <form method="post" enctype="multipart/form-data">
-            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-            <input type="hidden" name="act" value="tambah">
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="md:col-span-2">
-                    <label class="form-label">Judul Masalah</label>
-                    <input type="text" name="judul" class="form-input w-full" placeholder="Contoh: AC Bocor, Lampu Mati" required>
+    <div style="display:flex; flex-direction:column; gap:15px;">
+        <?php
+        $idp = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
+        $res = $mysqli->query("SELECT * FROM keluhan WHERE id_penghuni=$idp ORDER BY dibuat_at DESC");
+        
+        if($res->num_rows > 0){
+            while($row = $res->fetch_assoc()){
+                $st = $row['status'];
+                $badgeColor = ($st=='BARU')?'#fee2e2; color:#dc2626':(($st=='PROSES')?'#fef3c7; color:#d97706':'#dcfce7; color:#166534');
+        ?>
+        <div class="card-white" style="display:flex; gap:15px; padding:20px; border-left:4px solid <?= ($st=='BARU'?'#ef4444':($st=='PROSES'?'#f59e0b':'#22c55e')) ?>;">
+            <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-size:12px; font-weight:600; color:#94a3b8;"><?= date('d M Y, H:i', strtotime($row['dibuat_at'])) ?></span>
+                    <span style="font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; background:<?= $badgeColor ?>"><?= $st ?></span>
                 </div>
-                <div>
-                    <label class="form-label">Prioritas</label>
-                    <select name="prioritas" class="form-input w-full">
-                        <option value="LOW">Rendah</option>
-                        <option value="MEDIUM" selected>Sedang</option>
-                        <option value="HIGH">Tinggi (Urgent)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="mb-4">
-                <label class="form-label">Deskripsi Detail</label>
-                <textarea name="deskripsi" class="form-input w-full" rows="3" placeholder="Jelaskan detail kerusakan..." required></textarea>
-            </div>
-
-            <div class="mb-6">
-                <label class="form-label">Foto Bukti (Opsional)</label>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <label for="foto_keluhan_input" class="btn btn-secondary" style="padding:8px 12px; cursor:pointer;">
-                        <i class="fa-solid fa-image mr-2"></i> Pilih Foto
-                    </label>
-                    <input id="foto_keluhan_input" type="file" name="foto" accept="image/*" style="display:none;">
-                    <div style="color:#64748b; font-size:13px;">Maks 2MB. JPG/PNG/WebP.</div>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn-primary w-full py-3 font-bold rounded-lg shadow-lg"> <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Laporan</button>
-        </form>
-    </div>
-
-    <div class="card-white">
-        <h3 class="font-bold text-slate-800 mb-4">Riwayat Keluhan Saya</h3>
-        <div style="overflow-x:auto;">
-            <table class="w-full text-sm text-left text-slate-600" role="table">
-                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
-                    <tr>
-                        <th class="px-6 py-3">Tanggal</th>
-                        <th class="px-6 py-3">Masalah</th>
-                        <th class="px-6 py-3 text-center" style="width:240px;">Status Progress</th>
-                        <th class="px-6 py-3 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php
-                $idp = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
-                $res = $mysqli->query("SELECT * FROM keluhan WHERE id_penghuni=$idp ORDER BY dibuat_at DESC");
+                <h3 style="font-size:16px; font-weight:700; color:#1e293b; margin-bottom:5px;"><?= htmlspecialchars($row['judul']) ?></h3>
+                <p style="font-size:14px; color:#475569; margin-bottom:10px;"><?= htmlspecialchars($row['deskripsi']) ?></p>
                 
-                if ($res->num_rows > 0) {
-                    while($row=$res->fetch_assoc()){
-                        $s1_cls = 'step-inactive'; $l1_cls = 'bg-slate-200';
-                        $s2_cls = 'step-inactive'; $l2_cls = 'bg-slate-200';
-                        $s3_cls = 'step-inactive';
-                        $status_text = '';
-
-                        if($row['status'] == 'BARU') {
-                            $s1_cls = 'step-active-red'; 
-                            $status_text = '<span class="text-red-500 font-bold" style="font-size:12px;">TERKIRIM</span>';
-                        } elseif ($row['status'] == 'PROSES') {
-                            $s1_cls = 'step-active-yellow';
-                            $l1_cls = 'line-active-yellow';
-                            $s2_cls = 'step-active-yellow';
-                            $status_text = '<span class="text-yellow-600 font-bold" style="font-size:12px;">DIPROSES</span>';
-                        } elseif ($row['status'] == 'SELESAI') {
-                            $s1_cls = 'step-active-green';
-                            $l1_cls = 'line-active-green';
-                            $s2_cls = 'step-active-green';
-                            $l2_cls = 'line-active-green';
-                            $s3_cls = 'step-active-green';
-                            $status_text = '<span class="text-green-600 font-bold" style="font-size:12px;">SELESAI</span>';
-                        }
-                ?>
-                    <tr class="bg-white border-b hover:bg-slate-50 transition">
-                        <td class="px-6 py-4"><?= date('d/m/Y', strtotime($row['dibuat_at'])) ?></td>
-                        <td class="px-6 py-4">
-                            <div class="font-bold text-slate-800"><?= htmlspecialchars($row['judul']) ?></div>
-                            <div class="text-xs text-slate-500 truncate max-w-[260px]"><?= htmlspecialchars($row['deskripsi']) ?></div>
-                        </td>
-                        
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center w-full px-2">
-                                <div class="step-circle <?= $s1_cls ?> w-5 h-5 text-[10px]">1</div>
-                                <div class="step-line <?= $l1_cls ?> h-1"></div>
-                                <div class="step-circle <?= $s2_cls ?> w-5 h-5 text-[10px]">2</div>
-                                <div class="step-line <?= $l2_cls ?> h-1"></div>
-                                <div class="step-circle <?= $s3_cls ?> w-5 h-5 text-[10px]">3</div>
-                            </div>
-                            <div class="mt-1"><?= $status_text ?></div>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            <button class="text-blue-600 hover:text-blue-800 font-medium text-xs border border-blue-200 px-3 py-1 rounded hover:bg-blue-50 open-modal transition"
-                                data-judul="<?= htmlspecialchars($row['judul']) ?>"
-                                data-deskripsi="<?= htmlspecialchars($row['deskripsi']) ?>"
-                                data-status="<?= $row['status'] ?>"
-                                data-tanggapan="<?= htmlspecialchars($row['tanggapan_admin'] ?? '') ?>"
-                                data-foto="<?= $row['foto_path'] ? 'assets/uploads/keluhan/' . $row['foto_path'] : '' ?>">
-                                Lihat Detail
-                            </button>
-                        </td>
-                    </tr>
-                <?php 
-                    } 
-                } else {
-                    echo '<tr><td colspan="4" class="text-center py-8 text-slate-400">Belum ada riwayat keluhan.</td></tr>';
-                }
-                ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="modalDetail" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
-        <div class="modal-content">
-            <div class="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-start">
-                <div>
-                    <h3 class="font-bold text-lg text-slate-800">Detail Perkembangan</h3>
-                    <p class="text-xs text-slate-500 mt-1">Pantau status laporan Anda</p>
-                </div>
-                <button class="close text-slate-400 hover:text-red-500 text-2xl cursor-pointer font-bold" aria-label="Tutup">&times;</button>
-            </div>
-
-            <div class="p-6">
-                <div class="flex items-center justify-between w-full max-w-sm mx-auto mb-8">
-                    <div class="flex flex-col items-center relative">
-                        <div id="step_1" class="step-circle step-inactive w-10 h-10 text-sm"><i class="fa-solid fa-file-pen"></i></div>
-                        <span class="text-[10px] font-bold mt-2 text-slate-500">TERKIRIM</span>
+                <?php if(!empty($row['tanggapan_admin'])): ?>
+                    <div style="background:#eff6ff; padding:12px; border-radius:8px; font-size:13px; color:#1e3a8a; border:1px solid #dbeafe;">
+                        <strong><i class="fa-solid fa-headset mr-1"></i> Admin:</strong> <?= $row['tanggapan_admin'] ?>
                     </div>
-                    <div id="line_1" class="step-line h-1"></div>
-                    <div class="flex flex-col items-center relative">
-                        <div id="step_2" class="step-circle step-inactive w-10 h-10 text-sm"><i class="fa-solid fa-wrench"></i></div>
-                        <span class="text-[10px] font-bold mt-2 text-slate-500">DIPROSES</span>
-                    </div>
-                    <div id="line_2" class="step-line h-1"></div>
-                    <div class="flex flex-col items-center relative">
-                        <div id="step_3" class="step-circle step-inactive w-10 h-10 text-sm"><i class="fa-solid fa-check"></i></div>
-                        <span class="text-[10px] font-bold mt-2 text-slate-500">SELESAI</span>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <h4 class="font-bold text-sm text-blue-800 mb-1" id="m_judul"></h4>
-                        <p class="text-sm text-blue-600" id="m_deskripsi"></p>
-                    </div>
-
-                    <div id="m_foto_box" class="hidden">
-                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">Foto Anda</p>
-                        <img id="m_foto" src="" class="h-32 rounded-lg border border-slate-200 object-cover" alt="Foto keluhan">
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">Respon Admin / Teknisi</p>
-                        <div id="m_tanggapan" class="bg-white p-4 rounded-lg border border-slate-200 text-sm text-slate-600 max-h-40 overflow-y-auto shadow-inner"></div>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
+        <?php }} else { ?>
+            <div style="text-align:center; padding:40px; color:#94a3b8; border:2px dashed #cbd5e1; border-radius:12px;">
+                Belum ada riwayat keluhan.
+            </div>
+        <?php } ?>
     </div>
-
   </main>
 
-  <script>
-    const modal = document.getElementById("modalDetail");
-    const closeBtn = document.querySelector(".close");
+  <div id="modalTambah" class="modal-penghuni">
+      <div class="modal-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <h3 style="font-size:18px; font-weight:700;">Buat Laporan Baru</h3>
+              <span onclick="document.getElementById('modalTambah').style.display='none'" style="cursor:pointer; font-size:24px;">&times;</span>
+          </div>
+          
+          <form method="post" enctype="multipart/form-data">
+              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+              <input type="hidden" name="act" value="tambah">
+              
+              <div class="form-group">
+                  <label class="form-label">Judul Masalah</label>
+                  <input type="text" name="judul" class="form-input" placeholder="Contoh: AC Bocor" required>
+              </div>
+              
+              <div class="form-group">
+                  <label class="form-label">Prioritas</label>
+                  <select name="prioritas" class="form-input">
+                      <option value="LOW">Rendah</option>
+                      <option value="MEDIUM" selected>Sedang</option>
+                      <option value="HIGH">Darurat</option>
+                  </select>
+              </div>
 
-    function updateStepper(status) {
-        ['step_1','step_2','step_3'].forEach(id => document.getElementById(id).className = 'step-circle step-inactive w-10 h-10 text-sm');
-        ['line_1','line_2'].forEach(id => document.getElementById(id).className = 'step-line bg-slate-200 h-1');
+              <div class="form-group">
+                  <label class="form-label">Deskripsi Detail</label>
+                  <textarea name="deskripsi" class="form-input" rows="3" required></textarea>
+              </div>
 
-        const s1 = document.getElementById('step_1');
-        const s2 = document.getElementById('step_2');
-        const s3 = document.getElementById('step_3');
-        const l1 = document.getElementById('line_1');
-        const l2 = document.getElementById('line_2');
+              <div class="form-group">
+                  <label class="form-label">Foto (Opsional)</label>
+                  <input type="file" name="foto" class="form-input" accept="image/*">
+              </div>
 
-        const baseClass = "step-circle w-10 h-10 text-sm ";
-
-        if (status === 'BARU') {
-            s1.className = baseClass + 'step-active-red';
-        } else if (status === 'PROSES') {
-            s1.className = baseClass + 'step-active-yellow';
-            l1.className = 'step-line line-active-yellow h-1';
-            s2.className = baseClass + 'step-active-yellow';
-        } else if (status === 'SELESAI') {
-            s1.className = baseClass + 'step-active-green';
-            l1.className = 'step-line line-active-green h-1';
-            s2.className = baseClass + 'step-active-green';
-            l2.className = 'step-line line-active-green h-1';
-            s3.className = baseClass + 'step-active-green';
-        }
-    }
-
-    document.querySelectorAll('.open-modal').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('m_judul').textContent = this.getAttribute('data-judul');
-            document.getElementById('m_deskripsi').textContent = this.getAttribute('data-deskripsi');
-            
-            const tanggapan = this.getAttribute('data-tanggapan');
-            document.getElementById('m_tanggapan').innerHTML = tanggapan ? tanggapan : '<i class="text-slate-400">Belum ada respon dari admin.</i>';
-
-            const foto = this.getAttribute('data-foto');
-            const fotoBox = document.getElementById('m_foto_box');
-            if(foto) {
-                fotoBox.classList.remove('hidden');
-                document.getElementById('m_foto').src = foto;
-                document.getElementById('m_foto').alt = 'Foto keluhan';
-            } else {
-                fotoBox.classList.add('hidden');
-            }
-
-            updateStepper(this.getAttribute('data-status'));
-            modal.style.display = "block";
-            modal.setAttribute('aria-hidden','false');
-            closeBtn.focus();
-        });
-    });
-
-    closeBtn.onclick = function() { modal.style.display = "none"; modal.setAttribute('aria-hidden','true'); }
-    window.addEventListener('click', function(event) { if (event.target == modal) { modal.style.display = "none"; modal.setAttribute('aria-hidden','true'); }});
-    window.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ modal.style.display = "none"; modal.setAttribute('aria-hidden','true'); }});
-  </script>
+              <button type="submit" class="btn btn-primary w-full" style="padding:12px;">Kirim Laporan</button>
+          </form>
+      </div>
+  </div>
 </body>
 </html>

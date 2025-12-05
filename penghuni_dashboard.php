@@ -3,15 +3,10 @@ session_start();
 require 'inc/koneksi.php';
 require 'inc/utils.php';
 
-// Cek Login & Peran
-if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') { 
-    header('Location: login.php'); exit; 
-}
+if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') { header('Location: login.php'); exit; }
 
 $id_pengguna = $_SESSION['id_pengguna'];
-// Ambil data user
 $user = $mysqli->query("SELECT * FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-// Ambil data penghuni & kontrak aktif
 $id_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
 
 $kontrak = null;
@@ -19,119 +14,98 @@ if($id_penghuni) {
     $kontrak = $mysqli->query("SELECT k.*, km.kode_kamar, km.harga FROM kontrak k JOIN kamar km ON k.id_kamar=km.id_kamar WHERE k.id_penghuni=$id_penghuni AND k.status='AKTIF'")->fetch_assoc();
 }
 
-// LOGIKA NOTIFIKASI (BANNER)
-$notif_banner = '';
-if (isset($_GET['msg'])) {
-    if ($_GET['msg'] == 'pembayaran_berhasil') {
-        $notif_banner = '
-        <div role="status" aria-live="polite" style="background-color: #dcfce7; border: 1px solid #22c55e; color: #15803d; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; display:flex; align-items:center; gap:12px;">
-            <i class="fa-solid fa-circle-check" style="font-size:20px;"></i>
-            <div>
-                <strong style="display:block; margin-bottom:2px;">Pembayaran Berhasil Diupload!</strong>
-                <span style="font-size:14px;">Bukti transfer Anda sudah masuk. Mohon tunggu verifikasi admin 1x24 jam.</span>
-            </div>
-        </div>';
-    }
+$tagihan_pending = 0;
+if ($kontrak) {
+    $tagihan_pending = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} AND status='BELUM'")->fetch_row()[0];
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <title>Dashboard Penghuni</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="dashboard-body">
+<body> <?php include 'components/sidebar_penghuni.php'; ?>
 
-<?php include 'components/sidebar_penghuni.php'; ?>
+  <main class="main-content">
+      
+      <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius:16px; padding:30px; color:white; margin-bottom:30px; position:relative; overflow:hidden;">
+          <i class="fa-solid fa-house-chimney" style="position:absolute; right:-20px; bottom:-30px; font-size:140px; color:rgba(255,255,255,0.1); transform:rotate(-15deg);"></i>
+          <div style="position:relative; z-index:2;">
+              <h2 style="font-size:22px; font-weight:700; margin-bottom:5px;">Halo, <?= htmlspecialchars(explode(' ', $user['nama'])[0]) ?>! 👋</h2>
+              <p style="opacity:0.9; font-size:14px; max-width:500px;">Selamat datang di Dashboard. Akses semua kebutuhan kost Anda di sini dengan mudah.</p>
+              
+              <?php if($tagihan_pending > 0): ?>
+                  <div style="margin-top:20px; display:inline-flex; align-items:center; background:rgba(255,255,255,0.2); padding:10px 15px; border-radius:8px; border:1px solid rgba(255,255,255,0.3);">
+                      <i class="fa-solid fa-circle-exclamation" style="color:#fcd34d; margin-right:10px;"></i>
+                      <span style="font-size:13px; font-weight:500;">Ada <b><?= $tagihan_pending ?> Tagihan</b> belum dibayar.</span>
+                      <a href="tagihan_saya.php" style="margin-left:15px; background:white; color:#2563eb; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; text-decoration:none;">Bayar</a>
+                  </div>
+              <?php endif; ?>
+          </div>
+      </div>
 
-<main class="main-content" aria-labelledby="welcome-heading">
-    <?= $notif_banner ?>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:20px; margin-bottom:30px;">
+          
+          <div class="card-white" style="display:flex; align-items:center; gap:15px; padding:20px;">
+              <div style="width:50px; height:50px; background:#dcfce7; color:#166534; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                  <i class="fa-solid fa-door-open"></i>
+              </div>
+              <div>
+                  <div style="font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase;">Kamar Anda</div>
+                  <div style="font-size:18px; font-weight:700; color:#1e293b;"><?= $kontrak['kode_kamar'] ?? '-' ?></div>
+              </div>
+          </div>
 
-    <header style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px;">
-        <div>
-            <h1 id="welcome-heading" style="font-size:22px; font-weight:700; color:#1e293b; margin-bottom:6px;">Selamat Datang, <?= htmlspecialchars($user['nama']) ?></h1>
-            <p style="color:#64748b; margin:0; font-size:14px;">Ringkasan singkat status sewa & tindakan cepat untuk penghuni.</p>
-        </div>
+          <div class="card-white" style="display:flex; align-items:center; gap:15px; padding:20px;">
+              <div style="width:50px; height:50px; background:#dbeafe; color:#1e40af; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                  <i class="fa-regular fa-calendar-check"></i>
+              </div>
+              <div>
+                  <div style="font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase;">Akhir Sewa</div>
+                  <div style="font-size:18px; font-weight:700; color:#1e293b;">
+                      <?= $kontrak ? date('d M Y', strtotime($kontrak['tanggal_selesai'])) : '-' ?>
+                  </div>
+              </div>
+          </div>
 
-        <div style="display:flex; gap:8px; align-items:center;">
-            <a href="tagihan_saya.php" class="btn btn-secondary" style="padding:8px 12px; display:inline-flex; align-items:center;">
-                <i class="fa-solid fa-credit-card mr-2"></i> Tagihan
-            </a>
-            <a href="keluhan.php" class="btn btn-primary" style="padding:8px 12px; display:inline-flex; align-items:center;">
-                <i class="fa-solid fa-triangle-exclamation mr-2"></i> Ajukan Keluhan
-            </a>
-        </div>
-    </header>
+          <div class="card-white" style="display:flex; align-items:center; gap:15px; padding:20px;">
+              <div style="width:50px; height:50px; background:#ffedd5; color:#9a3412; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                  <i class="fa-solid fa-file-invoice-dollar"></i>
+              </div>
+              <div>
+                  <div style="font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase;">Tagihan Aktif</div>
+                  <div style="font-size:18px; font-weight:700; color:#1e293b;">
+                      <?= $tagihan_pending > 0 ? 'Rp '.number_format($kontrak['harga'] ?? 0) : 'Lunas' ?>
+                  </div>
+              </div>
+          </div>
+      </div>
 
-    <section class="grid-stats" aria-label="Ringkasan">
-        <div class="card-white" role="article" aria-labelledby="contract-status">
-            <div id="contract-status" style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Status Kontrak</div>
-            <?php if($kontrak): ?>
-                <div style="font-size:26px; font-weight:800; color:#16a34a; margin-top:8px; margin-bottom:6px;">AKTIF</div>
-                <div style="font-size:13px; color:#64748b;">Berakhir: <strong><?= date('d M Y', strtotime($kontrak['tanggal_selesai'])) ?></strong></div>
-                <div style="margin-top:12px;"><a href="kamar_saya.php" class="btn btn-secondary">Lihat Kamar Saya</a></div>
-            <?php else: ?>
-                <div style="font-size:22px; font-weight:700; color:#94a3b8; margin-top:8px;">Tidak Aktif</div>
-                <div style="margin-top:12px;"><a href="index.php#kamar" class="btn btn-primary">Cari Kamar</a></div>
-            <?php endif; ?>
-        </div>
+      <div class="card-white">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">
+              <h3 style="font-size:16px; font-weight:700; color:#1e293b;"><i class="fa-solid fa-bullhorn text-blue-500 mr-2"></i> Pengumuman Terbaru</h3>
+              <a href="pengumuman.php" style="font-size:13px; color:#2563eb; text-decoration:none; font-weight:500;">Lihat Semua &rarr;</a>
+          </div>
 
-        <div class="card-white" role="article" aria-labelledby="my-room">
-            <div id="my-room" style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Kamar Anda</div>
-            <div style="font-size:26px; font-weight:800; color:#1e293b; margin-top:8px;"><?= $kontrak['kode_kamar'] ?? '-' ?></div>
-            <div style="font-size:13px; color:#64748b; margin-top:6px;">
-                <?= $kontrak ? 'Rp '.number_format($kontrak['harga']).'/bulan' : '-' ?>
-            </div>
-        </div>
-
-        <div class="card-white" role="article" aria-labelledby="pending-bills">
-            <div id="pending-bills" style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Tagihan Pending</div>
-            <?php 
-                $tagihan = 0;
-                if($kontrak) {
-                    $id_k = $kontrak['id_kontrak'];
-                    $tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=$id_k AND status='BELUM'")->fetch_row()[0];
-                }
+          <?php
+            $res = $mysqli->query("SELECT * FROM pengumuman WHERE is_aktif=1 ORDER BY aktif_mulai DESC LIMIT 2");
+            if($res->num_rows > 0):
+                while($r = $res->fetch_assoc()):
             ?>
-            <div style="font-size:28px; font-weight:800; color: <?= $tagihan>0 ? '#f59e0b' : '#2563eb' ?>; margin-top:8px;"><?= $tagihan ?></div>
-            <div style="font-size:13px; color:#64748b; margin-top:6px;">Perlu dibayar</div>
-            <?php if($tagihan>0): ?>
-                <div style="margin-top:12px;"><a href="tagihan_saya.php" class="btn btn-primary">Bayar Sekarang</a></div>
+              <div style="padding:15px; background:#f8fafc; border-radius:10px; border-left:4px solid #3b82f6; margin-bottom:15px;">
+                  <h4 style="font-size:15px; font-weight:700; color:#1e293b; margin-bottom:5px;"><?= htmlspecialchars($r['judul']) ?></h4>
+                  <div style="font-size:12px; color:#64748b; margin-bottom:8px;"><i class="fa-regular fa-clock mr-1"></i> <?= date('d M Y', strtotime($r['aktif_mulai'])) ?></div>
+                  <p style="font-size:13px; color:#475569; line-height:1.5;"><?= substr(strip_tags($r['isi']), 0, 100) ?>...</p>
+              </div>
+            <?php endwhile; else: ?>
+                <p style="text-align:center; color:#94a3b8; font-style:italic; padding:20px;">Tidak ada pengumuman baru.</p>
             <?php endif; ?>
-        </div>
-    </section>
+      </div>
 
-    <section style="margin-top:18px;" aria-label="Info & Pengumuman">
-        <div class="card-white" style="display:flex; flex-direction:column; gap:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2 style="font-size:16px; font-weight:700; color:#1e293b;">Informasi Terbaru</h2>
-                <a href="pengumuman.php" class="text-sm" style="color:var(--primary); text-decoration:none;">Lihat Semua →</a>
-            </div>
-
-            <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                <?php
-                // ambil 3 pengumuman terbaru
-                $res = $mysqli->query("SELECT id_pengumuman, judul, aktif_mulai FROM pengumuman WHERE is_aktif=1 ORDER BY aktif_mulai DESC LIMIT 3");
-                if($res->num_rows > 0){
-                    while($r = $res->fetch_assoc()){
-                        echo '<div style="min-width:200px; flex:1; max-width:360px;">
-                                <div style="padding:12px; border-radius:10px; background:#f8fafc;">
-                                  <div style="font-weight:700; color:#0f172a;">'.htmlspecialchars($r['judul']).'</div>
-                                  <div style="font-size:12px; color:#64748b; margin-top:6px;">'.date('d M Y',strtotime($r['aktif_mulai'])).'</div>
-                                </div>
-                              </div>';
-                    }
-                } else {
-                    echo '<div style="color:#64748b;">Belum ada pengumuman.</div>';
-                }
-                ?>
-            </div>
-        </div>
-    </section>
-</main>
-
+  </main>
 </body>
 </html>

@@ -14,131 +14,157 @@ $data_tipe = $db->tampil_tipe_kamar();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="../assets/js/main.js"></script>
+
+  <style>
+      /* CSS KHUSUS HALAMAN INI AGAR RAPI */
+      .form-container {
+          max-width: 850px; 
+          margin: 0 auto;
+          background: white;
+          padding: 30px;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          border: 1px solid #e2e8f0;
+      }
+      .form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr; 
+          gap: 20px;
+          margin-bottom: 15px;
+      }
+      .form-group { margin-bottom: 15px; }
+      .form-group label {
+          display: block; font-size: 13px; font-weight: 600; 
+          color: #64748b; margin-bottom: 6px; text-transform: uppercase;
+      }
+      .form-input {
+          width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1;
+          border-radius: 6px; font-size: 14px; color: #334155;
+          transition: 0.2s; box-sizing: border-box; 
+      }
+      .form-input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+      
+      .upload-box {
+          border: 2px dashed #cbd5e1; border-radius: 8px;
+          padding: 20px; text-align: center; cursor: pointer;
+          transition: 0.2s; background: #f8fafc;
+      }
+      .upload-box:hover { border-color: #2563eb; background: #eff6ff; }
+      
+      .fasilitas-grid {
+          display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
+      }
+      .check-item {
+          display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+          border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;
+          font-size: 13px; color: #475569;
+      }
+      .check-item:hover { background: #f1f5f9; }
+      
+      @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body class="dashboard-body">
 
-  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <?php include '../components/sidebar_admin.php'; ?>
 
   <main class="main-content">
     
-    <div class="flex justify-between items-center mb-6 max-w-3xl mx-auto">
+    <div class="flex justify-between items-center mb-6" style="max-width: 850px; margin: 0 auto 20px;">
         <h1 class="font-bold text-xl text-slate-800">Tambah Kamar</h1>
-        <a href="kamar_data.php" class="btn btn-secondary text-xs px-3 py-2">
-            <i class="fa-solid fa-arrow-left mr-1"></i> Kembali
+        <a href="kamar_data.php" class="btn btn-secondary text-xs" style="padding: 8px 16px;">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Kembali
         </a>
     </div>
 
-    <div class="card-white max-w-3xl mx-auto p-6 shadow-sm border border-slate-200">
+    <div class="form-container">
         <form method="post" action="kamar_proses.php?act=tambah" enctype="multipart/form-data">
             
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-                
-                <div class="md:col-span-8 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="form-label text-xs uppercase text-slate-500">Kode Kamar</label>
-                            <input name="kode_kamar" class="form-input w-full font-bold text-slate-700" placeholder="A01" required>
-                        </div>
-                        <div>
-                            <label class="form-label text-xs uppercase text-slate-500">Tipe Kamar</label>
-                            <select name="id_tipe" class="form-input w-full" required>
-                                <option value="">- Pilih -</option>
-                                <?php 
-                                if (!empty($data_tipe)) {
-                                    foreach($data_tipe as $t) {
-                                        echo '<option value="'.$t['id_tipe'].'">'.htmlspecialchars($t['nama_tipe']).'</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="form-label text-xs uppercase text-slate-500">Harga (Per Bulan)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2.5 text-slate-500 text-sm font-bold">Rp</span>
-                            <input name="harga" type="number" class="form-input w-full pl-10 font-bold text-lg text-blue-600" placeholder="0" required>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="form-label text-xs uppercase text-slate-500">Lantai</label>
-                            <input name="lantai" type="number" class="form-input w-full" value="1" min="1" required>
-                        </div>
-                        <div>
-                            <label class="form-label text-xs uppercase text-slate-500">Luas (m²)</label>
-                            <input name="luas_m2" type="number" step="0.1" class="form-input w-full" value="9" required>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="form-label text-xs uppercase text-slate-500">Catatan</label>
-                        <textarea name="catatan" class="form-input w-full text-sm" rows="2" placeholder="Keterangan tambahan..."></textarea>
-                    </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Kode Kamar</label>
+                    <input name="kode_kamar" class="form-input" placeholder="Contoh: A01" required>
                 </div>
-
-                <div class="md:col-span-4">
-                    <label class="form-label text-xs uppercase text-slate-500 mb-2 block">Foto Cover</label>
-                    <label class="block w-full aspect-square border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition cursor-pointer flex flex-col items-center justify-center text-center p-4 relative overflow-hidden group">
-                        <input type="file" name="foto_cover" class="hidden" accept="image/*" onchange="previewImage(this)">
-                        
-                        <div id="upload-placeholder" class="space-y-2">
-                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-                                <i class="fa-solid fa-camera"></i>
-                            </div>
-                            <span class="text-xs text-slate-500 font-medium">Upload Foto</span>
-                        </div>
-
-                        <img id="image-preview" src="#" alt="Preview" class="absolute inset-0 w-full h-full object-cover hidden">
-                    </label>
-                    <p class="text-[10px] text-slate-400 mt-2 text-center">*Format JPG/PNG, Max 2MB</p>
+                <div class="form-group">
+                    <label>Tipe Kamar</label>
+                    <select name="id_tipe" class="form-input" required>
+                        <option value="">-- Pilih Tipe --</option>
+                        <?php if (!empty($data_tipe)) {
+                            foreach($data_tipe as $t) {
+                                echo '<option value="'.$t['id_tipe'].'">'.htmlspecialchars($t['nama_tipe']).'</option>';
+                            }
+                        } ?>
+                    </select>
                 </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-100">
-                <label class="form-label text-xs uppercase text-slate-500 mb-3 block">Fasilitas</label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr;">
+                <div class="form-group">
+                    <label>Harga (Per Bulan)</label>
+                    <div style="position:relative;">
+                        <span style="position:absolute; left:10px; top:10px; color:#64748b; font-size:14px;">Rp</span>
+                        <input name="harga" type="number" class="form-input" style="padding-left: 35px; font-weight:bold; color:#2563eb;" placeholder="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Lantai</label>
+                    <input name="lantai" type="number" class="form-input" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Luas (m²)</label>
+                    <input name="luas_m2" type="number" step="0.1" class="form-input" value="9" required>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Foto Cover</label>
+                    <label class="upload-box">
+                        <input type="file" name="foto_cover" style="display:none;" accept="image/*" onchange="previewImage(this)">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color:#cbd5e1; margin-bottom:5px;"></i>
+                        <div style="font-size:12px; font-weight:bold; color:#2563eb;">Klik Upload Foto</div>
+                        <img id="img-prev" src="" style="max-height:100px; margin: 10px auto 0; display:none; border-radius:6px;">
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>Catatan / Fasilitas Khusus</label>
+                    <textarea name="catatan" class="form-input" rows="5" placeholder="Tulis deskripsi kamar..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                <label style="margin-bottom: 10px;">Fasilitas Kamar</label>
+                <div class="fasilitas-grid">
                     <?php
                     $q_fas = $mysqli->query("SELECT * FROM fasilitas_master ORDER BY nama_fasilitas ASC");
-                    if ($q_fas && $q_fas->num_rows > 0) {
-                        while($f = $q_fas->fetch_assoc()):
+                    while($f = $q_fas->fetch_assoc()):
                     ?>
-                        <label class="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition select-none">
-                            <input type="checkbox" name="fasilitas[]" value="<?= $f['id_fasilitas'] ?>" class="w-3.5 h-3.5 accent-blue-600">
-                            <span class="text-xs text-slate-700 font-medium truncate">
-                                <i class="fa-solid <?= $f['icon'] ?> text-slate-400 w-4 text-center mr-1"></i> 
-                                <?= htmlspecialchars($f['nama_fasilitas']) ?>
-                            </span>
+                        <label class="check-item">
+                            <input type="checkbox" name="fasilitas[]" value="<?= $f['id_fasilitas'] ?>">
+                            <i class="fa-solid <?= $f['icon'] ?> text-slate-400"></i> 
+                            <?= htmlspecialchars($f['nama_fasilitas']) ?>
                         </label>
-                    <?php 
-                        endwhile; 
-                    }
-                    ?>
+                    <?php endwhile; ?>
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 mt-8">
-                <button type="button" onclick="history.back()" class="btn btn-secondary text-sm px-6">Batal</button>
-                <button type="submit" class="btn btn-primary text-sm px-8 shadow-md">Simpan Data</button>
+            <div style="text-align: right; margin-top: 30px;">
+                <button type="submit" class="btn btn-primary" style="padding: 12px 40px;">Simpan Data</button>
             </div>
         </form>
     </div>
-
   </main>
 
   <script>
     function previewImage(input) {
-        const preview = document.getElementById('image-preview');
-        const placeholder = document.getElementById('upload-placeholder');
         if (input.files && input.files[0]) {
-            const reader = new FileReader();
+            var reader = new FileReader();
             reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.classList.remove('hidden');
-                placeholder.classList.add('hidden');
+                document.getElementById('img-prev').src = e.target.result;
+                document.getElementById('img-prev').style.display = 'block';
             }
             reader.readAsDataURL(input.files[0]);
         }
