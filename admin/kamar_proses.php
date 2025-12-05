@@ -18,15 +18,7 @@ if ($act == 'tambah') {
     }
 
     $stmt = $mysqli->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, 'TERSEDIA', ?, ?)");
-    $kode = bersihkan_input($_POST['kode_kamar']);
-    $lantai = intval($_POST['lantai']); // Angka pakai intval lebih aman
-    $luas = bersihkan_input($_POST['luas_m2']);
-    $harga = intval($_POST['harga']); // Harga pasti angka
-    $catatan = bersihkan_input($_POST['catatan']);
-    $id_tipe = intval($_POST['id_tipe']);
-
-    $stmt = $mysqli->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, 'TERSEDIA', ?, ?)");
-    $stmt->bind_param('siidiss', $kode, $id_tipe, $lantai, $luas, $harga, $foto_cover, $catatan);
+    $stmt->bind_param('siidiss', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $foto_cover, $_POST['catatan']);
     
     if ($stmt->execute()) {
         $id_kamar_baru = $stmt->insert_id;
@@ -47,35 +39,40 @@ if ($act == 'tambah') {
 }
 
 // 2. EDIT KAMAR
-// 2. EDIT KAMAR
 elseif ($act == 'edit') {
     $id_kamar = intval($_POST['id_kamar']);
-    // ... (variabel lain tetap sama) ...
-    
-    // LOGIKA FOTO COVER
     $foto_cover = null;
+    
+    // Cek jika ada upload foto cover baru
     if (!empty($_FILES['foto_cover']['name'])) {
+        // --- LOGIKA BARU: HAPUS FOTO LAMA ---
+        // 1. Cari nama foto lama di database sebelum di-update
+        $q_lama = $mysqli->query("SELECT foto_cover FROM kamar WHERE id_kamar=$id_kamar");
+        $d_lama = $q_lama->fetch_assoc();
+        $file_lama = $d_lama['foto_cover'];
+
+        // 2. Hapus file fisik jika ada
+        if ($file_lama && file_exists("../assets/uploads/kamar/$file_lama")) {
+            unlink("../assets/uploads/kamar/$file_lama");
+        }
+        // -------------------------------------
+
+        // 3. Upload foto baru
         $foto_cover = upload_process($_FILES['foto_cover'], 'kamar');
-        // Hapus foto lama jika perlu (opsional)
     }
-    
-    // HAPUS BLOK bind_param() YANG DISINI (Baris ~100 di file aslimu)
-    
-    // Siapkan Query
+
     $query = "UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, catatan=?";
     if ($foto_cover) { $query .= ", foto_cover=?"; }
     $query .= " WHERE id_kamar=?";
     
-    $stmt = $mysqli->prepare($query); // Prepare DULU baru Bind
-    
+    $stmt = $mysqli->prepare($query);
     if ($foto_cover) {
-        $stmt->bind_param('siidissi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $foto_cover, $id_kamar);
+        $stmt->bind_param('siidissi', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $_POST['catatan'], $foto_cover, $id_kamar);
     } else {
-        $stmt->bind_param('siidisi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $id_kamar);
+        $stmt->bind_param('siidisi', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $_POST['catatan'], $id_kamar);
     }
 
     if ($stmt->execute()) {
-        // ... sisa kode ke bawah aman ...
         $mysqli->query("DELETE FROM kamar_fasilitas WHERE id_kamar = $id_kamar");
         if (isset($_POST['fasilitas']) && is_array($_POST['fasilitas'])) {
             $stmt_fas = $mysqli->prepare("INSERT INTO kamar_fasilitas (id_kamar, id_fasilitas) VALUES (?, ?)");
