@@ -47,35 +47,35 @@ if ($act == 'tambah') {
 }
 
 // 2. EDIT KAMAR
+// 2. EDIT KAMAR
 elseif ($act == 'edit') {
     $id_kamar = intval($_POST['id_kamar']);
-    $kode = bersihkan_input($_POST['kode_kamar']);
-    $lantai = intval($_POST['lantai']);
-    $luas = bersihkan_input($_POST['luas_m2']);
-    $harga = intval($_POST['harga']);
-    $catatan = bersihkan_input($_POST['catatan']);
-    $id_tipe = intval($_POST['id_tipe']);
-    $foto_cover = null;
+    // ... (variabel lain tetap sama) ...
     
-    // Cek jika ada upload foto cover baru
-    if ($foto_cover) {
-    $stmt->bind_param('siidissi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $foto_cover, $id_kamar);
-} else {
-    $stmt->bind_param('siidisi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $id_kamar);
-}
-
+    // LOGIKA FOTO COVER
+    $foto_cover = null;
+    if (!empty($_FILES['foto_cover']['name'])) {
+        $foto_cover = upload_process($_FILES['foto_cover'], 'kamar');
+        // Hapus foto lama jika perlu (opsional)
+    }
+    
+    // HAPUS BLOK bind_param() YANG DISINI (Baris ~100 di file aslimu)
+    
+    // Siapkan Query
     $query = "UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, catatan=?";
     if ($foto_cover) { $query .= ", foto_cover=?"; }
     $query .= " WHERE id_kamar=?";
     
-    $stmt = $mysqli->prepare($query);
+    $stmt = $mysqli->prepare($query); // Prepare DULU baru Bind
+    
     if ($foto_cover) {
-        $stmt->bind_param('siidissi', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $_POST['catatan'], $foto_cover, $id_kamar);
+        $stmt->bind_param('siidissi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $foto_cover, $id_kamar);
     } else {
-        $stmt->bind_param('siidisi', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $_POST['catatan'], $id_kamar);
+        $stmt->bind_param('siidisi', $kode, $id_tipe, $lantai, $luas, $harga, $catatan, $id_kamar);
     }
 
     if ($stmt->execute()) {
+        // ... sisa kode ke bawah aman ...
         $mysqli->query("DELETE FROM kamar_fasilitas WHERE id_kamar = $id_kamar");
         if (isset($_POST['fasilitas']) && is_array($_POST['fasilitas'])) {
             $stmt_fas = $mysqli->prepare("INSERT INTO kamar_fasilitas (id_kamar, id_fasilitas) VALUES (?, ?)");

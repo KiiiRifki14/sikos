@@ -1,6 +1,6 @@
 <?php
 // Panggil file konfigurasi (opsional, jika ingin tetap pakai konstanta)
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/config.php';
 
 class Database {
     // PENERAPAN ENKAPSULASI (Pertemuan 7)
@@ -21,12 +21,16 @@ class Database {
                 throw new Exception("Koneksi Database Gagal: " . $this->koneksi->connect_error);
             }
         } catch (Exception $e) {
-            // Jika error, tampilkan pesan rapi (tidak membocorkan path file server)
-            die('<div style="padding: 20px; background: #fee2e2; color: #991b1b; border: 1px solid #f87171; border-radius: 8px; font-family: sans-serif; margin: 20px;">
-                    <strong>⚠️ Terjadi Kesalahan Sistem:</strong><br>
-                    Tidak dapat terhubung ke database. Silakan hubungi administrator.<br>
-                    <small style="color: #7f1d1d;">Error Detail: ' . $e->getMessage() . '</small>
-                 </div>');
+            // [UPDATE] Error Handling Profesional
+            // 1. Log error ke file server (agar admin bisa cek, tapi user tidak lihat)
+            error_log("Database Error: " . $e->getMessage());
+
+            // 2. Tampilkan pesan user-friendly
+            die('<div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                    <h1>Layanan Sedang Pemeliharaan</h1>
+                    <p>Maaf, saat ini sistem sedang tidak dapat diakses.</p>
+                    <p style="color: #666; font-size: 12px;">(Error Code: DB_CONN_ERR)</p>
+                </div>');
         }
     }
 

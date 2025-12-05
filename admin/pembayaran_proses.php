@@ -24,15 +24,18 @@ function get_pay_info($mysqli, $id) {
 }
 
 // 1. TERIMA PEMBAYARAN
+// 1. TERIMA PEMBAYARAN
 if ($act == 'terima' && $id) {
     $info = get_pay_info($mysqli, $id);
     $nominal = number_format($info['jumlah'] ?? 0);
     $nama = $info['nama'] ?? 'User';
 
+    // Update status pembayaran SEKALI SAJA
     $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
 
-    // Cek Tipe untuk aksi lanjutan
+    // Cek Tipe untuk aksi lanjutan (Booking/Tagihan)
     $cek = $mysqli->query("SELECT ref_type, ref_id FROM pembayaran WHERE id_pembayaran=$id")->fetch_assoc();
+    
     if ($cek['ref_type'] == 'BOOKING') {
         $db->setujui_booking_dan_buat_kontrak($cek['ref_id']);
     } 
@@ -40,16 +43,13 @@ if ($act == 'terima' && $id) {
         $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan={$cek['ref_id']}");
     }
 
-    // LOG
-    // ... query update ...
-    $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
-
-    // [TAMBAHAN LOG]
+    // Catat Log SEKALI SAJA
     $db->catat_log($_SESSION['id_pengguna'], 'VERIFIKASI BAYAR', "Menerima pembayaran Rp $nominal dari $nama (ID: $id)");
     
-    // ... lanjut kode cek tipe ...
-} 
-
+    // Redirect
+    header("Location: keuangan_index.php?tab=verifikasi");
+    exit;
+}
 // 2. TOLAK PEMBAYARAN
 else if ($act == 'tolak' && $id) {
     $mysqli->query("UPDATE pembayaran SET status='DITOLAK', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");

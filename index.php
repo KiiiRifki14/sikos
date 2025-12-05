@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 require 'inc/koneksi.php';
 
 // --- LOGIC FILTER (TETAP SAMA, HANYA SALIN ULANG BIAR AMAN) ---
@@ -106,9 +107,9 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
           <select name="tipe" class="form-input">
             <option value="">Semua Tipe</option>
             <?php while($t = $tipeRes->fetch_assoc()): ?>
-              <option value="<?= $t['id_tipe'] ?>" <?= (isset($_GET['tipe']) && $_GET['tipe']==$t['id_tipe']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($t['nama_tipe']) ?>
-              </option>
+              <option value="<?= $t['id_tipe'] ?>" <?= (isset($_GET['tipe']) && $_GET['tipe'] == $t['id_tipe']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($t['nama_tipe']) ?>
+            </option>
             <?php endwhile; ?>
           </select>
         </div>
