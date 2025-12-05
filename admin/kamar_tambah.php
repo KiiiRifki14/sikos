@@ -1,24 +1,16 @@
 <?php
-// Urutan require sangat penting!
-require '../inc/koneksi.php'; // 1. Load class Database
-require '../inc/guard.php';   // 2. Load guard (ini sudah ada session_start di dalamnya)
+require '../inc/koneksi.php';
+require '../inc/guard.php';
 
-// Cek Admin (Fungsi is_admin() berasal dari guard.php)
-if (!is_admin()) { 
-    header('Location: ../login.php'); 
-    exit; 
-}
+if (!is_admin()) { header('Location: ../login.php'); exit; }
 
 $db = new Database();
-
-// Ambil data tipe kamar untuk dropdown
-// Pastikan method tampil_tipe_kamar() SUDAH DITAMBAHKAN di inc/koneksi.php langkah 1!
 $data_tipe = $db->tampil_tipe_kamar(); 
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <title>Tambah Kamar - SIKOS Admin</title>
+  <title>Tambah Kamar Baru</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,96 +21,128 @@ $data_tipe = $db->tampil_tipe_kamar();
   <?php include '../components/sidebar_admin.php'; ?>
 
   <main class="main-content">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="font-bold text-xl">Tambah Kamar Baru</h1>
-        <a href="kamar_data.php" class="btn btn-secondary text-sm">
-            <i class="fa-solid fa-arrow-left"></i> Kembali
+    
+    <div class="flex justify-between items-center mb-6 max-w-3xl mx-auto">
+        <h1 class="font-bold text-xl text-slate-800">Tambah Kamar</h1>
+        <a href="kamar_data.php" class="btn btn-secondary text-xs px-3 py-2">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Kembali
         </a>
     </div>
 
-    <div class="card-white" style="max-width:800px;">
+    <div class="card-white max-w-3xl mx-auto p-6 shadow-sm border border-slate-200">
         <form method="post" action="kamar_proses.php?act=tambah" enctype="multipart/form-data">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                <div>
-                    <label class="form-label">Kode Kamar</label>
-                    <input name="kode_kamar" class="form-input" placeholder="Contoh: A01" required>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                
+                <div class="md:col-span-8 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label text-xs uppercase text-slate-500">Kode Kamar</label>
+                            <input name="kode_kamar" class="form-input w-full font-bold text-slate-700" placeholder="A01" required>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs uppercase text-slate-500">Tipe Kamar</label>
+                            <select name="id_tipe" class="form-input w-full" required>
+                                <option value="">- Pilih -</option>
+                                <?php 
+                                if (!empty($data_tipe)) {
+                                    foreach($data_tipe as $t) {
+                                        echo '<option value="'.$t['id_tipe'].'">'.htmlspecialchars($t['nama_tipe']).'</option>';
+                                    }
+                                }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label text-xs uppercase text-slate-500">Harga (Per Bulan)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-slate-500 text-sm font-bold">Rp</span>
+                            <input name="harga" type="number" class="form-input w-full pl-10 font-bold text-lg text-blue-600" placeholder="0" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label text-xs uppercase text-slate-500">Lantai</label>
+                            <input name="lantai" type="number" class="form-input w-full" value="1" min="1" required>
+                        </div>
+                        <div>
+                            <label class="form-label text-xs uppercase text-slate-500">Luas (m²)</label>
+                            <input name="luas_m2" type="number" step="0.1" class="form-input w-full" value="9" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label text-xs uppercase text-slate-500">Catatan</label>
+                        <textarea name="catatan" class="form-input w-full text-sm" rows="2" placeholder="Keterangan tambahan..."></textarea>
+                    </div>
                 </div>
-                <div>
-                    <label class="form-label">Tipe Kamar</label>
-                    <select name="id_tipe" class="form-input" required>
-                        <option value="">-- Pilih Tipe --</option>
-                        <?php 
-                        if (!empty($data_tipe)) {
-                            foreach($data_tipe as $t) {
-                                // Pastikan nama kolom sesuai tabel kamu (id_tipe, nama_tipe)
-                                echo '<option value="'.$t['id_tipe'].'">'.htmlspecialchars($t['nama_tipe']).'</option>';
-                            }
-                        } else {
-                            echo '<option value="" disabled>Data tipe kamar tidak terbaca</option>';
-                        }
-                        ?>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-                <div>
-                    <label class="form-label">Harga (Per Bulan)</label>
-                    <input name="harga" type="number" class="form-input" placeholder="0" required>
-                </div>
-                <div>
-                    <label class="form-label">Lantai</label>
-                    <input name="lantai" type="number" class="form-input" value="1" min="1" required>
-                </div>
-                <div>
-                    <label class="form-label">Luas (m²)</label>
-                    <input name="luas_m2" type="number" step="0.1" class="form-input" value="9" required>
+
+                <div class="md:col-span-4">
+                    <label class="form-label text-xs uppercase text-slate-500 mb-2 block">Foto Cover</label>
+                    <label class="block w-full aspect-square border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition cursor-pointer flex flex-col items-center justify-center text-center p-4 relative overflow-hidden group">
+                        <input type="file" name="foto_cover" class="hidden" accept="image/*" onchange="previewImage(this)">
+                        
+                        <div id="upload-placeholder" class="space-y-2">
+                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                            <span class="text-xs text-slate-500 font-medium">Upload Foto</span>
+                        </div>
+
+                        <img id="image-preview" src="#" alt="Preview" class="absolute inset-0 w-full h-full object-cover hidden">
+                    </label>
+                    <p class="text-[10px] text-slate-400 mt-2 text-center">*Format JPG/PNG, Max 2MB</p>
                 </div>
             </div>
 
-            <div class="mb-6 bg-slate-50 p-4 rounded border border-slate-200">
-                <label class="form-label block mb-2">Foto Cover</label>
-                <input type="file" name="foto_cover" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*">
-                <p class="text-xs text-muted mt-1">Format: JPG/PNG/WEBP. Maks 2MB.</p>
-            </div>
-
-            <div class="mb-6">
-                <label class="form-label block mb-3">Fasilitas Kamar</label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <label class="form-label text-xs uppercase text-slate-500 mb-3 block">Fasilitas</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     <?php
-                    // Query manual untuk fasilitas (biar simpel di view)
                     $q_fas = $mysqli->query("SELECT * FROM fasilitas_master ORDER BY nama_fasilitas ASC");
                     if ($q_fas && $q_fas->num_rows > 0) {
                         while($f = $q_fas->fetch_assoc()):
                     ?>
-                        <label class="flex items-center gap-2 p-2 border rounded hover:bg-slate-50 cursor-pointer">
-                            <input type="checkbox" name="fasilitas[]" value="<?= $f['id_fasilitas'] ?>" class="w-4 h-4 text-blue-600 rounded">
-                            <span class="text-sm">
-                                <i class="fa-solid <?= $f['icon'] ?> text-slate-400 w-5 text-center"></i> 
+                        <label class="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition select-none">
+                            <input type="checkbox" name="fasilitas[]" value="<?= $f['id_fasilitas'] ?>" class="w-3.5 h-3.5 accent-blue-600">
+                            <span class="text-xs text-slate-700 font-medium truncate">
+                                <i class="fa-solid <?= $f['icon'] ?> text-slate-400 w-4 text-center mr-1"></i> 
                                 <?= htmlspecialchars($f['nama_fasilitas']) ?>
                             </span>
                         </label>
                     <?php 
                         endwhile; 
-                    } else {
-                        echo '<p class="text-sm text-muted col-span-3">Belum ada data fasilitas.</p>';
                     }
                     ?>
                 </div>
             </div>
 
-            <div class="mb-6">
-                <label class="form-label">Catatan Tambahan (Opsional)</label>
-                <textarea name="catatan" class="form-input" rows="3" placeholder="Contoh: Kamar pojok, view taman, dilarang bawa hewan..."></textarea>
-            </div>
-
-            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button type="button" onclick="history.back()" class="btn btn-secondary">Batal</button>
-                <button type="submit" class="btn btn-primary px-8">Simpan Kamar</button>
+            <div class="flex justify-end gap-3 mt-8">
+                <button type="button" onclick="history.back()" class="btn btn-secondary text-sm px-6">Batal</button>
+                <button type="submit" class="btn btn-primary text-sm px-8 shadow-md">Simpan Data</button>
             </div>
         </form>
     </div>
+
   </main>
+
+  <script>
+    function previewImage(input) {
+        const preview = document.getElementById('image-preview');
+        const placeholder = document.getElementById('upload-placeholder');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+  </script>
 </body>
 </html>
