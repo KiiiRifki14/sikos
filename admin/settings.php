@@ -8,41 +8,33 @@ if (!is_admin() && !is_owner()) {
     header("Location: ../login.php"); exit; 
 }
 
-$file_settings = __DIR__ . '/../inc/settings_data.json';
+// [CARI KODE LAMA INI DAN HAPUS]
+// $file_settings = __DIR__ . '/../inc/settings_data.json';
+// ...sampai logika file_put_contents...
 
-// DATA DEFAULT
-$data = [
-    'nama_kos'   => 'SIKOS PAADAASIH',
-    'alamat'     => 'Jl. Paadaasih No. 123, Cimahi, Jawa Barat',
-    'no_hp'      => '0812-3456-7890',
-    'email'      => 'admin@sikos.com',
-    'rek_bank'   => 'BCA 123456789 a.n Owner',
-    'pemilik'    => 'Ibu Kost'
-];
-
-// LOAD DATA
-if (file_exists($file_settings)) {
-    $json = file_get_contents($file_settings);
-    $data_saved = json_decode($json, true);
-    if ($data_saved) $data = array_merge($data, $data_saved);
-}
+// [GANTI DENGAN KODE BARU INI]
+$db = new Database(); // Pastikan objek DB dipanggil
 
 // PROSES SIMPAN
 $pesan = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data['nama_kos'] = htmlspecialchars($_POST['nama_kos']);
-    $data['alamat']   = htmlspecialchars($_POST['alamat']);
-    $data['no_hp']    = htmlspecialchars($_POST['no_hp']);
-    $data['email']    = htmlspecialchars($_POST['email']);
-    $data['rek_bank'] = htmlspecialchars($_POST['rek_bank']);
-    $data['pemilik']  = htmlspecialchars($_POST['pemilik']);
+    // Validasi input sederhana
+    $nama = htmlspecialchars($_POST['nama_kos']);
+    $alamat = htmlspecialchars($_POST['alamat']);
+    $hp = htmlspecialchars($_POST['no_hp']);
+    $email = htmlspecialchars($_POST['email']);
+    $rek = htmlspecialchars($_POST['rek_bank']);
+    $pemilik = htmlspecialchars($_POST['pemilik']);
 
-    if (file_put_contents($file_settings, json_encode($data, JSON_PRETTY_PRINT))) {
-        $pesan = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid #bbf7d0;">✅ Pengaturan berhasil disimpan dan diterapkan ke seluruh sistem!</div>';
+    if ($db->update_pengaturan($nama, $alamat, $hp, $email, $rek, $pemilik)) {
+        $pesan = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid #bbf7d0;">✅ Pengaturan berhasil disimpan ke Database!</div>';
     } else {
-        $pesan = '<div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid #fecaca;">❌ Gagal menyimpan. Pastikan folder inc memiliki izin tulis (writable).</div>';
+        $pesan = '<div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid #fecaca;">❌ Gagal menyimpan database.</div>';
     }
 }
+
+// LOAD DATA DARI DB (Bukan JSON lagi)
+$data = $db->ambil_pengaturan();
 ?>
 <!DOCTYPE html>
 <html lang="id">

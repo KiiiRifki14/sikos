@@ -3,8 +3,9 @@ session_start();
 require 'inc/koneksi.php';
 require 'inc/utils.php'; 
 
-// === LOGIKA LOAD SETTINGS (BARU) ===
-$file_settings = 'inc/settings_data.json';
+// [GANTI BLOK LOAD SETTINGS LAMA DENGAN INI]
+$db = new Database();
+$app = $db->ambil_pengaturan();
 // Default jika file belum ada
 $app = [
     'nama_kos' => 'SIKOS PAADAASIH',

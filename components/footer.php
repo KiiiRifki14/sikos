@@ -1,17 +1,11 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+// Pastikan koneksi sudah di-load. 
+// Gunakan require_once agar tidak error jika sudah diload di header
+require_once __DIR__ . '/../inc/koneksi.php';
 
-// Load Settings
-$file_settings = __DIR__ . '/../inc/settings_data.json';
-$app = [
-    'nama_kos' => 'SIKOS Paadaasih',
-    'alamat' => 'Jl. Paadaasih No. 123, Bandung',
-    'no_hp' => '0812-3456-7890',
-    'email' => 'help@sikos.com'
-];
-if (file_exists($file_settings)) {
-    $app = array_merge($app, json_decode(file_get_contents($file_settings), true));
-}
+$db_footer = new Database();
+$app = $db_footer->ambil_pengaturan();
 ?>
 <footer class="footer">
   <div class="footer-grid">

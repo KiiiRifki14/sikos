@@ -460,7 +460,22 @@ class Database {
         }
         return $count;
     }
-}
+    // ... (kode fungsi auto_cek_kontrak_habis di atasnya) ...
+
+    // --- FUNGSI BARU: PENGATURAN SISTEM ---
+    function ambil_pengaturan() {
+        // Kita ambil ID 1 karena hanya ada 1 baris konfigurasi
+        $res = $this->koneksi->query("SELECT * FROM pengaturan WHERE id=1");
+        return $res->fetch_assoc();
+    }
+
+    function update_pengaturan($nama, $alamat, $hp, $email, $rek, $pemilik) {
+        $stmt = $this->koneksi->prepare("UPDATE pengaturan SET nama_kos=?, alamat=?, no_hp=?, email=?, rek_bank=?, pemilik=? WHERE id=1");
+        $stmt->bind_param('ssssss', $nama, $alamat, $hp, $email, $rek, $pemilik);
+        return $stmt->execute();
+    }
+} // <--- Ini penutup class Database yang sudah ada
+
 
 $db = new Database();
 $mysqli = $db->koneksi;

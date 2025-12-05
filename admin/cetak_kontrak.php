@@ -45,7 +45,9 @@ if(!$data) {
 }
 
 // Load Settings Owner untuk Kop Surat
-$app = json_decode(file_get_contents('../inc/settings_data.json'), true);
+// Ambil settings dari DB
+$db_kontrak = new Database();
+$app = $db_kontrak->ambil_pengaturan();
 ?>
 <!DOCTYPE html>
 <html>
