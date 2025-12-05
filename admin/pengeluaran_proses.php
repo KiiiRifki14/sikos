@@ -16,13 +16,19 @@ if ($act == 'tambah') {
     $stmt->bind_param('ssis', $judul, $desk, $biaya, $tgl);
     
     if ($stmt->execute()) {
-        // [TAMBAHAN LOG]
-        $db = new Database(); // Pastikan inisialisasi objek DB jika belum ada di file ini
+        // Log Aktivitas
+        $db = new Database(); 
         $db->catat_log($_SESSION['id_pengguna'], 'TAMBAH PENGELUARAN', "Mencatat pengeluaran: $judul (Rp " . number_format($biaya) . ")");
         
-        header('Location: pengeluaran_data.php?msg=sukses');
-    }else {
-        echo "<script>alert('Gagal menyimpan data!'); window.history.back();</script>";
+        // --- LOGIKA REDIRECT CERDAS ---
+        // Cek apakah ada request redirect khusus dari form?
+        if (isset($_POST['redirect']) && !empty($_POST['redirect'])) {
+            header("Location: " . $_POST['redirect'] . "&msg=sukses");
+        } else {
+            // Default balik ke halaman data biasa
+            header('Location: pengeluaran_data.php?msg=sukses');
+        }
+        exit;
     }
 } 
 elseif ($act == 'hapus') {

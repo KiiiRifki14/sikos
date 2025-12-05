@@ -492,3 +492,31 @@ if ($tab == 'pengeluaran') {
             </div>
         </div>
     <?php endif; ?>
+<!-- ... kode PHP/HTML di atas ... -->
+
+  <!-- TAMBAHKAN SCRIPT INI DI BAGIAN PALING BAWAH -->
+  <script>
+    function openModal() {
+        var modal = document.getElementById('modalAdd');
+        if (modal) {
+            modal.style.display = 'block';
+        } else {
+            alert('Error: Modal tidak ditemukan di halaman ini.');
+        }
+    }
+
+    function closeModal() {
+        var modal = document.getElementById('modalAdd');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Tutup modal jika user klik di luar area putih
+    window.onclick = function(e) {
+        var modal = document.getElementById('modalAdd');
+        if (e.target == modal) {
+            closeModal();
+        }
+    }
+  </script>
+</body>
+</html>
