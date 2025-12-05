@@ -576,3 +576,125 @@ tr:last-child td { border-bottom: none; }
 
 /* Small visual spacer at bottom for logout button separation */
 .sidebar .logout-spacer { margin-top: 12px; }
+
+/* ===========================
+   PENGHUNI: Scoped styles appended
+   (appended to end of app.css)
+   Scoped under .role-penghuni to avoid impacting admin
+   =========================== */
+
+/* Scoped styling for penghuni area */
+.role-penghuni .sidebar {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    border-right: 1px solid rgba(226,232,240,0.9);
+}
+
+/* Profile block refinement */
+.role-penghuni .sidebar > .mb-8 {
+    padding: 6px 6px 18px 6px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 18px;
+}
+
+/* Slightly larger, modern-looking active link */
+.role-penghuni .sidebar-link {
+    padding: 12px 14px;
+    border-radius: 10px;
+    transition: all 0.14s ease;
+    box-shadow: none;
+}
+.role-penghuni .sidebar-link i { min-width: 20px; text-align: center; }
+
+/* Active state with accent */
+.role-penghuni .sidebar-link.active {
+    background: linear-gradient(90deg, rgba(37,99,235,0.06), rgba(37,99,235,0.02));
+    color: var(--primary);
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+}
+
+/* Improve spacing for main-content in dashboard (penghuni) */
+.role-penghuni .main-content {
+    padding-top: 96px; /* keep content below fixed navbar if any */
+    transition: padding 0.18s ease;
+}
+
+/* Tweak card style for penghuni: softer shadows, rounded radius */
+.role-penghuni .card-white {
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+}
+
+/* Friendly CTA buttons for penghuni */
+.role-penghuni .btn-primary {
+    background: linear-gradient(180deg, var(--primary), var(--primary-hover));
+    box-shadow: 0 8px 20px rgba(37,99,235,0.14);
+}
+.role-penghuni .btn-secondary {
+    background: #fff;
+    border: 1px solid #e6eefc;
+}
+
+/* File input friendly */
+.role-penghuni input[type="file"] {
+    display: block;
+}
+
+/* Small toast helper */
+.role-penghuni .mini-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 22px;
+    background: rgba(17,24,39,0.96);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(2,6,23,0.2);
+    z-index: 2000;
+    font-size: 13px;
+}
+
+/* Keluhan stepper improvements (scope only to penghuni) */
+.role-penghuni .step-circle {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 4px 10px rgba(2,6,23,0.06);
+}
+.role-penghuni .step-circle.step-active-green { box-shadow: 0 8px 22px rgba(34,197,94,0.18); }
+.role-penghuni .step-circle.step-active-yellow { box-shadow: 0 8px 22px rgba(234,179,8,0.12); }
+.role-penghuni .step-circle.step-active-red { box-shadow: 0 8px 22px rgba(239,68,68,0.12); }
+
+/* Card hover micro-interaction */
+.role-penghuni .card-white:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(2,6,23,0.06);
+}
+
+/* Make modal look a bit nicer on mobile */
+.role-penghuni .modal-content {
+    width: 96%;
+    max-width: 720px;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+/* Improve small-table readability */
+.role-penghuni table td, .role-penghuni table th {
+    padding: 12px 10px;
+}
+
+/* Make mobile nav (header) cleaner */
+.role-penghuni .navbar {
+    height: 72px;
+    padding: 0 18px;
+}
+.role-penghuni .nav-brand-logo { width: 44px; height: 44px; border-radius: 10px; }
+
+/* Ensure mobile menu button visible and consistent */
+.role-penghuni .mobile-menu-btn { display: block; }
+
+/* Accessibility focus visible tweaks (penghuni) */
+.role-penghuni a:focus, .role-penghuni button:focus {
+    outline: 3px solid rgba(37,99,235,0.14);
+    outline-offset: 2px;
+}

@@ -28,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
         
         if ($row_penghuni) {
             $id_penghuni = $row_penghuni['id_penghuni'];
-            // Ambil ID Kamar dari Kontrak Aktif
             $q_kamar = $mysqli->query("SELECT id_kamar FROM kontrak WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
             $id_kamar = ($q_kamar->num_rows > 0) ? $q_kamar->fetch_object()->id_kamar : null;
 
@@ -36,9 +35,9 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
             $stmt->bind_param('iissss', $id_penghuni, $id_kamar, $judul, $desk, $prioritas, $foto_path);
             
             if ($stmt->execute()) {
-                $msg = '<div class="bg-green-100 text-green-700 p-3 rounded mb-4">✅ Keluhan berhasil dikirim! Admin akan segera merespon.</div>';
+                $msg = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:24px;">✅ Keluhan berhasil dikirim! Admin akan segera merespon.</div>';
             } else {
-                $msg = '<div class="bg-red-100 text-red-700 p-3 rounded mb-4">Gagal menyimpan data ke database.</div>';
+                $msg = '<div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:24px;">Gagal menyimpan data ke database.</div>';
             }
         }
     }
@@ -47,42 +46,38 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <meta charset="utf-8">
     <title>Keluhan - SIKOS</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="assets/css/app.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="assets/js/main.js"></script>
     <style>
-      /* Styles untuk Stepper */
-      .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
-      .modal-content { background-color: #fff; margin: 5% auto; padding: 0; border: none; width: 90%; max-width: 600px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideDown 0.3s ease-out; overflow: hidden; }
-      @keyframes slideDown { from {transform: translateY(-20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
-      
-      /* Base Stepper */
-      .step-circle { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; position: relative; z-index: 10; transition: all 0.3s; }
-      .step-line { flex: 1; height: 3px; background-color: #e2e8f0; margin: 0 -2px; z-index: 0; transition: all 0.3s; }
-      
-      /* Status Colors */
-      .step-active-red { background-color: #ef4444; border: 2px solid #fca5a5; }
-      .step-active-yellow { background-color: #eab308; border: 2px solid #fde047; }
-      .step-active-green { background-color: #22c55e; border: 2px solid #86efac; }
-      .step-inactive { background-color: #cbd5e1; color: #fff; }
-      
-      .line-active-yellow { background-color: #eab308; }
-      .line-active-green { background-color: #22c55e; }
+      /* Modal tweaks */
+      .modal { display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.45); }
+      .modal-content { animation: slideDown 260ms ease; background:#fff; margin: 6% auto; padding:0; border-radius:12px; width: 94%; max-width: 760px; overflow:hidden; }
+      @keyframes slideDown { from { transform: translateY(-8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
     </style>
 </head>
 <body class="dashboard-body">
 
   <?php include 'components/sidebar_penghuni.php'; ?>
 
-  <main class="main-content">
-    <div class="flex justify-between items-center mb-6">
-        <h2 style="font-size:24px; font-weight:700; color:#1e293b;">Layanan Keluhan</h2>
+  <main class="main-content" aria-labelledby="keluhan-heading">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+            <h1 id="keluhan-heading" style="font-size:22px; font-weight:700; color:#1e293b;">Layanan Keluhan</h1>
+            <p style="color:#64748b; margin:0; font-size:14px;">Kirim laporan kerusakan atau gangguan, dan pantau progresnya.</p>
+        </div>
+        <div>
+            <a href="#form-keluhan" class="btn btn-primary">Ajukan Keluhan</a>
+        </div>
     </div>
+
     <?= $msg ?>
 
-    <div class="card-white mb-8">       
-        <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Ajukan Keluhan Baru</h3>
+    <div class="card-white mb-6" id="form-keluhan" aria-labelledby="form-keluhan-title">       
+        <h3 id="form-keluhan-title" class="font-bold text-slate-800 mb-3" style="border-bottom:1px solid #f1f5f9; padding-bottom:10px;">Ajukan Keluhan Baru</h3>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
             <input type="hidden" name="act" value="tambah">
@@ -109,33 +104,28 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 
             <div class="mb-6">
                 <label class="form-label">Foto Bukti (Opsional)</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" name="foto" class="block w-full text-sm text-slate-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100
-                    " accept="image/*">
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <label for="foto_keluhan_input" class="btn btn-secondary" style="padding:8px 12px; cursor:pointer;">
+                        <i class="fa-solid fa-image mr-2"></i> Pilih Foto
+                    </label>
+                    <input id="foto_keluhan_input" type="file" name="foto" accept="image/*" style="display:none;">
+                    <div style="color:#64748b; font-size:13px;">Maks 2MB. JPG/PNG/WebP.</div>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">Maksimal 2MB. Format: JPG, PNG, WEBP.</p>
             </div>
             
-            <button type="submit" class="btn-primary w-full py-3 font-bold rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">
-                <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Laporan
-            </button>
+            <button type="submit" class="btn-primary w-full py-3 font-bold rounded-lg shadow-lg"> <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Laporan</button>
         </form>
     </div>
 
     <div class="card-white">
         <h3 class="font-bold text-slate-800 mb-4">Riwayat Keluhan Saya</h3>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-slate-600">
+        <div style="overflow-x:auto;">
+            <table class="w-full text-sm text-left text-slate-600" role="table">
                 <thead class="text-xs text-slate-700 uppercase bg-slate-50">
                     <tr>
                         <th class="px-6 py-3">Tanggal</th>
                         <th class="px-6 py-3">Masalah</th>
-                        <th class="px-6 py-3 text-center" style="width:200px;">Status Progress</th>
+                        <th class="px-6 py-3 text-center" style="width:240px;">Status Progress</th>
                         <th class="px-6 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -146,7 +136,6 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
                 
                 if ($res->num_rows > 0) {
                     while($row=$res->fetch_assoc()){
-                        // --- LOGIC MINI STEPPER ---
                         $s1_cls = 'step-inactive'; $l1_cls = 'bg-slate-200';
                         $s2_cls = 'step-inactive'; $l2_cls = 'bg-slate-200';
                         $s3_cls = 'step-inactive';
@@ -154,26 +143,26 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 
                         if($row['status'] == 'BARU') {
                             $s1_cls = 'step-active-red'; 
-                            $status_text = '<span class="text-red-500 font-bold text-[10px]">TERKIRIM</span>';
+                            $status_text = '<span class="text-red-500 font-bold" style="font-size:12px;">TERKIRIM</span>';
                         } elseif ($row['status'] == 'PROSES') {
                             $s1_cls = 'step-active-yellow';
                             $l1_cls = 'line-active-yellow';
                             $s2_cls = 'step-active-yellow';
-                            $status_text = '<span class="text-yellow-600 font-bold text-[10px]">DIPROSES</span>';
+                            $status_text = '<span class="text-yellow-600 font-bold" style="font-size:12px;">DIPROSES</span>';
                         } elseif ($row['status'] == 'SELESAI') {
                             $s1_cls = 'step-active-green';
                             $l1_cls = 'line-active-green';
                             $s2_cls = 'step-active-green';
                             $l2_cls = 'line-active-green';
                             $s3_cls = 'step-active-green';
-                            $status_text = '<span class="text-green-600 font-bold text-[10px]">SELESAI</span>';
+                            $status_text = '<span class="text-green-600 font-bold" style="font-size:12px;">SELESAI</span>';
                         }
                 ?>
                     <tr class="bg-white border-b hover:bg-slate-50 transition">
                         <td class="px-6 py-4"><?= date('d/m/Y', strtotime($row['dibuat_at'])) ?></td>
                         <td class="px-6 py-4">
                             <div class="font-bold text-slate-800"><?= htmlspecialchars($row['judul']) ?></div>
-                            <div class="text-xs text-slate-500 truncate max-w-[200px]"><?= htmlspecialchars($row['deskripsi']) ?></div>
+                            <div class="text-xs text-slate-500 truncate max-w-[260px]"><?= htmlspecialchars($row['deskripsi']) ?></div>
                         </td>
                         
                         <td class="px-6 py-4 text-center">
@@ -209,14 +198,14 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
         </div>
     </div>
 
-    <div id="modalDetail" class="modal">
+    <div id="modalDetail" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="modal-content">
             <div class="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-start">
                 <div>
                     <h3 class="font-bold text-lg text-slate-800">Detail Perkembangan</h3>
                     <p class="text-xs text-slate-500 mt-1">Pantau status laporan Anda</p>
                 </div>
-                <span class="close text-slate-400 hover:text-red-500 text-2xl cursor-pointer font-bold">&times;</span>
+                <button class="close text-slate-400 hover:text-red-500 text-2xl cursor-pointer font-bold" aria-label="Tutup">&times;</button>
             </div>
 
             <div class="p-6">
@@ -245,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 
                     <div id="m_foto_box" class="hidden">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-2">Foto Anda</p>
-                        <img id="m_foto" src="" class="h-32 rounded-lg border border-slate-200 object-cover">
+                        <img id="m_foto" src="" class="h-32 rounded-lg border border-slate-200 object-cover" alt="Foto keluhan">
                     </div>
 
                     <div>
@@ -261,12 +250,11 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 
   <script>
     const modal = document.getElementById("modalDetail");
-    const span = document.getElementsByClassName("close")[0];
+    const closeBtn = document.querySelector(".close");
 
     function updateStepper(status) {
-        // Reset styles
-        ['step_1', 'step_2', 'step_3'].forEach(id => document.getElementById(id).className = 'step-circle step-inactive w-10 h-10 text-sm');
-        ['line_1', 'line_2'].forEach(id => document.getElementById(id).className = 'step-line bg-slate-200 h-1');
+        ['step_1','step_2','step_3'].forEach(id => document.getElementById(id).className = 'step-circle step-inactive w-10 h-10 text-sm');
+        ['line_1','line_2'].forEach(id => document.getElementById(id).className = 'step-line bg-slate-200 h-1');
 
         const s1 = document.getElementById('step_1');
         const s2 = document.getElementById('step_2');
@@ -296,27 +284,29 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
             document.getElementById('m_judul').textContent = this.getAttribute('data-judul');
             document.getElementById('m_deskripsi').textContent = this.getAttribute('data-deskripsi');
             
-            // Tanggapan
             const tanggapan = this.getAttribute('data-tanggapan');
             document.getElementById('m_tanggapan').innerHTML = tanggapan ? tanggapan : '<i class="text-slate-400">Belum ada respon dari admin.</i>';
 
-            // Foto
             const foto = this.getAttribute('data-foto');
             const fotoBox = document.getElementById('m_foto_box');
             if(foto) {
                 fotoBox.classList.remove('hidden');
                 document.getElementById('m_foto').src = foto;
+                document.getElementById('m_foto').alt = 'Foto keluhan';
             } else {
                 fotoBox.classList.add('hidden');
             }
 
             updateStepper(this.getAttribute('data-status'));
             modal.style.display = "block";
+            modal.setAttribute('aria-hidden','false');
+            closeBtn.focus();
         });
     });
 
-    span.onclick = function() { modal.style.display = "none"; }
-    window.onclick = function(event) { if (event.target == modal) modal.style.display = "none"; }
+    closeBtn.onclick = function() { modal.style.display = "none"; modal.setAttribute('aria-hidden','true'); }
+    window.addEventListener('click', function(event) { if (event.target == modal) { modal.style.display = "none"; modal.setAttribute('aria-hidden','true'); }});
+    window.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ modal.style.display = "none"; modal.setAttribute('aria-hidden','true'); }});
   </script>
 </body>
 </html>

@@ -15,13 +15,15 @@ $kontrak = $mysqli->query("SELECT id_kontrak FROM kontrak
 
 $status_msg = '';
 if (isset($_GET['status']) && $_GET['status'] == 'sukses') {
-    $status_msg = '<div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:24px; font-size:14px;">✅ Bukti pembayaran berhasil dikirim! Menunggu verifikasi admin.</div>';
+    $status_msg = '<div role="status" aria-live="polite" style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:24px; font-size:14px;">✅ Bukti pembayaran berhasil dikirim! Menunggu verifikasi admin.</div>';
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <meta charset="utf-8">
     <title>Tagihan Saya - SIKOS</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="assets/css/app.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -29,14 +31,18 @@ if (isset($_GET['status']) && $_GET['status'] == 'sukses') {
 
   <?php include 'components/sidebar_penghuni.php'; ?>
 
-  <main class="main-content">
-    <h2 style="font-size:24px; font-weight:700; color:#1e293b; margin-bottom:24px;">Tagihan & Pembayaran</h2>
-    
+  <main class="main-content" aria-labelledby="billing-heading">
+    <h2 id="billing-heading" style="font-size:22px; font-weight:700; color:#1e293b; margin-bottom:8px;">Tagihan & Pembayaran</h2>
+    <p style="margin-top:0; color:#64748b; margin-bottom:18px;">Kelola dan unggah bukti pembayaran di halaman ini.</p>
+
     <?= $status_msg ?>
 
     <div class="card-white">
-        <div style="border-bottom:1px solid #f1f5f9; padding-bottom:16px; margin-bottom:24px;">
-            <h3 style="font-weight:700; color:#1e293b;">Riwayat Tagihan</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:12px; margin-bottom:18px;">
+            <h3 style="font-weight:700; color:#1e293b; margin:0;">Riwayat Tagihan</h3>
+            <?php if($kontrak): ?>
+                <a href="index.php#kamar" class="btn btn-secondary" style="padding:8px 12px;">Lihat Kamar</a>
+            <?php endif; ?>
         </div>
         
         <?php if(!$kontrak){ ?>
@@ -77,38 +83,36 @@ if (isset($_GET['status']) && $_GET['status'] == 'sukses') {
                         <td style="padding:16px 12px; color:#64748b;"><?= date('d M Y', strtotime($row['jatuh_tempo'])) ?></td>
                         
                         <td style="padding:16px 12px;">
-                            <span style="padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; <?= $badgeStyle ?>"><?= $text ?></span>
+                            <span style="padding:6px 12px; border-radius:10px; font-size:12px; font-weight:700; <?= $badgeStyle ?>"><?= $text ?></span>
                         </td>
 
                         <td style="padding:16px 12px;">
                             <?php if($row['status'] == 'BELUM' && $statusBayar != 'PENDING'): ?>
-                                <form method="post" action="pembayaran_tagihan.php" enctype="multipart/form-data" style="display:flex; gap:8px;">
+                                <form method="post" action="pembayaran_tagihan.php" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center;">
                                     <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
                                     <input type="hidden" name="id_tagihan" value="<?= $row['id_tagihan'] ?>">
                                     <input type="hidden" name="jumlah" value="<?= $row['nominal'] ?>">
                                     
-                                    <label class="btn-secondary" style="padding:6px 12px; font-size:12px; cursor:pointer;">
+                                    <label class="btn btn-secondary" style="padding:8px 10px; font-size:13px; cursor:pointer;">
                                         📂 Pilih File
                                         <input type="file" name="bukti" required style="display:none;" onchange="this.form.submit()">
                                     </label>
+                                    <span style="font-size:13px; color:#64748b;">atau <a href="pembayaran_tagihan.php?id=<?= $row['id_tagihan'] ?>" style="color:var(--primary)">unggah manual</a></span>
                                 </form>
 
                             <?php elseif($statusBayar == 'PENDING'): ?>
-                                <span style="font-size:12px; color:#ca8a04;">⏳ Menunggu</span>
+                                <span style="font-size:13px; color:#ca8a04;">⏳ Menunggu Verifikasi</span>
 
                             <?php else: ?>
-                                <div style="display:flex; flex-direction:column; gap:4px;">
-                                    <span style="font-size:12px; color:#166534; font-weight:bold;">✔ Selesai</span>
-                                    
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <span style="font-size:13px; color:#166534; font-weight:700;">✔ Lunas</span>
                                     <?php
-                                        // Cari ID Pembayaran sukses untuk tagihan ini
                                         $q_lunas = $mysqli->query("SELECT id_pembayaran FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id={$row['id_tagihan']} AND status='DITERIMA' ORDER BY id_pembayaran DESC LIMIT 1");
                                         $data_lunas = $q_lunas->fetch_row();
                                         $id_pay = $data_lunas[0] ?? 0;
-
                                         if($id_pay > 0):
                                     ?>
-                                        <a href="cetak_kuitansi.php?id=<?= $id_pay ?>" target="_blank" style="font-size:11px; color:#2563eb; text-decoration:none; background:#eff6ff; padding:2px 6px; border-radius:4px; border:1px solid #bfdbfe; text-align:center;">
+                                        <a href="cetak_kuitansi.php?id=<?= $id_pay ?>" target="_blank" class="btn btn-secondary" style="padding:6px 10px; font-size:13px;">
                                             🖨️ Kuitansi
                                         </a>
                                     <?php endif; ?>
