@@ -16,16 +16,29 @@ if ($act == 'tambah') {
     $stmt->bind_param('ssis', $judul, $desk, $biaya, $tgl);
     
     if ($stmt->execute()) {
-        // Log Aktivitas (Opsional tapi bagus)
-        // $db->catat_log($_SESSION['id_pengguna'], 'TAMBAH PENGELUARAN', "Rp $biaya untuk $judul");
+        // [TAMBAHAN LOG]
+        $db = new Database(); // Pastikan inisialisasi objek DB jika belum ada di file ini
+        $db->catat_log($_SESSION['id_pengguna'], 'TAMBAH PENGELUARAN', "Mencatat pengeluaran: $judul (Rp " . number_format($biaya) . ")");
+        
         header('Location: pengeluaran_data.php?msg=sukses');
-    } else {
+    }else {
         echo "<script>alert('Gagal menyimpan data!'); window.history.back();</script>";
     }
 } 
 elseif ($act == 'hapus') {
     $id = intval($_GET['id']);
+    
+    // Ambil info dulu sebelum dihapus buat log
+    $cek = $mysqli->query("SELECT judul, biaya FROM pengeluaran WHERE id_pengeluaran=$id")->fetch_assoc();
+    $judul_hapus = $cek['judul'] ?? 'Unknown';
+    $biaya_hapus = number_format($cek['biaya'] ?? 0);
+
     $mysqli->query("DELETE FROM pengeluaran WHERE id_pengeluaran=$id");
+    
+    // [TAMBAHAN LOG]
+    $db = new Database();
+    $db->catat_log($_SESSION['id_pengguna'], 'HAPUS PENGELUARAN', "Menghapus data pengeluaran: $judul_hapus (Rp $biaya_hapus)");
+
     header('Location: pengeluaran_data.php?msg=hapus');
 }
 ?>

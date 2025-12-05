@@ -376,8 +376,10 @@ class Database {
         }
         return false;
     }
+    // --- FUNGSI LOG AKTIVITAS (AUDIT TRAIL) ---
     function catat_log($id_user, $aksi, $keterangan) {
-        $stmt = $this->koneksi->prepare("INSERT INTO log_aktivitas (id_pengguna, aksi, keterangan) VALUES (?, ?, ?)");
+        // Gunakan prepared statement agar aman
+        $stmt = $this->koneksi->prepare("INSERT INTO log_aktivitas (id_pengguna, aksi, keterangan, waktu) VALUES (?, ?, ?, NOW())");
         $stmt->bind_param('iss', $id_user, $aksi, $keterangan);
         $stmt->execute();
     }
