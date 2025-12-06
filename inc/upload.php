@@ -50,9 +50,11 @@ function upload_process($file, $folder) {
     $dest  = __DIR__ . "/../assets/uploads/$folder/$fname";
     
     // Fitur Kompresi Gambar (GD Library)
+    // Cek dulu apakah ekstensi GD aktif
     $valid_images = ['image/jpeg', 'image/png', 'image/webp'];
+    $gd_available = extension_loaded('gd');
     
-    if (in_array($mime, $valid_images)) {
+    if ($gd_available && in_array($mime, $valid_images)) {
         // Ambil info dimensi
         list($width, $height) = getimagesize($file['tmp_name']);
         
@@ -61,9 +63,12 @@ function upload_process($file, $folder) {
 
         // Load Gambar ke Memory
         $image = null;
-        if ($mime == 'image/jpeg') $image = imagecreatefromjpeg($file['tmp_name']);
-        elseif ($mime == 'image/png') $image = imagecreatefrompng($file['tmp_name']);
-        elseif ($mime == 'image/webp') $image = imagecreatefromwebp($file['tmp_name']);
+        if ($mime == 'image/jpeg' && function_exists('imagecreatefromjpeg')) 
+            $image = imagecreatefromjpeg($file['tmp_name']);
+        elseif ($mime == 'image/png' && function_exists('imagecreatefrompng')) 
+            $image = imagecreatefrompng($file['tmp_name']);
+        elseif ($mime == 'image/webp' && function_exists('imagecreatefromwebp')) 
+            $image = imagecreatefromwebp($file['tmp_name']);
 
         if ($image) {
             // Cek apakah perlu resize?

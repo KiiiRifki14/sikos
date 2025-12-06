@@ -120,13 +120,19 @@ $data_tipe = $db->tampil_tipe_kamar();
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Foto Cover</label>
+                    <label>Foto Cover (Utama)</label>
                     <label class="upload-box">
                         <input type="file" name="foto_cover" style="display:none;" accept="image/*" onchange="previewImage(this)">
                         <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color:#cbd5e1; margin-bottom:5px;"></i>
-                        <div style="font-size:12px; font-weight:bold; color:#2563eb;">Klik Upload Foto</div>
+                        <div style="font-size:12px; font-weight:bold; color:#2563eb;">Klik Upload Cover</div>
                         <img id="img-prev" src="" style="max-height:100px; margin: 10px auto 0; display:none; border-radius:6px;">
                     </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>Galeri Foto (Banyak)</label>
+                    <input type="file" name="foto_galeri[]" multiple class="form-input" accept="image/*">
+                    <small style="color:#aaa; font-size:11px;">Bisa pilih lebih dari 1 foto sekaligus</small>
                 </div>
 
                 <div class="form-group">

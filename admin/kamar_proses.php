@@ -29,6 +29,34 @@ if ($act == 'tambah') {
                 $stmt_fas->execute();
             }
         }
+
+        // --- UPLOAD GALERI FOTO (MULTI) ---
+        if (!empty($_FILES['foto_galeri']['name'][0])) {
+            $files = $_FILES['foto_galeri'];
+            $count = count($files['name']);
+            
+            $stmt_gal = $mysqli->prepare("INSERT INTO kamar_foto (id_kamar, file_nama) VALUES (?, ?)");
+
+            for ($i = 0; $i < $count; $i++) {
+                if ($files['error'][$i] === 0) {
+                    // Re-structure file array for upload_process function
+                    $file_item = [
+                        'name'     => $files['name'][$i],
+                        'type'     => $files['type'][$i],
+                        'tmp_name' => $files['tmp_name'][$i],
+                        'error'    => $files['error'][$i],
+                        'size'     => $files['size'][$i]
+                    ];
+                    
+                    $uploaded = upload_process($file_item, 'kamar'); // Reuse existing function
+                    if ($uploaded) {
+                        $stmt_gal->bind_param('is', $id_kamar_baru, $uploaded);
+                        $stmt_gal->execute();
+                    }
+                }
+            }
+        }
+        // -----------------------------------
         
         // LOG
         $db->catat_log($_SESSION['id_pengguna'], 'TAMBAH KAMAR', "Menambah kamar " . $_POST['kode_kamar']);
@@ -81,10 +109,32 @@ elseif ($act == 'edit') {
                 $stmt_fas->execute();
             }
         }
+        // --- UPLOAD GALERI FOTO TAMBAHAN (MULTI) ---
         if (!empty($_FILES['foto_galeri']['name'][0])) {
-             // Logic upload galeri (disederhanakan untuk brevity, asumsi sama kayak sebelumnya)
-             // ... (kode upload galeri tetap sama) ...
+            $files = $_FILES['foto_galeri'];
+            $count = count($files['name']);
+            
+            $stmt_gal = $mysqli->prepare("INSERT INTO kamar_foto (id_kamar, file_nama) VALUES (?, ?)");
+
+            for ($i = 0; $i < $count; $i++) {
+                if ($files['error'][$i] === 0) {
+                    $file_item = [
+                        'name'     => $files['name'][$i],
+                        'type'     => $files['type'][$i],
+                        'tmp_name' => $files['tmp_name'][$i],
+                        'error'    => $files['error'][$i],
+                        'size'     => $files['size'][$i]
+                    ];
+                    
+                    $uploaded = upload_process($file_item, 'kamar');
+                    if ($uploaded) {
+                        $stmt_gal->bind_param('is', $id_kamar, $uploaded);
+                        $stmt_gal->execute();
+                    }
+                }
+            }
         }
+        // -------------------------------------------
 
         // LOG
         $db->catat_log($_SESSION['id_pengguna'], 'EDIT KAMAR', "Update data kamar " . $_POST['kode_kamar']);
