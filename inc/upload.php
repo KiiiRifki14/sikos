@@ -44,15 +44,69 @@ function upload_process($file, $folder) {
         exit;
     }
 
-    // 4. Proses Simpan
+    // 4. Proses Kompresi & Simpan (Cegah Overload Storage)
     $ext   = $allowed[$mime];
-    $fname = bin2hex(random_bytes(12)) . '.' . $ext; // Nama file acak agar aman
+    $fname = bin2hex(random_bytes(12)) . '.' . $ext; 
     $dest  = __DIR__ . "/../assets/uploads/$folder/$fname";
     
+    // Fitur Kompresi Gambar (GD Library)
+    $valid_images = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    if (in_array($mime, $valid_images)) {
+        // Ambil info dimensi
+        list($width, $height) = getimagesize($file['tmp_name']);
+        
+        // Setting Max Width (misal 1000px sudah cukup untuk web)
+        $max_width = 1000; 
+
+        // Load Gambar ke Memory
+        $image = null;
+        if ($mime == 'image/jpeg') $image = imagecreatefromjpeg($file['tmp_name']);
+        elseif ($mime == 'image/png') $image = imagecreatefrompng($file['tmp_name']);
+        elseif ($mime == 'image/webp') $image = imagecreatefromwebp($file['tmp_name']);
+
+        if ($image) {
+            // Cek apakah perlu resize?
+            if ($width > $max_width) {
+                // Hitung tinggi proporsional
+                $ratio = $max_width / $width;
+                $new_width = $max_width;
+                $new_height = $height * $ratio;
+
+                // Buat canvas baru
+                $new_image = imagecreatetruecolor($new_width, $new_height);
+
+                // Handle Transparency (PNG/WEBP)
+                if ($mime == 'image/png' || $mime == 'image/webp') {
+                    imagealphablending($new_image, false);
+                    imagesavealpha($new_image, true);
+                    $transparent = imagecolorallocatealpha($new_image, 255, 255, 255, 127);
+                    imagefilledrectangle($new_image, 0, 0, $new_width, $new_height, $transparent);
+                }
+
+                // Copy & Resize
+                imagecopyresampled($new_image, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+                $image = $new_image; // Timpa image lama dengan yg baru
+            }
+
+            // Simpan ke File Destination (Compress Quality: 80%)
+            $result = false;
+            if ($mime == 'image/jpeg') $result = imagejpeg($image, $dest, 80); // 80% Quality
+            elseif ($mime == 'image/png') $result = imagepng($image, $dest, 8); // Compression level 8 (0-9)
+            elseif ($mime == 'image/webp') $result = imagewebp($image, $dest, 80); // 80% Quality
+
+            // Bersihkan Memory
+            imagedestroy($image);
+
+            if ($result) return $fname;
+        }
+    }
+
+    // Fallback: Jika bukan gambar atau gagal kompres, pakai cara biasa
     if (move_uploaded_file($file['tmp_name'], $dest)) {
         return $fname;
     } else {
-        echo "<script>alert('Gagal menyimpan file ke server. Silakan coba lagi.'); window.history.back();</script>";
+        echo "<script>alert('Gagal menyimpan file. Folder destination mungkin permission denied.'); window.history.back();</script>";
         exit;
     }
 }
