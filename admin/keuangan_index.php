@@ -182,6 +182,7 @@ if ($tab == 'pengeluaran') {
 
     <?php if($tab == 'tagihan'): ?>
         <?php $bulan_filter = $_GET['bulan'] ?? date('Y-m'); ?>
+        <div class="animate-fade-up">
         <div class="card-white mb-6">
             <h3 class="font-bold text-lg mb-4">Generate Tagihan Masal</h3>
             <form method="post" action="pembayaran_proses.php?act=generate_masal" class="flex gap-4 items-end flex-wrap">
@@ -300,7 +301,7 @@ if ($tab == 'pengeluaran') {
     <?php endif; ?>
 
     <?php if($tab == 'pengeluaran'): ?>
-        
+        <div class="animate-fade-up">
         <div class="flex justify-between items-center mb-8 flex-wrap gap-4" style="margin-bottom: 32px;">
             <div>
                 <h3 class="font-bold text-lg">Daftar Pengeluaran</h3>
@@ -421,7 +422,7 @@ if ($tab == 'pengeluaran') {
         $laba_bersih = $total_masuk_bln - $total_keluar_bln;
         ?>
 
-        <div id="area-print"> 
+        <div id="area-print" class="animate-fade-up"> 
             <div class="card-white no-print mb-6 flex justify-between items-center flex-wrap gap-4">
                 <form method="get" class="flex items-center gap-2">
                     <input type="hidden" name="tab" value="laporan">

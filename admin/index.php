@@ -67,7 +67,7 @@ for ($i = 1; $i <= 12; $i++) {
 
     <?php include '../components/sidebar_admin.php'; ?>
 
-    <main class="main-content">
+    <main class="main-content animate-fade-up">
         <div class="mb-8">
             <h1 class="font-bold" style="font-size: 1.5rem;">Dashboard Owner</h1>
             <p style="color: var(--text-muted); font-size: 0.875rem;">Ringkasan performa bisnis kos Anda bulan ini.</p>

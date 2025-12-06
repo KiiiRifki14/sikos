@@ -108,12 +108,7 @@ if($row_kamar) {
 </head>
 <body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
-  
-  <main class="main-content">
-    <div style="margin-bottom: 30px;">
-        <h1 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">Kamar Saya</h1>
-        <p style="font-size: 13px; color: #64748b;">Detail kamar yang sedang Anda tempati.</p>
-    </div>
+  <main class="main-content animate-fade-up">
 
     <?php if($row_kamar): ?>
         <div class="kamar-layout">
@@ -177,12 +172,11 @@ if($row_kamar) {
                     <strong style="display:block; font-size:12px; color:#9a3412; margin-bottom:5px;">Catatan:</strong>
                     <p style="font-size:13px; color:#c2410c; margin:0;"><?= htmlspecialchars($row_kamar['catatan']) ?></p>
                 </div>
-                
                 <?php endif; ?>
                 
             </div>
-            
         </div>
+
     <?php else: ?>
         
         <div class="card-white" style="text-align:center; padding:60px 20px;">

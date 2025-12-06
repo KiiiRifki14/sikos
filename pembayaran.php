@@ -31,7 +31,7 @@ if (!$row) die("Data booking tidak ditemukan!");
         </div>
     </nav>
 
-    <div class="container" style="max-width: 600px; margin: 60px auto; padding: 20px;">
+    <div class="container animate-fade-up" style="max-width: 600px; margin: 60px auto; padding: 20px;">
         
         <div class="card-white" style="padding: 0; overflow: hidden; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
             

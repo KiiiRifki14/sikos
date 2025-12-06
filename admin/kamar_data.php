@@ -30,7 +30,7 @@ $nomor = $halaman_awal + 1;
   <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <?php include '../components/sidebar_admin.php'; ?>
 
-  <main class="main-content">
+  <main class="main-content animate-fade-up">
     <div class="flex justify-between items-center mb-8">
         <h1 class="font-bold text-xl">Kelola Kamar</h1>
         <a href="kamar_tambah.php" class="btn btn-primary text-xs">

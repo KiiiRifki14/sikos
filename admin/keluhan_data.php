@@ -75,7 +75,7 @@ $nomor = $halaman_awal + 1;
   <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <?php include '../components/sidebar_admin.php'; ?>
 
-  <main class="main-content">
+  <main class="main-content animate-fade-up">
     <div class="mb-8">
         <h1 class="font-bold text-xl">Laporan Keluhan</h1>
         <p class="text-xs text-muted">Daftar keluhan fasilitas dan perbaikan.</p>

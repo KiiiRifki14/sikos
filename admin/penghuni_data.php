@@ -80,7 +80,7 @@ $nomor = $halaman_awal + 1;
   <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <?php include '../components/sidebar_admin.php'; ?>
   
-  <main class="main-content">
+  <main class="main-content animate-fade-up">
     <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
         <h1 class="font-bold text-xl">Data Penghuni</h1>
         

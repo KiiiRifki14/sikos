@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 </head>
 <body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
-  <main class="main-content">
+  <main class="main-content animate-fade-up">
     
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <div>

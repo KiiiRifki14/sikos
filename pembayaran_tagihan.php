@@ -96,7 +96,7 @@ if (!$row) {
 <body>
     <?php include 'components/sidebar_penghuni.php'; ?>
     
-    <main class="main-content" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
+    <main class="main-content animate-fade-up" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
         
         <div class="pay-card">
             <div class="pay-header">

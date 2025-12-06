@@ -68,8 +68,8 @@ $kontrak = $mysqli->query($q_kontrak)->fetch_assoc();
 </head>
 <body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
-  <main class="main-content">
-    
+  <main class="main-content animate-fade-up">
+
     <div style="margin-bottom: 30px;">
         <h1 style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">Tagihan & Pembayaran</h1>
         <p style="font-size: 13px; color: #64748b;">Riwayat tagihan bulanan Anda.</p>

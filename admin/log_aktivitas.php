@@ -42,7 +42,7 @@ $nomor = $halaman_awal + 1;
 
   <?php include '../components/sidebar_admin.php'; ?>
 
-  <main class="main-content">
+  <main class="main-content animate-fade-up">
     <div class="mb-8">
         <h1 class="font-bold text-xl">Log Aktivitas</h1>
         <p class="text-xs text-muted">Rekam jejak aktivitas pengguna di dalam sistem.</p>

@@ -67,8 +67,8 @@ $foto_url = !empty($user['foto_profil']) ? "assets/uploads/profil/".$user['foto_
 </head>
 <body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
-  <main class="main-content">
-    
+  <main class="main-content animate-fade-up">
+
     <div style="margin-bottom: 30px;">
         <h1 style="font-size: 20px; font-weight: 700; color: #1e293b;">Profil Saya</h1>
     </div>
