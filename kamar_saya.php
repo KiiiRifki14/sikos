@@ -7,18 +7,32 @@ if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran'] != 'PENGHUNI') {
 }
 
 $id_pengguna = $_SESSION['id_pengguna'];
-$user = $mysqli->query("SELECT nama FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-$id_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
+// Pastikan $mysqli tersedia
+$db = new Database();
+$mysqli = $db->koneksi;
 
-// Ambil Data Kontrak & Kamar (Tanpa harga_deal yang bikin error tadi)
-$q_kamar = "SELECT k.*, t.nama_tipe, ko.tanggal_mulai, ko.tanggal_selesai 
-            FROM kontrak ko 
-            JOIN kamar k ON ko.id_kamar = k.id_kamar 
-            JOIN tipe_kamar t ON k.id_tipe = t.id_tipe 
-            WHERE ko.id_penghuni = $id_penghuni AND ko.status = 'AKTIF'";
-            
-$res_kamar = $mysqli->query($q_kamar);
-$row_kamar = $res_kamar->fetch_assoc();
+// Ambil Nama User
+$user = $mysqli->query("SELECT nama FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
+
+// Cek ID Penghuni (Gunakan fetch_object dengan safety check)
+$q_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna");
+$id_penghuni = ($q_penghuni->num_rows > 0) ? $q_penghuni->fetch_object()->id_penghuni : 0;
+
+$row_kamar = null; // Default null
+
+// Hanya jalankan query kontrak jika id_penghuni ada
+if ($id_penghuni > 0) {
+    $q_kamar = "SELECT k.*, t.nama_tipe, ko.tanggal_mulai, ko.tanggal_selesai, ko.id_kontrak 
+                FROM kontrak ko 
+                JOIN kamar k ON ko.id_kamar = k.id_kamar 
+                JOIN tipe_kamar t ON k.id_tipe = t.id_tipe 
+                WHERE ko.id_penghuni = $id_penghuni AND ko.status = 'AKTIF'";
+                
+    $res_kamar = $mysqli->query($q_kamar);
+    if ($res_kamar && $res_kamar->num_rows > 0) {
+        $row_kamar = $res_kamar->fetch_assoc();
+    }
+}
 
 $fasilitas = [];
 if($row_kamar) {
@@ -101,13 +115,7 @@ if($row_kamar) {
         <p style="font-size: 13px; color: #64748b;">Detail kamar yang sedang Anda tempati.</p>
     </div>
 
-    <?php if(!$row_kamar): ?>
-        <div class="card-white" style="text-align:center; padding:50px;">
-            <i class="fa-solid fa-bed" style="font-size:48px; color:#cbd5e1; margin-bottom:15px;"></i>
-            <h3 style="color:#64748b;">Anda belum menyewa kamar.</h3>
-        </div>
-    <?php else: ?>
-        
+    <?php if($row_kamar): ?>
         <div class="kamar-layout">
             <div class="kamar-foto">
                 <?php if(!empty($row_kamar['foto_cover'])): ?>
@@ -169,11 +177,32 @@ if($row_kamar) {
                     <strong style="display:block; font-size:12px; color:#9a3412; margin-bottom:5px;">Catatan:</strong>
                     <p style="font-size:13px; color:#c2410c; margin:0;"><?= htmlspecialchars($row_kamar['catatan']) ?></p>
                 </div>
+                
                 <?php endif; ?>
+                
             </div>
+            
+        </div>
+    <?php else: ?>
+        
+        <div class="card-white" style="text-align:center; padding:60px 20px;">
+            <div style="margin-bottom:20px;">
+                <i class="fa-solid fa-bed" style="font-size:64px; color:#cbd5e1;"></i>
+            </div>
+            <h3 style="color:#64748b; font-size:18px; font-weight:600; margin-bottom:10px;">
+                Anda belum menyewa kamar.
+            </h3>
+            <p style="color:#94a3b8; font-size:14px; margin-bottom:30px;">
+                Silakan cari kamar yang tersedia dan ajukan penyewaan.
+            </p>
+            
+            <a href="index.php#kamar" class="btn btn-primary" style="padding: 12px 30px;">
+                <i class="fa-solid fa-magnifying-glass mr-2"></i> Cari Kamar Sekarang
+            </a>
         </div>
 
     <?php endif; ?>
+    
   </main>
 </body>
 </html>

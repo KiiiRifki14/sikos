@@ -31,16 +31,25 @@ if (isset($_POST['act']) && $_POST['act'] == 'update_profil') {
     $stmt1->execute();
 
     // 2. Update Detail Penghuni
-    // Cek Foto
-    $foto_final = $old_foto; // Default pake foto lama
+    // 34. Proses Upload Foto (Jika ada)
+    $foto_final = $old_foto; 
     
-    if (!empty($_FILES['foto_profil']['name'])) {
-        $upload = upload_process($_FILES['foto_profil'], 'profil'); // Simpan ke folder assets/uploads/profil
-        if ($upload) {
-            $foto_final = $upload;
-            // Hapus foto lama biar hemat storage
-            if ($old_foto && file_exists("assets/uploads/profil/$old_foto")) {
-                unlink("assets/uploads/profil/$old_foto");
+    // Cek apakah user upload foto baru
+    if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+        
+        // Panggil fungsi upload helper
+        // Fungsi ini mengembalikan nama file baru jika sukses, atau exit js back jika gagal
+        $uploaded_file = upload_process($_FILES['foto_profil'], 'profil');
+        
+        if ($uploaded_file) {
+            $foto_final = $uploaded_file;
+
+            // Hapus file lama jika ada & bukan default
+            if ($old_foto && $old_foto != 'default.png' && $old_foto != 'avatar.png') {
+                $path_old = __DIR__ . "/assets/uploads/profil/" . $old_foto;
+                if (file_exists($path_old)) {
+                    @unlink($path_old); // Pakai @ agar tidak error jika gagal hapus
+                }
             }
         }
     }

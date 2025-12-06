@@ -22,14 +22,48 @@ $kontrak = $mysqli->query($q_kontrak)->fetch_assoc();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Tabel Responsive */
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .table-container { 
+            overflow-x: auto; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { background: #f8fafc; padding: 12px 15px; text-align: left; font-size: 12px; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .bg-lunas { background: #dcfce7; color: #166534; }
-        .bg-pending { background: #fef9c3; color: #ca8a04; }
-        .bg-belum { background: #fee2e2; color: #dc2626; }
+        
+        th { 
+            background: #f8fafc; 
+            padding: 16px 20px; 
+            text-align: left; 
+            font-size: 12px; 
+            color: #64748b; 
+            font-weight: 700;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0; 
+        }
+        
+        td { 
+            padding: 16px 20px; 
+            border-bottom: 1px solid #f1f5f9; 
+            color: #334155; 
+            font-size: 14px; 
+            vertical-align: middle;
+        }
+        
+        tr:hover td { background-color: #f8fafc; }
+        tr:last-child td { border-bottom: none; }
+
+        .badge { 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            display: inline-block;
+            letter-spacing: 0.3px;
+        }
+        .bg-lunas { background: #dcfce7; color: #15803d; }
+        .bg-pending { background: #fef9c3; color: #a16207; }
+        .bg-belum { background: #fee2e2; color: #b91c1c; }
     </style>
 </head>
 <body>

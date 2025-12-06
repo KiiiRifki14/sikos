@@ -223,6 +223,7 @@ if ($tab == 'pengeluaran') {
                         <td><?= $statusBadge ?></td>
                         <td>
                             <?php if($t['status'] == 'BELUM'): ?>
+                                <div class="flex gap-2">
                                 <a href="pembayaran_proses.php?act=bayar_cash&id=<?= $t['id_tagihan'] ?>" class="btn btn-secondary text-xs" style="padding:4px 8px;"
                                    onclick="return confirm('Konfirmasi pembayaran TUNAI dari <?= $t['nama'] ?> senilai Rp <?= number_format($t['nominal']) ?>?')">
                                    💰 Terima Cash

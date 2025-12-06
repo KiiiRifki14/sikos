@@ -2,6 +2,7 @@
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
 require 'inc/utils.php';
+
 // Panggil Object Database
 $db = new Database();
 
@@ -18,24 +19,30 @@ if ($user) {
     $_SESSION['id_pengguna'] = $user['id_pengguna'];
     $_SESSION['peran'] = $user['peran'];
     
-    // --- LOG LOGIN (BARU) ---
-    $db->catat_log($user['id_pengguna'], 'LOGIN', "User berhasil login ke sistem.");
-    // ------------------------
+    // Catat Log
+    $db->catat_log($user['id_pengguna'], 'LOGIN', "User berhasil login.");
 
-    // Jika Admin atau Owner, masuk ke Admin Panel
+    // --- LOGIKA REDIRECT PINTAR (FIX ALUR) ---
     if ($user['peran'] == 'ADMIN' || $user['peran'] == 'OWNER') {
         header('Location: admin/index.php');
-    } 
-    // Jika Penghuni, masuk ke Dashboard Penghuni
-    else {
-        header('Location: penghuni_dashboard.php');
+    } else {
+        // Cek apakah ada kamar yang mau dibooking sebelum login?
+        if (isset($_SESSION['next_booking_kamar'])) {
+            $id_kamar_tujuan = $_SESSION['next_booking_kamar'];
+            // Hapus sesi agar tidak redirect terus menerus
+            unset($_SESSION['next_booking_kamar']); 
+            // Lempar balik ke halaman booking
+            header("Location: booking.php?id_kamar=" . $id_kamar_tujuan);
+        } else {
+            // Jika login biasa, masuk dashboard
+            header('Location: penghuni_dashboard.php');
+        }
     }
     exit;
 
 } else {
-    // Set pesan error ke session
     set_flash_message('error', 'Email atau password salah!');
-    header('Location: login.php'); // Tidak perlu pakai ?error=auth lagi
+    header('Location: login.php');
     exit;
 }
 ?>

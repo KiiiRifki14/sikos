@@ -73,7 +73,8 @@ $foto_url = !empty($user['foto_profil']) ? "assets/uploads/profil/".$user['foto_
         <h1 style="font-size: 20px; font-weight: 700; color: #1e293b;">Profil Saya</h1>
     </div>
 
-    <form action="penghuni_proses.php?act=update_profil" method="POST" enctype="multipart/form-data">
+    <form action="penghuni_proses.php" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="act" value="update_profil">
         <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
         
         <div class="profil-layout">

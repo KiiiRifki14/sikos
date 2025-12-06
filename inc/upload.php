@@ -16,13 +16,24 @@ function upload_process($file, $folder) {
     }
 
     // 2. Cek Tipe MIME (Keamanan)
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime  = finfo_file($finfo, $file['tmp_name']);
-    // finfo_close($finfo); <-- BAGIAN INI DIHAPUS KARENA DEPRECATED
+    $mime = null;
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_file($finfo, $file['tmp_name']);
+    } else if (function_exists('mime_content_type')) {
+        $mime = mime_content_type($file['tmp_name']);
+    } else {
+        // Fallback: Check extension if PHP extensions are missing (Less Secure but functional)
+        $ext_check = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $mime_map = [
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png', 'webp' => 'image/webp'
+        ];
+        $mime = $mime_map[$ext_check] ?? 'application/octet-stream';
+    }
 
     if (!isset($allowed[$mime])) {
-        // Tampilkan Pesan Error Ramah
-        echo "<script>alert('Format file tidak didukung! Mohon hanya upload file JPG, PNG, atau WEBP.'); window.history.back();</script>";
+        echo "<script>alert('Format file tidak didukung! Deteksi: $mime'); window.history.back();</script>";
         exit;
     }
 

@@ -118,6 +118,19 @@ else if ($act == 'bayar_cash' && $id) {
         pesan_error("keuangan_index.php?tab=tagihan&bulan=$tgl", "💰 Pembayaran Tunai Berhasil Dicatat!");
     }
 }
+// 5. HAPUS TAGIHAN
+else if ($act == 'hapus_tagihan' && $id) {
+    // Cek dulu apakah statusnya BELUM lunas (security)
+    $cek = $mysqli->query("SELECT status, bulan_tagih FROM tagihan WHERE id_tagihan=$id")->fetch_assoc();
+    
+    if ($cek && $cek['status'] == 'BELUM') {
+        $mysqli->query("DELETE FROM tagihan WHERE id_tagihan=$id");
+        $db->catat_log($_SESSION['id_pengguna'], 'HAPUS TAGIHAN', "Menghapus tagihan ID $id ({$cek['bulan_tagih']})");
+        pesan_error("keuangan_index.php?tab=tagihan&bulan={$cek['bulan_tagih']}", "✅ Tagihan berhasil dihapus.");
+    } else {
+        pesan_error("keuangan_index.php?tab=tagihan", "❌ Gagal menghapus. Tagihan tidak ditemukan atau sudah LUNAS.");
+    }
+}
 else {
     header("Location: keuangan_index.php");
 }

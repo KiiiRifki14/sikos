@@ -25,6 +25,11 @@ $nama_user = htmlspecialchars($user_sb['nama'] ?? 'Pengguna');
 $foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/".$user_sb['foto_profil'] : "assets/img/avatar.png"; 
 ?>
 
+<!-- Tombol Toggle Desktop -->
+<button class="sidebar-toggle" onclick="toggleSidebar()">
+    <i class="fa-solid fa-bars"></i>
+</button>
+
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <div class="mobile-header">
@@ -39,13 +44,17 @@ $foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/".$user_sb
 
 <aside id="sidebar" class="sidebar-penghuni">
     <div class="sidebar-profile">
-        <div class="profile-img-box">
+        <a href="profil.php" class="profile-img-box" style="display:block; position:relative; cursor:pointer;" title="Klik untuk Ganti Foto">
             <?php if(!empty($user_sb['foto_profil'])): ?>
                 <img src="<?= $foto_user ?>" alt="Foto">
             <?php else: ?>
                 <div class="initial-avatar"><?= strtoupper(substr($nama_user, 0, 1)) ?></div>
             <?php endif; ?>
-        </div>
+            
+            <div style="position:absolute; bottom:0; right:0; background:#2563eb; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-pencil" style="font-size:10px;"></i>
+            </div>
+        </a>
         <div class="profile-info">
             <h4 title="<?= $nama_user ?>"><?= $nama_user ?></h4>
             <p>Penghuni Kost</p>
@@ -91,7 +100,11 @@ $foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/".$user_sb
 
 <script>
     function toggleSidebar() {
+        // Toggle untuk Mobile
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('sidebarOverlay').classList.toggle('active');
+        
+        // Toggle untuk Desktop (Memperluas konten)
+        document.body.classList.toggle('sidebar-collapsed');
     }
 </script>

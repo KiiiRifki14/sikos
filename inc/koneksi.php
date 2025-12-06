@@ -304,56 +304,72 @@ class Database {
     // 7. APPROVE BOOKING & KONTRAK
     // ==========================================
     function setujui_booking_dan_buat_kontrak($id_booking) {
-        $q_booking = $this->koneksi->query("SELECT b.*, k.harga FROM booking b JOIN kamar k ON b.id_kamar=k.id_kamar WHERE id_booking = $id_booking");
-        $booking = $q_booking->fetch_assoc();
-        
-        if (!$booking) return false;
+        $this->koneksi->begin_transaction(); // Mulai Transaksi agar data konsisten
 
-        $id_pengguna = $booking['id_pengguna'];
-        $id_kamar    = $booking['id_kamar'];
-        $tgl_mulai   = $booking['checkin_rencana'];
-        $durasi      = $booking['durasi_bulan_rencana'];
-        $harga_kamar = $booking['harga'];
-        $tgl_selesai = date('Y-m-d', strtotime("+$durasi months", strtotime($tgl_mulai)));
+        try {
+            // 1. Ambil Data Booking
+            $q_booking = $this->koneksi->query("SELECT b.*, k.harga FROM booking b JOIN kamar k ON b.id_kamar=k.id_kamar WHERE id_booking = $id_booking");
+            $booking = $q_booking->fetch_assoc();
+            
+            if (!$booking) throw new Exception("Data booking tidak ditemukan");
 
-        $q_penghuni = $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna = $id_pengguna");
-        if ($q_penghuni->num_rows > 0) {
-            $d_penghuni = $q_penghuni->fetch_object();
-            $id_penghuni = $d_penghuni->id_penghuni;
-        } else {
-            $this->koneksi->query("INSERT INTO penghuni (id_pengguna) VALUES ($id_pengguna)");
-            $id_penghuni = $this->koneksi->insert_id;
-        }
+            $id_pengguna = $booking['id_pengguna'];
+            $id_kamar    = $booking['id_kamar'];
+            $tgl_mulai   = $booking['checkin_rencana'];
+            $durasi      = $booking['durasi_bulan_rencana'];
+            $harga_kamar = $booking['harga'];
+            $tgl_selesai = date('Y-m-d', strtotime("+$durasi months", strtotime($tgl_mulai)));
 
-        $this->koneksi->query("UPDATE kontrak SET status='SELESAI' WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
+            // 2. Cek / Buat Data Penghuni
+            $q_penghuni = $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna = $id_pengguna");
+            if ($q_penghuni->num_rows > 0) {
+                $d_penghuni = $q_penghuni->fetch_object();
+                $id_penghuni = $d_penghuni->id_penghuni;
+            } else {
+                $this->koneksi->query("INSERT INTO penghuni (id_pengguna) VALUES ($id_pengguna)");
+                $id_penghuni = $this->koneksi->insert_id;
+            }
 
-        $stmt_kontrak = $this->koneksi->prepare("INSERT INTO kontrak (id_penghuni, id_kamar, tanggal_mulai, tanggal_selesai, durasi_bulan, status) VALUES (?, ?, ?, ?, ?, 'AKTIF')");
-        $stmt_kontrak->bind_param('iisss', $id_penghuni, $id_kamar, $tgl_mulai, $tgl_selesai, $durasi);
-        
-        if ($stmt_kontrak->execute()) {
+            // 3. Matikan kontrak lama jika ada (agar tidak double active)
+            $this->koneksi->query("UPDATE kontrak SET status='SELESAI' WHERE id_penghuni = $id_penghuni AND status='AKTIF'");
+
+            // 4. Buat Kontrak Baru
+            $stmt_kontrak = $this->koneksi->prepare("INSERT INTO kontrak (id_penghuni, id_kamar, tanggal_mulai, tanggal_selesai, durasi_bulan, status) VALUES (?, ?, ?, ?, ?, 'AKTIF')");
+            $stmt_kontrak->bind_param('iisss', $id_penghuni, $id_kamar, $tgl_mulai, $tgl_selesai, $durasi);
+            if (!$stmt_kontrak->execute()) throw new Exception("Gagal buat kontrak");
+            
             $id_kontrak_baru = $this->koneksi->insert_id;
 
+            // 5. Update Status Kamar & Booking
             $this->koneksi->query("UPDATE kamar SET status_kamar='TERISI' WHERE id_kamar = $id_kamar");
             $this->koneksi->query("UPDATE booking SET status='SELESAI' WHERE id_booking = $id_booking");
 
-            // DP Logic
-            $q_bayar = $this->koneksi->query("SELECT jumlah FROM pembayaran WHERE ref_type='BOOKING' AND ref_id=$id_booking AND status='DITERIMA'");
+            // 6. Buat Tagihan Pertama (Sisa Pembayaran)
+            $q_bayar = $this->koneksi->query("SELECT sum(jumlah) as total_bayar FROM pembayaran WHERE ref_type='BOOKING' AND ref_id=$id_booking AND status='DITERIMA'");
             $data_bayar = $q_bayar->fetch_assoc();
-            $dp_amount = $data_bayar['jumlah'] ?? 0;
+            $dp_amount = $data_bayar['total_bayar'] ?? 0;
 
             $sisa_tagihan = $harga_kamar - $dp_amount;
-            if($sisa_tagihan < 0) $sisa_tagihan = 0;
-
+            // Jika DP full/lebih, tagihan bulan pertama 0 atau tetap dibuat lunas?
+            // Kita buat tagihan tetap ada, nanti statusnya disesuaikan
+            
             $bulan_pertama = date('Y-m', strtotime($tgl_mulai));
-            $jatuh_tempo_pertama = date('Y-m-d', strtotime($tgl_mulai . ' + 5 days')); 
+            $jatuh_tempo = date('Y-m-d', strtotime($tgl_mulai . ' + 5 days')); 
 
-            $stmt_tagihan = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
-            $stmt_tagihan->bind_param('isis', $id_kontrak_baru, $bulan_pertama, $sisa_tagihan, $jatuh_tempo_pertama);
-            $stmt_tagihan->execute();
+            if ($sisa_tagihan > 0) {
+                $stmt_tagihan = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
+                $stmt_tagihan->bind_param('isis', $id_kontrak_baru, $bulan_pertama, $sisa_tagihan, $jatuh_tempo);
+                $stmt_tagihan->execute();
+            }
 
+            $this->koneksi->commit();
             return true;
+
+        } catch (Exception $e) {
+            $this->koneksi->rollback();
+            error_log("Error Approval: " . $e->getMessage());
+            return false;
         }
-        return false;
     }
 
     // ==========================================
@@ -451,6 +467,15 @@ class Database {
         $stmt->bind_param('ssssss', $nama, $alamat, $hp, $email, $rek, $pemilik);
         return $stmt->execute();
     }
+    // --- TAMBAHAN UNTUK FIX ERROR PEMBAYARAN ---
+    function update_bukti_pembayaran($id_pembayaran, $path) {
+        // Menggunakan Prepared Statement yang Benar
+        $stmt = $this->koneksi->prepare("UPDATE pembayaran SET bukti_path = ?, status = 'PENDING', waktu_verifikasi = NOW() WHERE id_pembayaran = ?");
+        $stmt->bind_param('si', $path, $id_pembayaran);
+        return $stmt->execute();
+    }
+
+
 
 } // <--- Tutup Class Database
 

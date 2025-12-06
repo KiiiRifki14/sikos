@@ -1,8 +1,9 @@
 <?php
-require '/inc/utils.php';
+session_start();
+require 'inc/utils.php';
 require 'inc/koneksi.php';
 require 'inc/csrf.php';
-session_start();
+
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_check($_POST['csrf'])) {
     die('Invalid Request');
