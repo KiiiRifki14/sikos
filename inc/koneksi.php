@@ -270,9 +270,15 @@ class Database {
     // 6. MANAJEMEN PEMBAYARAN
     // ==========================================
     function tambah_pembayaran_tagihan($id_tagihan, $jumlah, $bukti, $metode = 'TRANSFER') {
+        // [SECURITY] Cek apakah ada pembayaran PENDING sebelumnya
+        $cek = $this->koneksi->prepare("SELECT id_pembayaran FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id=? AND status='PENDING'");
+        $cek->bind_param('i', $id_tagihan);
+        $cek->execute();
+        if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+
         $stmt = $this->koneksi->prepare("INSERT INTO pembayaran (ref_type, ref_id, metode, jumlah, bukti_path, status) VALUES ('TAGIHAN', ?, ?, ?, ?, 'PENDING')");
         $stmt->bind_param('isis', $id_tagihan, $metode, $jumlah, $bukti);
-        return $stmt->execute();
+        return $stmt->execute() ? true : false;
     }
 
     function cek_status_pembayaran_terakhir($id_tagihan) {
@@ -417,6 +423,86 @@ class Database {
         return $jumlah_batal;
     }
 
+    // --- FITUR BARU: PERPANJANG & STOP SEWA ---
+    function perpanjang_kontrak($id_penghuni, $durasi_bulan) {
+        $this->koneksi->begin_transaction();
+        try {
+            // 1. Ambil Kontrak Aktif
+            $q = $this->koneksi->query("SELECT * FROM kontrak WHERE id_penghuni=$id_penghuni AND status='AKTIF'");
+            $kontrak = $q->fetch_assoc();
+            if (!$kontrak) throw new Exception("Tidak ada kontrak aktif.");
+
+            $id_kontrak = $kontrak['id_kontrak'];
+            $tgl_lama   = $kontrak['tanggal_selesai'];
+            
+            // 2. Hitung Tanggal Baru
+            $tgl_baru = date('Y-m-d', strtotime("+$durasi_bulan months", strtotime($tgl_lama)));
+            
+            // 3. Update Kontrak
+            $stmt = $this->koneksi->prepare("UPDATE kontrak SET tanggal_selesai=?, durasi_bulan = durasi_bulan + ? WHERE id_kontrak=?");
+            $stmt->bind_param('sii', $tgl_baru, $durasi_bulan, $id_kontrak);
+            $stmt->execute();
+
+            // 4. Generate Tagihan Baru untuk bulan-bulan tambahan
+            // Loop dari bulan setelah tanggal lama sampai tanggal baru
+            $start = strtotime("+1 month", strtotime($tgl_lama)); // Mulai bulan depan dari exp lama
+            $end   = strtotime($tgl_baru);
+            
+            // Ambil harga kamar saat ini (untuk tagihan baru)
+            $q_kamar = $this->koneksi->query("SELECT harga FROM kamar WHERE id_kamar={$kontrak['id_kamar']}");
+            $harga   = $q_kamar->fetch_object()->harga;
+
+            $current = $start;
+            while ($current <= $end) {
+                $bulan_tagih = date('Y-m', $current);
+                $jatuh_tempo = date('Y-m-d', strtotime(date('Y-m-10', $current))); // Tgl 10 bulan itu
+                
+                // Cek duplikat (jika sebelumnya sudah digenerate)
+                $cek = $this->koneksi->query("SELECT 1 FROM tagihan WHERE id_kontrak=$id_kontrak AND bulan_tagih='$bulan_tagih'");
+                if ($cek->num_rows == 0) {
+                    $ins = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
+                    $ins->bind_param('isis', $id_kontrak, $bulan_tagih, $harga, $jatuh_tempo);
+                    $ins->execute();
+                }
+                
+                $current = strtotime("+1 month", $current);
+            }
+
+            $this->koneksi->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->koneksi->rollback();
+            return false;
+        }
+    }
+
+    function stop_kontrak($id_penghuni) {
+        $this->koneksi->begin_transaction();
+        try {
+            // 1. Ambil Data
+            $q = $this->koneksi->query("SELECT id_kontrak, id_kamar FROM kontrak WHERE id_penghuni=$id_penghuni AND status='AKTIF'");
+            $data = $q->fetch_object();
+            
+            if ($data) {
+                // 2. Matikan Kontrak
+                $this->koneksi->query("UPDATE kontrak SET status='SELESAI' WHERE id_kontrak={$data->id_kontrak}");
+                
+                // 3. Kosongkan Kamar
+                $this->koneksi->query("UPDATE kamar SET status_kamar='TERSEDIA' WHERE id_kamar={$data->id_kamar}");
+                
+                // 4. (Opsional) Hapus Tagihan MASA DEPAN yang belum dibayar? 
+                // Biarkan saja, atau hapus yg > hari ini. Kita biarkan history tagihan tetap ada.
+            }
+            
+            $this->koneksi->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->koneksi->rollback();
+            return false;
+        }
+    }
+    // ------------------------------------------
+    
     function auto_cek_kontrak_habis() {
         $today = date('Y-m-d');
         $sql = "SELECT id_kontrak, id_kamar, id_penghuni FROM kontrak 

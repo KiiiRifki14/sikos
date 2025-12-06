@@ -126,7 +126,10 @@ $nomor = $halaman_awal + 1;
                     while ($row = $res->fetch_assoc()) {
                         $statusBadge = ($row['status'] == 'AKTIF') 
                             ? '<span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">AKTIF</span>' 
-                            : '<span style="background:#f1f5f9; color:#64748b; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">NON-AKTIF</span>';
+                            : '<span style="background:#f1f5f9; color:#64748b; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">MANTAN</span>';
+                        
+                        // Format WA
+                        $hp = preg_replace('/^0/', '62', $row['no_hp']);
                 ?>
                 <tr>
                     <td class="text-center" style="color:var(--text-muted);"><?= $nomor++ ?></td>
@@ -143,14 +146,31 @@ $nomor = $halaman_awal + 1;
                     </td>
                     <td><?= $statusBadge ?></td>
                     <td>
-                        <div class="flex gap-2">
-                            <a href="penghuni_edit.php?id=<?= htmlspecialchars($row['id_penghuni']) ?>" class="btn btn-secondary text-xs" style="padding:6px 10px;">
-                                <i class="fa-solid fa-pen"></i> Edit
+                        <div class="flex flex-wrap gap-2">
+                            <!-- 1. CHAT WA -->
+                            <a href="https://wa.me/<?= $hp ?>" target="_blank" class="btn text-xs" style="background:#25D366; color:white; padding:6px 10px;" title="Chat WhatsApp">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+
+                            <!-- 2. EDIT -->
+                            <a href="penghuni_edit.php?id=<?= $row['id_penghuni'] ?>" class="btn btn-secondary text-xs" style="padding:6px 10px;" title="Edit Biodata">
+                                <i class="fa-solid fa-pen"></i>
                             </a>
                             
                             <?php if($row['status'] == 'AKTIF'): ?>
-                                <a href="cetak_kontrak.php?id=<?= htmlspecialchars($row['id_penghuni']) ?>" target="_blank" class="btn btn-primary text-xs" style="padding:6px 10px; background-color:#4f46e5;">
-                                    <i class="fa-solid fa-file-contract"></i> Kontrak
+                                <!-- 3. PERPANJANG (Modal) -->
+                                <button onclick="bukaModalPerpanjang(<?= $row['id_penghuni'] ?>, '<?= htmlspecialchars($row['nama']) ?>')" class="btn text-xs" style="background:#3b82f6; color:white; padding:6px 10px;" title="Perpanjang Sewa">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                </button>
+
+                                <!-- 4. STOP (Konfirmasi) -->
+                                <a href="penghuni_proses.php?act=stop&id=<?= $row['id_penghuni'] ?>" onclick="return confirm('Yakin ingin memberhentikan sewa (Checkout)? Kamar akan menjadi TERSEDIA kembali.')" class="btn text-xs" style="background:#ef4444; color:white; padding:6px 10px;" title="Stop Sewa / Checkout">
+                                    <i class="fa-solid fa-power-off"></i>
+                                </a>
+
+                                <!-- 5. KONTRAK -->
+                                <a href="cetak_kontrak.php?id=<?= $row['id_penghuni'] ?>" target="_blank" class="btn btn-primary text-xs" style="padding:6px 10px; background-color:#4f46e5;" title="Cetak Kontrak">
+                                    <i class="fa-solid fa-file-contract"></i>
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -165,6 +185,37 @@ $nomor = $halaman_awal + 1;
                 </tbody>
             </table>
         </div>
+
+    <!-- MODAL PERPANJANG -->
+    <div id="modalPerpanjang" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-96 animate-fade-up">
+            <h3 class="font-bold text-lg mb-4">Perpanjang Sewa</h3>
+            <p class="text-sm mb-4">Penghuni: <span id="nama_penghuni_modal" class="font-bold"></span></p>
+            
+            <form action="penghuni_proses.php?act=perpanjang" method="POST">
+                <input type="hidden" name="id_penghuni" id="id_penghuni_modal">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2">Tambah Durasi (Bulan)</label>
+                    <input type="number" name="durasi" class="form-input w-full" min="1" value="1" required>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="tutupModal()" class="btn btn-secondary">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function bukaModalPerpanjang(id, nama) {
+        document.getElementById('id_penghuni_modal').value = id;
+        document.getElementById('nama_penghuni_modal').innerText = nama;
+        document.getElementById('modalPerpanjang').style.display = 'flex';
+    }
+    function tutupModal() {
+        document.getElementById('modalPerpanjang').style.display = 'none';
+    }
+    </script>
 
         <!-- Pagination (Standardized UI with Search Preservation) -->
         <?php

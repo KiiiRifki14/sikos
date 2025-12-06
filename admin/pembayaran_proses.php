@@ -39,6 +39,16 @@ if ($act == 'terima' && $id) {
         $db->setujui_booking_dan_buat_kontrak($cek['ref_id']);
     } 
     else if ($cek['ref_type'] == 'TAGIHAN') {
+        // [SECURITY] Cek Nominal Tagihan Asli
+        $q_tag = $mysqli->query("SELECT nominal FROM tagihan WHERE id_tagihan={$cek['ref_id']}");
+        $d_tag = $q_tag->fetch_assoc();
+        
+        if ($d_tag && $info['jumlah'] < $d_tag['nominal']) {
+            // Jika kurang bayar, jangan lunaskan. 
+            // Opsional: Bisa partial payment, tapi untuk sekarang kita Block agar aman.
+            pesan_error("keuangan_index.php?tab=verifikasi", "❌ Gagal Verifikasi! Nominal bayar (Rp $nominal) lebih kecil dari tagihan asli (Rp " . number_format($d_tag['nominal']) . "). Silakan TOLAK pembayaran ini.");
+        }
+
         $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan={$cek['ref_id']}");
     }
 

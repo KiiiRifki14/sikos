@@ -47,7 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 6. Simpan ke Database
     $simpan = $db->tambah_pembayaran_tagihan($id_tagihan, $jumlah, $bukti_path, $metode);
 
-    if ($simpan) {
+    if ($simpan === "DUPLIKAT") {
+        pesan_error("tagihan_saya.php", "Anda sudah mengirim bukti untuk tagihan ini dan sedang menunggu verifikasi admin.");
+    }
+    else if ($simpan) {
         header('Location: tagihan_saya.php?status=sukses');
         exit;
     } else {
