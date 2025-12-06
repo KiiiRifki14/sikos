@@ -138,11 +138,11 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
     </div>
 
     <?php if ($sisaKamar > 0): ?>
-    <div class="text-center mt-8" id="load-more-wrapper">
+    <div class="flex flex-col items-center justify-center mt-12 mb-12" id="load-more-wrapper">
         <button id="btn-load-more" onclick="loadMore()" class="btn btn-secondary" style="padding: 12px 30px;">
             Lihat Lebih Banyak (<?= $sisaKamar ?>+)
         </button>
-        <div id="loading-spinner" class="hidden" style="color:var(--primary);">
+        <div id="loading-spinner" class="hidden mt-4" style="color:var(--primary);">
             <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
         </div>
     </div>
