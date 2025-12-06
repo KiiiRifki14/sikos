@@ -23,6 +23,12 @@ $user_sb = $mysqli->query($q_user)->fetch_assoc();
 $nama_user = htmlspecialchars($user_sb['nama'] ?? 'Pengguna');
 // Gunakan path absolut web root untuk gambar agar aman di subfolder
 $foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/".$user_sb['foto_profil'] : "assets/img/avatar.png"; 
+
+// Hitung Tagihan Belum Bayar
+$count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t 
+    JOIN kontrak k ON t.id_kontrak = k.id_kontrak 
+    WHERE k.status='AKTIF' AND t.status='BELUM' 
+    AND k.id_penghuni = (SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna)")->fetch_row()[0];
 ?>
 
 <!-- Tombol Toggle Desktop -->
@@ -75,14 +81,31 @@ $foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/".$user_sb
         <a href="tagihan_saya.php" class="nav-link <?= $page=='tagihan_saya.php'?'active':'' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-file-invoice-dollar"></i></div>
             <span>Tagihan</span>
+            <?php if($count_tagihan > 0): ?>
+                <span class="badge-notif"><?= $count_tagihan ?></span>
+            <?php endif; ?>
         </a>
+<?php
+        // Hitung Keluhan "PROSES" (Sedang dikerjakan admin)
+        $c_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE id_penghuni=(SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna) AND status='PROSES'")->fetch_row()[0];
+        
+        // Hitung Pengumuman Baru (7 Hari Terakhir)
+        $c_info = $mysqli->query("SELECT COUNT(*) FROM pengumuman WHERE is_aktif=1 AND aktif_mulai >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetch_row()[0];
+        ?>
+        
         <a href="keluhan.php" class="nav-link <?= $page=='keluhan.php'?'active':'' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-screwdriver-wrench"></i></div>
             <span>Lapor Keluhan</span>
+            <?php if($c_keluhan > 0): ?>
+                <span class="badge-notif"><?= $c_keluhan ?></span>
+            <?php endif; ?>
         </a>
         <a href="pengumuman.php" class="nav-link <?= $page=='pengumuman.php'?'active':'' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-bullhorn"></i></div>
             <span>Info & Pengumuman</span>
+            <?php if($c_info > 0): ?>
+                <span class="badge-notif" style="background:#f59e0b;">New</span>
+            <?php endif; ?>
         </a>
 
         <div class="nav-label mt-4">Akun</div>

@@ -25,19 +25,45 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
 
         <a href="index.php" class="sidebar-link <?= $current_page == 'index.php' ? 'active' : '' ?>">
-            <i class="fa-solid fa-chart-pie w-6 text-blue-500"></i> Dashboard
+            <div class="flex items-center gap-3 w-full">
+                <i class="fa-solid fa-chart-pie w-6 text-blue-500"></i> 
+                <span>Dashboard</span>
+            </div>
         </a>
         <a href="kamar_data.php" class="sidebar-link <?= strpos($current_page, 'kamar') !== false ? 'active' : '' ?>">
-            <i class="fa-solid fa-house-chimney w-6 text-orange-500"></i> Kelola Kamar
+            <div class="flex items-center gap-3 w-full">
+                <i class="fa-solid fa-house-chimney w-6 text-orange-500"></i> 
+                <span>Kelola Kamar</span>
+            </div>
         </a>
+        
+        <?php 
+            $count_booking = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0]; 
+        ?>
         <a href="booking_data.php" class="sidebar-link <?= strpos($current_page, 'booking') !== false ? 'active' : '' ?>">
-            <i class="fa-solid fa-clipboard-list w-6 text-pink-500"></i> Booking
+            <div class="flex items-center gap-3 w-full">
+                <i class="fa-solid fa-clipboard-list w-6 text-pink-500"></i> 
+                <span>Booking</span>
+            </div>
+            <?php if($count_booking > 0): ?>
+                <span class="badge-notif"><?= $count_booking ?></span>
+            <?php endif; ?>
         </a>
 
         <!-- KATEGORI: KEUANGAN (DROPDOWN) -->
         <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin: 24px 16px 8px; letter-spacing:0.5px;">
             Keuangan
         </div>
+
+        <?php
+            // Hitung Pending Pembayaran
+            $c_bayar = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0]; 
+            // Hitung Tagihan Belum Lunas
+            $c_tagih = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE status='BELUM'")->fetch_row()[0];
+            
+            // Total Notif Keuangan (untuk badge parent)
+            $total_keuangan = $c_bayar + $c_tagih;
+        ?>
 
         <!-- Tombol Dropdown -->
         <div class="sidebar-dropdown">
@@ -47,15 +73,31 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <i class="fa-solid fa-sack-dollar w-6 text-green-600"></i> 
                     <span>Pusat Keuangan</span>
                 </div>
+                <!-- Badge Total di Parent Menu -->
+                <?php if($total_keuangan > 0): ?>
+                    <span class="badge-notif" style="margin-right:8px;"><?= $total_keuangan ?></span>
+                <?php endif; ?>
                 <i class="fa-solid fa-chevron-down arrow text-xs transition-transform"></i>
             </button>
             
             <div class="dropdown-content <?= ($current_page == 'keuangan_index.php') ? 'show' : '' ?>">
                 <a href="keuangan_index.php?tab=verifikasi" class="sidebar-sublink <?= (isset($_GET['tab']) && $_GET['tab'] == 'verifikasi') ? 'text-blue-600 font-bold bg-blue-50' : '' ?>">
-                    <i class="fa-solid fa-check-double w-4"></i> Verifikasi Bayar
+                    <div class="flex items-center gap-2 w-full">
+                        <i class="fa-solid fa-check-double w-4"></i> 
+                        <span>Verifikasi Bayar</span>
+                    </div>
+                    <?php if($c_bayar > 0): ?>
+                        <span class="badge-notif"><?= $c_bayar ?></span>
+                    <?php endif; ?>
                 </a>
                 <a href="keuangan_index.php?tab=tagihan" class="sidebar-sublink <?= (isset($_GET['tab']) && $_GET['tab'] == 'tagihan') ? 'text-blue-600 font-bold bg-blue-50' : '' ?>">
-                    <i class="fa-solid fa-file-invoice w-4"></i> Kelola Tagihan
+                    <div class="flex items-center gap-2 w-full">
+                        <i class="fa-solid fa-file-invoice w-4"></i> 
+                        <span>Kelola Tagihan</span>
+                    </div>
+                    <?php if($c_tagih > 0): ?>
+                        <span class="badge-notif"><?= $c_tagih ?></span>
+                    <?php endif; ?>
                 </a>
                 <a href="keuangan_index.php?tab=pengeluaran" class="sidebar-sublink <?= (isset($_GET['tab']) && $_GET['tab'] == 'pengeluaran') ? 'text-blue-600 font-bold bg-blue-50' : '' ?>">
                     <i class="fa-solid fa-wallet w-4"></i> Pengeluaran
@@ -72,10 +114,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
 
         <a href="penghuni_data.php" class="sidebar-link <?= strpos($current_page, 'penghuni') !== false ? 'active' : '' ?>">
-            <i class="fa-solid fa-users w-6 text-purple-500"></i> Penghuni
+            <div class="flex items-center gap-3 w-full">
+                <i class="fa-solid fa-users w-6 text-purple-500"></i> 
+                <span>Penghuni</span>
+            </div>
         </a>
+        
+        <?php 
+            $count_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE status='BARU'")->fetch_row()[0]; 
+        ?>
         <a href="keluhan_data.php" class="sidebar-link <?= strpos($current_page, 'keluhan') !== false ? 'active' : '' ?>">
-            <i class="fa-solid fa-triangle-exclamation w-6 text-red-500"></i> Komplain
+            <div class="flex items-center gap-3 w-full">
+                <i class="fa-solid fa-triangle-exclamation w-6 text-red-500"></i> 
+                <span>Komplain</span>
+            </div>
+            <?php if($count_keluhan > 0): ?>
+                <span class="badge-notif"><?= $count_keluhan ?></span>
+            <?php endif; ?>
         </a>
         
         <!-- KATEGORI: SYSTEM -->

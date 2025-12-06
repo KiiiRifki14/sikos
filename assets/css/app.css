@@ -1101,3 +1101,31 @@ tr:last-child td {
     border: 1px solid #e2e8f0;
   }
 }
+
+/* Notification Badge */
+.badge-notif {
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 8px;
+  min-width: 20px;
+  text-align: center;
+  border-radius: 99px;
+  margin-left: auto;
+  line-height: normal;
+}
+
+.sidebar-link {
+    display: flex;
+    justify-content: flex-start; 
+    align-items: center;
+}
+
+.sidebar-link i {
+    flex-shrink: 0;
+}
+
+.sidebar-link span {
+    flex-grow: 1;
+}
