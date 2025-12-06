@@ -24,13 +24,12 @@ function get_pay_info($mysqli, $id) {
 }
 
 // 1. TERIMA PEMBAYARAN
-// 1. TERIMA PEMBAYARAN
 if ($act == 'terima' && $id) {
     $info = get_pay_info($mysqli, $id);
     $nominal = number_format($info['jumlah'] ?? 0);
     $nama = $info['nama'] ?? 'User';
 
-    // Update status pembayaran SEKALI SAJA
+    // Update status pembayaran
     $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
 
     // Cek Tipe untuk aksi lanjutan (Booking/Tagihan)
@@ -43,25 +42,24 @@ if ($act == 'terima' && $id) {
         $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan={$cek['ref_id']}");
     }
 
-    // Catat Log SEKALI SAJA
+    // LOG
     $db->catat_log($_SESSION['id_pengguna'], 'VERIFIKASI BAYAR', "Menerima pembayaran Rp $nominal dari $nama (ID: $id)");
     
-    // Redirect
     header("Location: keuangan_index.php?tab=verifikasi");
     exit;
 }
 // 2. TOLAK PEMBAYARAN
 else if ($act == 'tolak' && $id) {
+    $info = get_pay_info($mysqli, $id);
+    $nama = $info['nama'] ?? 'User';
+
     $mysqli->query("UPDATE pembayaran SET status='DITOLAK', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
     
     // LOG
-    // ... query update ...
-    $mysqli->query("UPDATE pembayaran SET status='DITOLAK', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+    $db->catat_log($_SESSION['id_pengguna'], 'TOLAK BAYAR', "Menolak pembayaran dari $nama (ID: $id)");
     
-    // [TAMBAHAN LOG]
-    $db->catat_log($_SESSION['id_pengguna'], 'TOLAK BAYAR', "Menolak pembayaran ID: $id");
-    
-    // ... lanjut pesan error ...
+    header("Location: keuangan_index.php?tab=verifikasi");
+    exit;
 }
 
 // 3. GENERATE TAGIHAN MASAL
@@ -70,21 +68,13 @@ else if ($act == 'generate_masal' && $_SERVER['REQUEST_METHOD'] == 'POST') {
     $jumlah = $db->generate_tagihan_masal($bulan);
     
     // LOG
-    if($jumlah > 0) $db->catat_log($_SESSION['id_pengguna'], 'GENERATE TAGIHAN', "Membuat $jumlah tagihan untuk bulan $bulan");
-    
-    if ($jumlah > 0) {
-        pesan_error("keuangan_index.php?tab=tagihan&bulan=$bulan", "✅ Sukses membuat $jumlah tagihan baru.");
-    } else {
-        pesan_error("keuangan_index.php?tab=tagihan&bulan=$bulan", "ℹ️ Tidak ada tagihan baru yang dibuat.");
-    }
-
-    $jumlah = $db->generate_tagihan_masal($bulan);
-    
-    // [TAMBAHAN LOG]
     if($jumlah > 0) {
         $db->catat_log($_SESSION['id_pengguna'], 'GENERATE TAGIHAN', "Membuat $jumlah tagihan otomatis untuk bulan $bulan");
+        pesan_error("keuangan_index.php?tab=tagihan&bulan=$bulan", "✅ Sukses membuat $jumlah tagihan baru.");
+    } else {
+        $db->catat_log($_SESSION['id_pengguna'], 'GENERATE TAGIHAN', "Mencoba generate tagihan bulan $bulan (Tidak ada tagihan baru).");
+        pesan_error("keuangan_index.php?tab=tagihan&bulan=$bulan", "ℹ️ Tidak ada tagihan baru yang dibuat.");
     }
-    // ... lanjut pesan error ...
 }
 
 // 4. BAYAR CASH (Manual)
@@ -104,18 +94,10 @@ else if ($act == 'bayar_cash' && $id) {
     if($sukses) {
         // LOG
         $nominal = number_format($d_tag['nominal']);
-        $db->catat_log($_SESSION['id_pengguna'], 'TERIMA CASH', "Terima tunai Rp $nominal dari {$d_tag['nama']}");
-        
+        $db->catat_log($_SESSION['id_pengguna'], 'TERIMA CASH', "Menerima pembayaran TUNAI Rp $nominal dari {$d_tag['nama']}");
         pesan_error("keuangan_index.php?tab=tagihan&bulan=$tgl", "💰 Pembayaran Tunai Berhasil Dicatat!");
     } else {
         pesan_error("keuangan_index.php?tab=tagihan&bulan=$tgl", "❌ Gagal mencatat pembayaran.");
-    }
-    if($sukses) {
-        // [TAMBAHAN LOG - GANTI KODE LAMA JIKA PERLU]
-        $nominal_fmt = number_format($d_tag['nominal']);
-        $db->catat_log($_SESSION['id_pengguna'], 'TERIMA CASH', "Menerima pembayaran TUNAI Rp $nominal_fmt dari {$d_tag['nama']}");
-        
-        pesan_error("keuangan_index.php?tab=tagihan&bulan=$tgl", "💰 Pembayaran Tunai Berhasil Dicatat!");
     }
 }
 // 5. HAPUS TAGIHAN

@@ -5,21 +5,28 @@ require '../inc/guard.php';
 
 if (!is_admin() && !is_owner()) die('Forbidden');
 
+$db = new Database(); // Init untuk Logging
+
 // 1. LOGIKA HAPUS (GET Request)
 if (isset($_GET['act']) && $_GET['act'] == 'hapus') {
     $id = intval($_GET['id']);
     
-    // Cek apakah ada foto? Hapus filenya dulu biar bersih
-    $q = $mysqli->query("SELECT foto_path FROM keluhan WHERE id_keluhan=$id");
+    // Cek info buat log
+    $q = $mysqli->query("SELECT judul, foto_path FROM keluhan WHERE id_keluhan=$id");
     if($r = $q->fetch_assoc()){
         if($r['foto_path'] && file_exists("../assets/uploads/keluhan/".$r['foto_path'])){
             unlink("../assets/uploads/keluhan/".$r['foto_path']);
         }
+        $judul = $r['judul'];
     }
     
     $stmt = $mysqli->prepare("DELETE FROM keluhan WHERE id_keluhan=?");
     $stmt->bind_param('i', $id);
     $stmt->execute();
+    
+    // LOG
+    $db->catat_log($_SESSION['id_pengguna'], 'HAPUS KELUHAN', "Menghapus keluhan: $judul");
+
     header('Location: keluhan_data.php');
     exit;
 }
@@ -30,9 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $status_baru = $_POST['status'];
     $pesan_baru = trim($_POST['tanggapan']);
     
-    // Ambil history chat lama
-    $old_data = $mysqli->query("SELECT tanggapan_admin FROM keluhan WHERE id_keluhan=$id")->fetch_assoc();
+    // Ambil info buat log & history
+    $old_data = $mysqli->query("SELECT judul, tanggapan_admin FROM keluhan WHERE id_keluhan=$id")->fetch_assoc();
     $history_lama = $old_data['tanggapan_admin'];
+    $judul_kel = $old_data['judul'] ?? 'Keluhan';
 
     // Format Pesan Baru: "[TANGGAL JAM - STATUS] Pesan"
     if (!empty($pesan_baru)) {
@@ -54,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     $stmt->execute();
+    
+    // LOG
+    $db->catat_log($_SESSION['id_pengguna'], 'UPDATE KELUHAN', "Update status '$judul_kel' -> $status_baru");
+    
     header('Location: keluhan_data.php');
     exit;
 }

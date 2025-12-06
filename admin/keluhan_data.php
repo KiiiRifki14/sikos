@@ -151,14 +151,28 @@ $nomor = $halaman_awal + 1;
             </table>
         </div>
         
-        <div class="flex justify-center mt-6 gap-2">
+        <div class="pagination-container" style="margin-top: 20px; display:flex; gap:5px; justify-content:center;">
              <?php 
-                $prev = max(1, $halaman-1);
-                $next = min($total_halaman, $halaman+1);
+                $prev = ($halaman > 1) ? $halaman - 1 : 1;
+                $next = ($halaman < $total_halaman) ? $halaman + 1 : $total_halaman;
              ?>
-             <a href="?halaman=<?= $prev ?>" class="btn btn-secondary text-xs">Prev</a>
-             <span class="text-xs flex items-center px-2 text-muted">Hal <?= $halaman ?> dari <?= $total_halaman ?></span>
-             <a href="?halaman=<?= $next ?>" class="btn btn-secondary text-xs">Next</a>
+             
+             <a href="?halaman=<?= ($halaman > 1) ? $prev : '#' ?>" 
+                class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>" style="padding:6px 12px;">
+                <i class="fa-solid fa-chevron-left"></i> Prev
+             </a>
+
+             <?php for($x = 1; $x <= $total_halaman; $x++): ?>
+                <a href="?halaman=<?= $x ?>" 
+                   class="btn text-xs <?= ($halaman == $x) ? 'btn-primary' : 'btn-secondary' ?>" style="padding:6px 12px;">
+                   <?= $x ?>
+                </a>
+             <?php endfor; ?>
+
+             <a href="?halaman=<?= ($halaman < $total_halaman) ? $next : '#' ?>" 
+                class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>" style="padding:6px 12px;">
+                Next <i class="fa-solid fa-chevron-right"></i>
+             </a>
         </div>
     </div>
   </main>

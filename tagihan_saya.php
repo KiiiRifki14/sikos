@@ -66,7 +66,7 @@ $kontrak = $mysqli->query($q_kontrak)->fetch_assoc();
         .bg-belum { background: #fee2e2; color: #b91c1c; }
     </style>
 </head>
-<body>
+<body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
   <main class="main-content">
     

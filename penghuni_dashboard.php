@@ -28,21 +28,21 @@ if ($kontrak) {
   <link rel="stylesheet" href="assets/css/app.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body> <?php include 'components/sidebar_penghuni.php'; ?>
+<body class="role-penghuni"> <?php include 'components/sidebar_penghuni.php'; ?>
 
-  <main class="main-content">
+  <main class="main-content fade-in">
       
-      <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius:16px; padding:30px; color:white; margin-bottom:30px; position:relative; overflow:hidden;">
+      <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius:16px; padding:30px; color:white; margin-bottom:30px; position:relative; overflow:hidden; box-shadow: var(--shadow-lg);">
           <i class="fa-solid fa-house-chimney" style="position:absolute; right:-20px; bottom:-30px; font-size:140px; color:rgba(255,255,255,0.1); transform:rotate(-15deg);"></i>
           <div style="position:relative; z-index:2;">
-              <h2 style="font-size:22px; font-weight:700; margin-bottom:5px;">Halo, <?= htmlspecialchars(explode(' ', $user['nama'])[0]) ?>! 👋</h2>
-              <p style="opacity:0.9; font-size:14px; max-width:500px;">Selamat datang di Dashboard. Akses semua kebutuhan kost Anda di sini dengan mudah.</p>
+              <h2 style="font-size:24px; font-weight:700; margin-bottom:8px;">Halo, <?= htmlspecialchars(explode(' ', $user['nama'])[0]) ?>! 👋</h2>
+              <p style="opacity:0.9; font-size:15px; max-width:550px;">Selamat datang di Dashboard. Akses semua kebutuhan kost Anda di sini dengan mudah dan cepat.</p>
               
               <?php if($tagihan_pending > 0): ?>
-                  <div style="margin-top:20px; display:inline-flex; align-items:center; background:rgba(255,255,255,0.2); padding:10px 15px; border-radius:8px; border:1px solid rgba(255,255,255,0.3);">
-                      <i class="fa-solid fa-circle-exclamation" style="color:#fcd34d; margin-right:10px;"></i>
-                      <span style="font-size:13px; font-weight:500;">Ada <b><?= $tagihan_pending ?> Tagihan</b> belum dibayar.</span>
-                      <a href="tagihan_saya.php" style="margin-left:15px; background:white; color:#2563eb; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; text-decoration:none;">Bayar</a>
+                  <div style="margin-top:24px; display:inline-flex; align-items:center; background:rgba(0,0,0,0.2); padding:10px 20px; border-radius:12px; backdrop-filter: blur(5px);">
+                      <i class="fa-solid fa-bell" style="color:#fcd34d; margin-right:12px; font-size: 18px;"></i>
+                      <span style="font-size:14px; font-weight:500; margin-right: 15px;">Kamu punya <b><?= $tagihan_pending ?> Tagihan</b> belum lunas.</span>
+                      <a href="tagihan_saya.php" class="btn btn-sm" style="background:white; color:var(--primary); font-weight:700; border:none; padding: 6px 16px; border-radius: 8px;">Bayar Sekarang</a>
                   </div>
               <?php endif; ?>
           </div>

@@ -106,7 +106,7 @@ if($row_kamar) {
         }
     </style>
 </head>
-<body>
+<body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
   
   <main class="main-content">

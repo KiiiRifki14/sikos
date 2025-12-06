@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
       @keyframes slideUp { from {transform: translateY(50px); opacity:0;} to {transform: translateY(0); opacity:1;} }
   </style>
 </head>
-<body>
+<body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
   <main class="main-content">
     

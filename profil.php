@@ -65,7 +65,7 @@ $foto_url = !empty($user['foto_profil']) ? "assets/uploads/profil/".$user['foto_
         }
     </style>
 </head>
-<body>
+<body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
   <main class="main-content">
     

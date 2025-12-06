@@ -100,20 +100,37 @@ $res = $mysqli->query($sql);
         $prev = max(1, $halaman - 1);
         $next = min($total_halaman, $halaman + 1);
     ?>
-    <div class="flex justify-center mt-6 gap-2">
+    <div class="pagination-container" style="margin-top: 20px; display:flex; gap:5px; justify-content:center;">
         <?php
-            $qs = $_GET; $qs['halaman'] = $prev;
+            $qs = $_GET;
+            $qs['halaman'] = $prev;
+            $href_prev = ($halaman > 1) ? '?'.http_build_query($qs) : '#';
+
+            $qs['halaman'] = $next;
+            $href_next = ($halaman < $total_halaman) ? '?'.http_build_query($qs) : '#';
         ?>
-        <a href="?<?= http_build_query($qs) ?>" class="btn btn-secondary text-xs" style="<?= ($halaman <= 1) ? 'pointer-events:none; opacity:0.6;' : '' ?> padding: 6px 12px;">Previous</a>
+        
+        <a href="<?= $href_prev ?>" 
+           class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>" 
+           style="padding:6px 12px;">
+           <i class="fa-solid fa-chevron-left"></i> Prev
+        </a>
 
         <?php for($x = 1; $x <= $total_halaman; $x++):
-            $qs = $_GET; $qs['halaman'] = $x;
+            $qs = $_GET;
+            $qs['halaman'] = $x;
+            $href_page = '?'.http_build_query($qs);
         ?>
-            <a href="?<?= http_build_query($qs) ?>" class="btn btn-secondary text-xs <?= ($halaman == $x) ? 'btn-primary' : '' ?>" style="padding: 6px 12px;"><?= $x ?></a>
+            <a href="<?= $href_page ?>" 
+               class="btn text-xs <?= ($halaman == $x) ? 'btn-primary' : 'btn-secondary' ?>" 
+               style="padding:6px 12px;"><?= $x ?></a>
         <?php endfor; ?>
 
-        <?php $qs = $_GET; $qs['halaman'] = $next; ?>
-        <a href="?<?= http_build_query($qs) ?>" class="btn btn-secondary text-xs" style="<?= ($halaman >= $total_halaman) ? 'pointer-events:none; opacity:0.6;' : '' ?> padding: 6px 12px;">Next</a>
+        <a href="<?= $href_next ?>" 
+           class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>" 
+           style="padding:6px 12px;">
+           Next <i class="fa-solid fa-chevron-right"></i>
+        </a>
     </div>
   </main>
 </body>

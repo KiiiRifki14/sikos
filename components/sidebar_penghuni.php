@@ -7,7 +7,8 @@ $id_pengguna = $_SESSION['id_pengguna'] ?? 0;
 $page = basename($_SERVER['PHP_SELF']);
 
 // Inject class khusus ke body agar CSS terpisah dari admin
-echo '<script>document.body.classList.add("role-penghuni");</script>';
+// Inject class khusus ke body (Opsional, tapi CSS baru sudah support tanpa ini via class sidebar)
+// echo '<script>document.body.classList.add("role-penghuni");</script>';
 
 global $mysqli;
 if(!isset($mysqli)) { 
@@ -44,7 +45,7 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
     </button>
     <div class="mobile-user-info">
         <span class="mobile-user-name"><?= explode(' ', $nama_user)[0] ?></span>
-        <img src="<?= $foto_user ?>" alt="Foto" class="mobile-user-img">
+
     </div>
 </div>
 
@@ -114,8 +115,10 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
             <div class="icon-wrap"><i class="fa-solid fa-user-gear"></i></div>
             <span>Edit Profil</span>
         </a>
-        <a href="logout.php" class="nav-link text-red">
-            <div class="icon-wrap"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+        <a href="logout.php" class="nav-link" style="color: var(--danger); margin-top: 20px;">
+            <div class="icon-wrap" style="color: var(--danger); background: #fee2e2;">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </div>
             <span>Keluar</span>
         </a>
     </nav>

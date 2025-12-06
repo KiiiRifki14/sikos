@@ -25,7 +25,7 @@ $id_pengguna = $_SESSION['id_pengguna'];
         .p-body { font-size: 14px; color: #475569; line-height: 1.6; }
     </style>
 </head>
-<body>
+<body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
   <main class="main-content">
     

@@ -25,6 +25,21 @@ if ($tab == 'laporan') {
     $total_keluar_bln = $mysqli->query($q_keluar_bln)->fetch_row()[0] ?? 0;
 }
 
+// --- LOGIKA DATA TAGIHAN (PAGINATION) ---
+if ($tab == 'tagihan') {
+    $bulan_filter = $_GET['bulan'] ?? date('Y-m');
+    
+    $batas = 10;
+    $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+    if($halaman < 1) $halaman = 1;
+    $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
+
+    $q_count = "SELECT COUNT(*) FROM tagihan t WHERE t.bulan_tagih = '$bulan_filter'";
+    $total_data = $mysqli->query($q_count)->fetch_row()[0];
+    $total_halaman = ceil($total_data / $batas);
+    $nomor = $halaman_awal + 1;
+}
+
 // --- LOGIKA DATA PENGELUARAN (PAGINATION) ---
 if ($tab == 'pengeluaran') {
     $batas = 10;
@@ -207,7 +222,8 @@ if ($tab == 'pengeluaran') {
                                   JOIN penghuni p ON ko.id_penghuni = p.id_penghuni
                                   JOIN pengguna u ON p.id_pengguna = u.id_pengguna
                                   JOIN kamar k ON ko.id_kamar = k.id_kamar
-                                  WHERE t.bulan_tagih = '$bulan_filter' ORDER BY u.nama ASC";
+                                  WHERE t.bulan_tagih = '$bulan_filter' ORDER BY u.nama ASC 
+                                  LIMIT $halaman_awal, $batas";
                     $res_tagihan = $mysqli->query($q_tagihan);
                     
                     if($res_tagihan->num_rows > 0) {
@@ -238,6 +254,49 @@ if ($tab == 'pengeluaran') {
                 </table>
             </div>
         </div>
+
+        <div class="pagination-container" style="margin-top: 20px; display:flex; gap:5px; justify-content:center;">
+            <?php
+                // Previous
+                $qs = $_GET;
+                $prev = max(1, $halaman - 1);
+                $next = min($total_halaman, $halaman + 1);
+
+                $qs['halaman'] = $prev;
+                $href_prev = ($halaman > 1) ? '?'.http_build_query($qs) : '#';
+
+                // Next
+                $qs['halaman'] = $next;
+                $href_next = ($halaman < $total_halaman) ? '?'.http_build_query($qs) : '#';
+            ?>
+            
+            <a href="<?= $href_prev ?>" 
+               class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>" 
+               style="padding:6px 12px;">
+               <i class="fa-solid fa-chevron-left"></i> Prev
+            </a>
+
+            <?php for($x = 1; $x <= $total_halaman; $x++):
+                $qs = $_GET;
+                $qs['halaman'] = $x;
+                $href_page = '?'.http_build_query($qs);
+            ?>
+                <a href="<?= $href_page ?>" 
+                   class="btn text-xs <?= ($halaman == $x) ? 'btn-primary' : 'btn-secondary' ?>" 
+                   style="padding:6px 12px;"><?= $x ?></a>
+            <?php endfor; ?>
+
+            <a href="<?= $href_next ?>" 
+               class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>" 
+               style="padding:6px 12px;">
+               Next <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+        
+        <div class="text-center mt-4 text-xs text-muted">
+            Halaman <?= $halaman ?> dari <?= $total_halaman ?> (Total <?= $total_data ?> data)
+        </div>
+    </div>
     <?php endif; ?>
 
     <?php if($tab == 'pengeluaran'): ?>

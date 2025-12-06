@@ -74,28 +74,36 @@ for ($i = 1; $i <= 12; $i++) {
         </div>
 
         <div class="grid-stats">
-            <div class="card-white text-center">
-                <div class="text-xs font-bold mb-4 uppercase" style="color: var(--text-muted);">Occupancy Rate</div>
-                <div class="stat-value"><?= $occupancy_rate ?>%</div>
-                <div class="text-xs" style="color: var(--text-muted);"><?= $terisi ?> dari <?= $total_kamar ?> kamar</div>
+            <!-- Occupancy Rate -->
+            <div class="card-white card-gradient-purple text-center" style="border:none;">
+                <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Occupancy Rate</div>
+                <div class="stat-value" style="font-size: 2.5rem;"><?= $occupancy_rate ?>%</div>
+                <div class="text-xs" style="color: rgba(255,255,255,0.8);"><?= $terisi ?> dari <?= $total_kamar ?> kamar terisi</div>
+                <i class="fa-solid fa-bed" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
 
-            <div class="card-white text-center">
-                <div class="text-xs font-bold mb-4 uppercase" style="color: var(--text-muted);">Pemasukan</div>
-                <div class="stat-value text-blue"><?= format_uang_singkat($omset_raw) ?></div>
-                <div class="text-xs" style="color: var(--text-muted);">Omset Bulan Ini</div>
+            <!-- Pemasukan -->
+            <div class="card-white card-gradient-blue text-center" style="border:none;">
+                <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Pemasukan</div>
+                <div class="stat-value" style="font-size: 1.8rem;"><?= format_uang_singkat($omset_raw) ?></div>
+                <div class="text-xs" style="color: rgba(255,255,255,0.8);">Omset Bulan Ini</div>
+                <i class="fa-solid fa-wallet" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
 
-            <div class="card-white text-center">
-                <div class="text-xs font-bold mb-4 uppercase" style="color: var(--text-muted);">Pengeluaran</div>
-                <div class="stat-value text-red"><?= format_uang_singkat($keluar_raw) ?></div>
-                <div class="text-xs" style="color: var(--text-muted);">Biaya Operasional</div>
+            <!-- Pengeluaran -->
+            <div class="card-white card-gradient-orange text-center" style="border:none;">
+                <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Pengeluaran</div>
+                <div class="stat-value" style="font-size: 1.8rem;"><?= format_uang_singkat($keluar_raw) ?></div>
+                <div class="text-xs" style="color: rgba(255,255,255,0.8);">Operasional</div>
+                <i class="fa-solid fa-money-bill-transfer" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
 
-            <div class="card-white text-center" style="border-left: 4px solid var(--success);">
-                <div class="text-xs font-bold mb-4 uppercase" style="color: var(--text-muted);">Laba Bersih</div>
-                <div class="stat-value text-green"><?= format_uang_singkat($profit_raw) ?></div>
-                <div class="text-xs" style="color: var(--text-muted);">(Masuk - Keluar)</div>
+            <!-- Laba Bersih -->
+            <div class="card-white card-gradient-emerald text-center" style="border:none;">
+                <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Laba Bersih</div>
+                <div class="stat-value" style="font-size: 1.8rem;"><?= format_uang_singkat($profit_raw) ?></div>
+                <div class="text-xs" style="color: rgba(255,255,255,0.8);">Profit Bersih</div>
+                <i class="fa-solid fa-chart-line" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
         </div> 
 
