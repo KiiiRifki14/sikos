@@ -149,25 +149,38 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
     <?php endif; ?>
   </section>
 
-  <section id="fasilitas" class="section" style="background: white; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
-    <div class="text-center mb-8">
+  <section id="fasilitas" class="section" style="background: #f8fafc; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+    <div class="text-center mb-12">
       <h2 class="section-title">Fasilitas Bangunan</h2>
       <p class="section-subtitle">Kenyamanan Anda adalah prioritas kami</p>
     </div>
-    <div class="grid-rooms"> <div class="card-white text-center">
-        <i class="fa-solid fa-shield-halved" style="font-size:40px; color:var(--primary); margin-bottom:16px;"></i>
-        <h3 class="font-bold mb-2">Keamanan 24 Jam</h3>
-        <p class="text-sm text-muted">CCTV dan akses terkontrol untuk keamanan maksimal.</p>
+    
+    <div class="grid-rooms"> 
+      <!-- Card 1 -->
+      <div class="card-white text-center" style="border: 1px solid var(--border); transition: transform 0.3s;">
+        <div style="background: var(--primary-light); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+            <i class="fa-solid fa-shield-halved" style="font-size:32px; color:var(--primary);"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2">Keamanan 24 Jam</h3>
+        <p class="text-sm text-muted">CCTV 24 jam dan sistem akses satu pintu untuk keamanan maksimal penghuni.</p>
       </div>
-      <div class="card-white text-center">
-        <i class="fa-solid fa-wifi" style="font-size:40px; color:var(--primary); margin-bottom:16px;"></i>
-        <h3 class="font-bold mb-2">Internet Stabil</h3>
-        <p class="text-sm text-muted">Wi-Fi cepat untuk menunjang aktivitas digital Anda.</p>
+
+      <!-- Card 2 -->
+      <div class="card-white text-center" style="border: 1px solid var(--border); transition: transform 0.3s;">
+        <div style="background: var(--primary-light); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+            <i class="fa-solid fa-wifi" style="font-size:32px; color:var(--primary);"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2">Internet Super Cepat</h3>
+        <p class="text-sm text-muted">Koneksi Wi-Fi dedicated fiber optic untuk menunjang aktivitas kerja & hiburan.</p>
       </div>
-      <div class="card-white text-center">
-        <i class="fa-solid fa-shower" style="font-size:40px; color:var(--primary); margin-bottom:16px;"></i>
-        <h3 class="font-bold mb-2">Kamar Mandi Dalam</h3>
-        <p class="text-sm text-muted">Privasi dan kebersihan lebih terjaga di setiap kamar.</p>
+
+      <!-- Card 3 -->
+      <div class="card-white text-center" style="border: 1px solid var(--border); transition: transform 0.3s;">
+        <div style="background: var(--primary-light); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+            <i class="fa-solid fa-shower" style="font-size:32px; color:var(--primary);"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2">Kamar Mandi Dalam</h3>
+        <p class="text-sm text-muted">Kenyamanan privasi dengan kamar mandi bersih dan shower di setiap kamar.</p>
       </div>
     </div>
   </section>

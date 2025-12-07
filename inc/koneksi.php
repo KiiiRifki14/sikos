@@ -571,7 +571,15 @@ $mysqli = $db->koneksi;
 
 // Fungsi Helper Global (Bukan method class, tapi helper biasa)
 function pesan_error($url, $pesan) {
-    echo "<script>alert('$pesan'); window.location.href='$url';</script>";
+    $sep = (strpos($url, '?') === false) ? '?' : '&';
+    // Auto-detect type based on message content
+    $type = 'error';
+    if (strpos($pesan, '✅') !== false || stripos($pesan, 'berhasil') !== false || stripos($pesan, 'sukses') !== false) {
+        $type = 'success';
+    }
+    
+    $new_url = $url . $sep . "msg=custom&text=" . urlencode($pesan) . "&type=" . $type;
+    header("Location: $new_url");
     exit;
 }
 ?>

@@ -368,3 +368,120 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+// ==========================================
+// SWEETALERT2 GLOBAL HELPER
+// ==========================================
+
+// 1. Toast Configuration
+const Toast = (typeof Swal !== 'undefined') ? Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer)
+        toast.addEventListener('mouseleave', Swal.resumeTimer)
+    }
+}) : null;
+
+// 2. Global Confirmation Functions (Exposed to Window)
+window.konfirmasiAksi = function(e, pesan, url) {
+    if(e) e.preventDefault();
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: pesan,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Lanjutkan!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = url;
+        }
+    });
+};
+
+window.konfirmasiForm = function(e, pesan) {
+    if(e) e.preventDefault();
+    let form = e.target.closest('form');
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: pesan,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Proses!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+};
+
+// 3. Auto-Detect Messages from URL (e.g. ?msg=saved)
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Swal === 'undefined') return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const msg = urlParams.get('msg');
+
+    const text = urlParams.get('text');
+    const type = urlParams.get('type');
+
+    if (msg) {
+        let title = '';
+        let icon = 'success';
+
+        switch(msg) {
+            case 'saved':
+            case 'created':
+                title = 'Data berhasil disimpan!';
+                break;
+            case 'updated':
+                title = 'Data berhasil diperbarui!';
+                break;
+            case 'deleted':
+                title = 'Data berhasil dihapus!';
+                break;
+            case 'extended':
+                title = 'Kontrak berhasil diperpanjang!';
+                break;
+            case 'stopped':
+                title = 'Kontrak berhasil diberhentikan!';
+                break;
+            case 'verified':
+                title = 'Pembayaran berhasil diverifikasi!';
+                break;
+            case 'rejected':
+                title = 'Pembayaran ditolak.';
+                icon = 'info';
+                break;
+            case 'sent':
+                title = 'Terkirim!';
+                break;
+            case 'custom':
+                title = text || 'Notifikasi';
+                icon = type || 'info';
+                break;
+            default:
+                title = 'Operasi berhasil!';
+        }
+
+        // Auto-detect icon from text content (compatibility with legacy messages)
+        if (title.includes('✅')) icon = 'success';
+        if (title.includes('❌') || title.includes('Gagal') || title.includes('Ditolak')) icon = 'error';
+
+        Toast.fire({
+            icon: icon,
+            title: title
+        });
+        
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});

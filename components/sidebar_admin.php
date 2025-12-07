@@ -2,6 +2,9 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- Mobile Hamburger -->
 <button class="sidebar-toggle" onclick="toggleSidebar()">
     <i class="fa-solid fa-bars"></i>

@@ -32,6 +32,9 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
     AND k.id_penghuni = (SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna)")->fetch_row()[0];
 ?>
 
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- Tombol Toggle Desktop -->
 <button class="sidebar-toggle" onclick="toggleSidebar()">
     <i class="fa-solid fa-bars"></i>

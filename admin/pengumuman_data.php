@@ -76,7 +76,7 @@ if (!is_admin()) { die('Forbidden'); }
                                 <a href="pengumuman_proses.php?act=edit&id=<?= $row['id_pengumuman'] ?>" class="btn btn-secondary text-xs" style="padding: 6px 10px;">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <a href="pengumuman_proses.php?act=hapus&id=<?= $row['id_pengumuman'] ?>" class="btn btn-danger text-xs" style="padding: 6px 10px;" onclick="return confirm('Yakin hapus pengumuman ini?')">
+                                <a href="pengumuman_proses.php?act=hapus&id=<?= $row['id_pengumuman'] ?>" class="btn btn-danger text-xs" style="padding: 6px 10px;" onclick="konfirmasiAksi(event, 'Yakin hapus pengumuman ini?', this.href)">
                                     <i class="fa-solid fa-trash"></i>
                                 </a>
                             </div>

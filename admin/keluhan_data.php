@@ -135,7 +135,7 @@ $nomor = $halaman_awal + 1;
                                     <i class="fa-solid fa-pen-to-square"></i> Update
                                 </button>
 
-                                <a href="keluhan_proses.php?act=hapus&id=<?= htmlspecialchars($row['id_keluhan']) ?>" class="btn btn-danger text-xs" style="padding:6px 10px;" onclick="return confirm('Hapus data keluhan ini?')">
+                                <a href="keluhan_proses.php?act=hapus&id=<?= htmlspecialchars($row['id_keluhan']) ?>" class="btn btn-danger text-xs" style="padding:6px 10px;" onclick="konfirmasiAksi(event, 'Yakin ingin menghapus data keluhan ini?', this.href)">
                                     <i class="fa-solid fa-trash"></i>
                                 </a>
                             </div>
@@ -201,7 +201,7 @@ $nomor = $halaman_awal + 1;
                   <textarea name="tanggapan" id="modal_tanggapan" class="form-input w-full" rows="3" placeholder="Tulis tanggapan untuk penghuni..."></textarea>
               </div>
 
-              <button type="submit" class="btn btn-primary w-full">Simpan Perubahan</button>
+              <button type="submit" class="btn btn-primary w-full" onclick="konfirmasiForm(event, 'Simpan perubahan status keluhan ini?')">Simpan Perubahan</button>
           </form>
       </div>
   </div>

@@ -164,7 +164,7 @@ $nomor = $halaman_awal + 1;
                                 </button>
 
                                 <!-- 4. STOP (Konfirmasi) -->
-                                <a href="penghuni_proses.php?act=stop&id=<?= $row['id_penghuni'] ?>" onclick="return confirm('Yakin ingin memberhentikan sewa (Checkout)? Kamar akan menjadi TERSEDIA kembali.')" class="btn text-xs" style="background:#ef4444; color:white; padding:6px 10px;" title="Stop Sewa / Checkout">
+                                <a href="penghuni_proses.php?act=stop&id=<?= $row['id_penghuni'] ?>" onclick="konfirmasiAksi(event, 'Yakin ingin memberhentikan sewa (Checkout)? Kamar akan menjadi TERSEDIA kembali.', this.href)" class="btn text-xs" style="background:#ef4444; color:white; padding:6px 10px;" title="Stop Sewa / Checkout">
                                     <i class="fa-solid fa-power-off"></i>
                                 </a>
 
@@ -200,7 +200,7 @@ $nomor = $halaman_awal + 1;
                 </div>
                 <div class="flex justify-end gap-2">
                     <button type="button" onclick="tutupModal()" class="btn btn-secondary">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-primary" onclick="konfirmasiForm(event, 'Yakin ingin memperpanjang sewa penghuni ini?')">Simpan</button>
                 </div>
             </form>
         </div>

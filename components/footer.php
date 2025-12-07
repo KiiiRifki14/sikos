@@ -40,4 +40,6 @@ $app = $db_footer->ambil_pengaturan();
   <div class="footer-bottom">
     &copy; <?= date('Y') ?> <?= htmlspecialchars($app['nama_kos']) ?>. All rights reserved.
   </div>
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </footer>

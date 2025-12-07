@@ -70,7 +70,7 @@ $nomor = $halaman_awal + 1;
                         </td>
                         <td>
                             <a href="kamar_edit.php?id=<?= htmlspecialchars($row['id_kamar']) ?>" class="btn btn-secondary text-xs" style="padding: 6px 10px;">Edit</a>
-                            <a href="kamar_proses.php?act=hapus&id=<?= htmlspecialchars($row['id_kamar']) ?>" class="btn btn-danger text-xs" style="padding: 6px 10px;" onclick="return confirm('Hapus?')">Hapus</a>
+                            <a href="kamar_proses.php?act=hapus&id=<?= htmlspecialchars($row['id_kamar']) ?>" class="btn btn-danger text-xs" style="padding: 6px 10px;" onclick="konfirmasiAksi(event, 'Yakin ingin menghapus kamar ini? Data tidak dapat dikembalikan.', this.href)">Hapus</a>
                         </td>
                     </tr>
                 <?php } ?>

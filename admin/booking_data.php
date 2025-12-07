@@ -80,8 +80,8 @@ $res = $mysqli->query($sql);
 
             <?php if($row['status'] == 'PENDING'): ?>
             <div class="flex gap-2">
-                <a href="booking_proses.php?act=approve&id=<?= htmlspecialchars($row['id_booking']) ?>" class="btn btn-primary w-full text-center" onclick="return confirm('Terima Booking ini?')">✓ Terima</a>
-                <a href="booking_proses.php?act=reject&id=<?= htmlspecialchars($row['id_booking']) ?>" class="btn btn-danger w-full text-center" onclick="return confirm('Tolak Booking ini?')">✕ Tolak</a>
+                <a href="booking_proses.php?act=approve&id=<?= htmlspecialchars($row['id_booking']) ?>" class="btn btn-primary w-full text-center" onclick="konfirmasiAksi(event, 'Terima permintaan booking ini? Calon penyewa akan menjadi Penghuni Aktif.', this.href)">✓ Terima</a>
+                <a href="booking_proses.php?act=reject&id=<?= htmlspecialchars($row['id_booking']) ?>" class="btn btn-danger w-full text-center" onclick="konfirmasiAksi(event, 'Tolak permintaan booking ini?', this.href)">✕ Tolak</a>
             </div>
             <?php else: ?>
                 <div class="text-center text-xs italic" style="color:var(--text-muted);">Booking selesai diproses.</div>

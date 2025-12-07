@@ -157,19 +157,23 @@ if ($tab == 'pengeluaran') {
                         </td>
                         <td class="font-bold">Rp <?= number_format($row['jumlah']) ?></td>
                         <td>
+                            <?php if(!empty($row['bukti_path'])): ?>
+                                <a href="../view_file.php?type=bukti&file=<?= htmlspecialchars($row['bukti_path']) ?>" target="_blank" class="btn btn-sm btn-secondary text-xs">
+                                    <i class="fa-solid fa-image"></i> Bukti
+                                </a>
+                            <?php endif; ?>
+                            
                             <?php if(!empty($row['ktp_path_opt'])): ?>
-                            <!-- Menggunakan view_file.php dengan parameter type=ktp -->
-                            <a href="../view_file.php?type=ktp&file=<?= htmlspecialchars($row['ktp_path_opt']) ?>" target="_blank" style="color:var(--primary); font-weight:600;">
-                                <i class="fa-solid fa-id-card"></i> Lihat KTP
-                            </a>
-                        <?php else: ?> 
-                            <span class="text-muted">-</span> 
-                        <?php endif; ?>
+                                <a href="../view_file.php?type=ktp&file=<?= htmlspecialchars($row['ktp_path_opt']) ?>" target="_blank" class="btn btn-sm btn-secondary text-xs">
+                                    <i class="fa-solid fa-id-card"></i> KTP
+                                </a>
+                            <?php endif; ?>
+                            <?php if(empty($row['bukti_path']) && empty($row['ktp_path_opt'])) echo '<span class="text-muted">-</span>'; ?>
                         </td>
                         <td>
                             <div class="flex gap-2">
-                                <a href="pembayaran_proses.php?act=terima&id=<?= $row['id_pembayaran'] ?>" class="btn btn-primary text-xs" style="padding:6px 10px;" onclick="return confirm('Terima pembayaran ini?')">✓ Terima</a>
-                                <a href="pembayaran_proses.php?act=tolak&id=<?= $row['id_pembayaran'] ?>" class="btn btn-danger text-xs" style="padding:6px 10px;" onclick="return confirm('Tolak pembayaran ini?')">✕ Tolak</a>
+                                <a href="pembayaran_proses.php?act=terima&id=<?= $row['id_pembayaran'] ?>" class="btn btn-primary text-xs" style="padding:6px 10px;" onclick="konfirmasiAksi(event, 'Terima dan verifikasi pembayaran sebesar Rp <?= number_format($row['jumlah']) ?>?', this.href)">✓ Terima</a>
+                                <a href="pembayaran_proses.php?act=tolak&id=<?= $row['id_pembayaran'] ?>" class="btn btn-danger text-xs" style="padding:6px 10px;" onclick="konfirmasiAksi(event, 'Yakin ingin menolak pembayaran ini?', this.href)">✕ Tolak</a>
                             </div>
                         </td>
                     </tr>
@@ -190,7 +194,7 @@ if ($tab == 'pengeluaran') {
                     <label class="form-label">Untuk Bulan</label>
                     <input type="month" name="bulan_tagih" value="<?= $bulan_filter ?>" class="form-input">
                 </div>
-                <button type="submit" class="btn btn-primary" onclick="return confirm('Sistem akan membuat tagihan untuk SEMUA penghuni aktif pada bulan terpilih. Lanjutkan?')">
+                <button type="submit" class="btn btn-primary" onclick="konfirmasiForm(event, 'Sistem akan membuat tagihan untuk SEMUA penghuni aktif pada bulan terpilih. Pastikan harga kamar sudah benar. Lanjutkan?')">
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Tagihan
                 </button>
             </form>

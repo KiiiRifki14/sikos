@@ -62,7 +62,7 @@ if (!is_admin()) { die('Forbidden'); }
                                 <a href="fasilitas_proses.php?act=hapus&id=<?= $row['id_fasilitas'] ?>" 
                                    class="btn btn-danger text-xs" 
                                    style="padding: 6px 10px;"
-                                   onclick="return confirm('Yakin hapus fasilitas ini? Semua kamar yang punya fasilitas ini akan kehilangan data fasilitas ini.')">Hapus</a>
+                                   onclick="konfirmasiAksi(event, 'Yakin hapus fasilitas ini? Semua kamar yang punya fasilitas ini akan kehilangan data fasilitas ini.', this.href)">Hapus</a>
                             </div>
                         </td>
                     </tr>
