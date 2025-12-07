@@ -94,17 +94,93 @@ $wa_link = "https://wa.me/" . ($pengaturan['no_wa'] ?? '62881011201664');
   </section>
 
   <section id="kamar" class="section">
-    <!-- ... (Filter Form & Kamar List tetap sama) ... -->
     <div class="flex justify-between items-end mb-8">
       <div>
         <h2 class="section-title">Kamar Tersedia</h2>
+        <p class="section-subtitle">Pilihan kamar terbaik untuk kenyamanan Anda</p>
       </div>
+      <!-- Filter Toggle (Mobile) -->
+      <button class="md:hidden btn btn-secondary" onclick="document.getElementById('filter-box').classList.toggle('hidden')">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
     </div>
-    
-    <!-- (Form Filter & List Kamar dilewati, karena tidak diubah di snippet ini) -->
-    <!-- GUNAKAN REPLACE CHUNKS JIKA PERLU SKIP BANYAK BARIS --> 
-    <!-- Tp karena replace_file_content butuh contiguous block, saya akan split replacement -->
-    
+
+    <!-- FILTER BOX -->
+    <div id="filter-box" class="filter-box hidden md:block animate-fade-up">
+      <form id="filterForm" class="filter-grid">
+         <!-- Status Filter -->
+         <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-input">
+                <option value="">Semua Status</option>
+                <option value="TERSEDIA">Tersedia</option>
+                <option value="TERISI">Terisi</option>
+            </select>
+         </div>
+         <!-- Tipe Filter -->
+         <div class="form-group">
+            <label class="form-label">Tipe Kamar</label>
+            <select name="tipe" class="form-input">
+                <option value="">Semua Tipe</option>
+                <?php
+                $res_tipe = $db->koneksi->query("SELECT * FROM tipe_kamar");
+                while($tipe = $res_tipe->fetch_assoc()):
+                ?>
+                <option value="<?= $tipe['id_tipe'] ?>"><?= htmlspecialchars($tipe['nama_tipe']) ?></option>
+                <?php endwhile; ?>
+            </select>
+         </div>
+         <!-- Harga Filter -->
+         <div class="form-group">
+            <label class="form-label">Maksimal Harga</label>
+            <select name="max_harga" class="form-input">
+                <option value="">Semua Harga</option>
+                <option value="500000">Di bawah 500rb</option>
+                <option value="1000000">Di bawah 1jt</option>
+                <option value="2000000">Di bawah 2jt</option>
+            </select>
+         </div>
+         <!-- Button Cari -->
+         <div class="form-group">
+             <button type="button" onclick="loadKamar(true)" class="btn btn-primary w-full" style="height: 48px; margin-top: auto;">
+                <i class="fa-solid fa-search"></i> Terapkan
+             </button>
+         </div>
+      </form>
+    </div>
+
+    <!-- ROOM LIST CONTAINER -->
+    <div id="kamar-container" class="grid-rooms">
+        <?php
+        // LOGIC PHP UNTUK MENAMPILKAN 6 KAMAR PERTAMA
+        // (Mirip dengan ajax_kamar.php tapi versi inisial)
+        $sql_awal = "SELECT k.*, t.nama_tipe 
+                     FROM kamar k 
+                     JOIN tipe_kamar t ON k.id_tipe=t.id_tipe
+                     WHERE k.id_kamar NOT IN (SELECT id_kamar FROM booking WHERE status='PENDING')
+                     ORDER BY k.status_kamar ASC, k.kode_kamar ASC
+                     LIMIT 6";
+        $res_awal = $db->koneksi->query($sql_awal);
+        
+        if($res_awal && $res_awal->num_rows > 0) {
+            while($row = $res_awal->fetch_assoc()) {
+                include 'components/card_kamar.php';
+            }
+        } else {
+            echo '<p class="col-span-3 text-center text-muted">Belum ada data kamar.</p>';
+        }
+        ?>
+    </div>
+
+    <!-- LOAD MORE BUTTON -->
+    <div id="load-more-wrapper" class="text-center mt-12">
+        <button id="btn-load-more" onclick="loadMore()" class="btn btn-secondary px-8 py-3 rounded-full">
+            Lihat Lebih Banyak <i class="fa-solid fa-chevron-down ml-2"></i>
+        </button>
+        <div id="loading-spinner" class="hidden">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-primary"></i>
+        </div>
+    </div>
   </section>
   
   <section id="fasilitas" class="section" style="background: #f8fafc; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">

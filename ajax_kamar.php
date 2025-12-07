@@ -1,5 +1,5 @@
 <?php
-require 'inc/koneksi.php';
+require_once 'inc/koneksi.php';
 
 // Ambil parameter dari URL
 $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
