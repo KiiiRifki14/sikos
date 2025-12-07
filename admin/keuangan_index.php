@@ -204,10 +204,24 @@ if ($tab == 'pengeluaran') {
         <div class="card-white">
             <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h3 class="font-bold text-lg">Daftar Tagihan (<?= date('F Y', strtotime($bulan_filter)) ?>)</h3>
-                <form method="get" class="flex gap-2">
-                    <input type="hidden" name="tab" value="tagihan">
-                    <input type="month" name="bulan" value="<?= $bulan_filter ?>" onchange="this.form.submit()" class="form-input text-sm" style="padding:6px;">
-                </form>
+                <?php
+                    $prev_mo = date('Y-m', strtotime($bulan_filter . ' -1 month'));
+                    $next_mo = date('Y-m', strtotime($bulan_filter . ' +1 month'));
+                ?>
+                <div class="flex items-center gap-2">
+                    <a href="?tab=tagihan&bulan=<?= $prev_mo ?>" class="btn btn-secondary text-xs" style="padding: 8px 10px;" title="Bulan Sebelumnya">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                    
+                    <form method="get" class="flex gap-2">
+                        <input type="hidden" name="tab" value="tagihan">
+                        <input type="month" name="bulan" value="<?= $bulan_filter ?>" onchange="this.form.submit()" class="form-input text-sm" style="padding:6px;">
+                    </form>
+
+                    <a href="?tab=tagihan&bulan=<?= $next_mo ?>" class="btn btn-secondary text-xs" style="padding: 8px 10px;" title="Bulan Selanjutnya">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
             </div>
             <div style="overflow-x: auto;">
                 <table style="width:100%;">
@@ -246,8 +260,12 @@ if ($tab == 'pengeluaran') {
                             <?php if($t['status'] == 'BELUM'): ?>
                                 <div class="flex gap-2">
                                 <a href="pembayaran_proses.php?act=bayar_cash&id=<?= $t['id_tagihan'] ?>" class="btn btn-secondary text-xs" style="padding:4px 8px;"
-                                   onclick="return confirm('Konfirmasi pembayaran TUNAI dari <?= $t['nama'] ?> senilai Rp <?= number_format($t['nominal']) ?>?')">
+                                   onclick="konfirmasiAksi(event, 'Konfirmasi pembayaran TUNAI dari <?= htmlspecialchars($t['nama']) ?> senilai Rp <?= number_format($t['nominal']) ?>?', this.href)">
                                    💰 Terima Cash
+                                </a>
+                                <a href="pembayaran_proses.php?act=hapus_tagihan&id=<?= $t['id_tagihan'] ?>" class="btn btn-danger text-xs" style="padding:4px 8px;"
+                                   onclick="konfirmasiAksi(event, 'Yakin hapus tagihan ini? (Hanya bisa untuk yang belum lunas)', this.href)">
+                                   <i class="fa-solid fa-trash"></i>
                                 </a>
                             <?php else: ?>
                                 <span class="text-xs text-muted">-</span>

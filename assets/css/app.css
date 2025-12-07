@@ -43,7 +43,13 @@
 /* --- RESET & BASE --- */
 * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
 
-html { scroll-behavior: smooth; }
+/* Enable native page transitions (Chrome/Edge 111+) */
+@view-transition { navigation: auto; }
+
+html { 
+  scroll-behavior: smooth; 
+  background-color: var(--bg-body); /* Prevents white flash during load */
+}
 
 body {
   font-family: 'Poppins', sans-serif;
@@ -224,12 +230,20 @@ button.sidebar-link {
 }
 
 /* Admin Sidebar Dropdown */
+/* Admin Sidebar Dropdown (Smooth Animation Fix) */
 .sidebar-dropdown { width: 100%; }
 .dropdown-content {
-  display: none; background: rgba(0, 0, 0, 0.2);
-  margin: 0; padding: 5px 0;
+  max-height: 0; opacity: 0; visibility: hidden; overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  margin: 0; padding: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.dropdown-content.show { display: block; }
+.dropdown-content.open { 
+  max-height: 500px; /* Adjust if menu is very long */
+  opacity: 1; 
+  visibility: visible;
+  padding: 5px 0;
+}
 .dropdown-content .sidebar-sublink {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 24px 10px 54px;
@@ -289,6 +303,7 @@ button.sidebar-link {
 .main-content {
   margin-left: 260px; padding: 30px; min-height: 100vh;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.4s ease-out; /* Smooth load */
 }
 
 /* --- COLLAPSED STATE (Desktop) --- */

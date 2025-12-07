@@ -64,7 +64,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
         <div class="sidebar-dropdown">
             <button class="sidebar-link w-full justify-between <?= ($current_page == 'keuangan_index.php') ? 'active' : '' ?>" 
-                    onclick="this.nextElementSibling.classList.toggle('show'); this.querySelector('.arrow').classList.toggle('rotate');">
+                    onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.arrow').classList.toggle('rotate');">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-sack-dollar"></i> 
                     <span>Pusat Keuangan</span>
@@ -77,7 +77,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </div>
             </button>
             
-            <div class="dropdown-content <?= ($current_page == 'keuangan_index.php') ? 'show' : '' ?>">
+            <div class="dropdown-content <?= ($current_page == 'keuangan_index.php') ? 'open' : '' ?>">
                 <a href="keuangan_index.php?tab=verifikasi" class="sidebar-sublink <?= (isset($_GET['tab']) && $_GET['tab'] == 'verifikasi') ? 'active' : '' ?>">
                     <span>Verifikasi Bayar</span>
                     <?php if($c_bayar > 0): ?>

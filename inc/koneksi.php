@@ -563,6 +563,79 @@ class Database {
 
 
 
+    // ==========================================
+    // 11. DASHBOARD ANALYTICS (MVC REFACTOR)
+    // ==========================================
+    function get_statistik_kamar() {
+        // Tidak perlu params, jadi query langsung aman
+        $total = $this->koneksi->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
+        $terisi = $this->koneksi->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
+        return [
+            'total' => $total,
+            'terisi' => $terisi,
+            'rate' => ($total > 0) ? round(($terisi / $total) * 100) : 0
+        ];
+    }
+
+    function get_statistik_keuangan($bulan, $tahun) {
+        // [SECURITY] Gunakan Prepared Statement untuk Profit/Loss
+        // Pemasukan
+        $stmt_in = $this->koneksi->prepare("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = ? AND YEAR(waktu_verifikasi) = ?");
+        $stmt_in->bind_param('ss', $bulan, $tahun);
+        $stmt_in->execute();
+        $masuk = $stmt_in->get_result()->fetch_row()[0] ?? 0;
+
+        // Pengeluaran
+        $stmt_out = $this->koneksi->prepare("SELECT SUM(biaya) FROM pengeluaran WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?");
+        $stmt_out->bind_param('ss', $bulan, $tahun);
+        $stmt_out->execute();
+        $keluar = $stmt_out->get_result()->fetch_row()[0] ?? 0;
+
+        return [
+            'omset' => $masuk,
+            'keluar' => $keluar,
+            'profit' => $masuk - $keluar
+        ];
+    }
+
+    function get_chart_pendapatan($tahun) {
+        // [SECURITY] Wajib Prepared Statement karena $tahun input user
+        // Query agak kompleks karena loop 1-12 bulan
+        $data = [];
+        $stmt = $this->koneksi->prepare("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = ? AND YEAR(waktu_verifikasi) = ?");
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $stmt->bind_param('is', $i, $tahun); // i=month integer, s=year string
+            $stmt->execute();
+            $val = $stmt->get_result()->fetch_row()[0] ?? 0;
+            $data[] = $val;
+        }
+        return $data;
+    }
+
+    function get_pending_counts() {
+        $booking = $this->koneksi->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
+        $tagihan = $this->koneksi->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0];
+        return ['booking' => $booking, 'tagihan' => $tagihan];
+    }
+
+    function get_booking_terbaru($limit = 5) {
+        $stmt = $this->koneksi->prepare("SELECT b.*, u.nama, u.no_hp, k.kode_kamar, t.nama_tipe 
+                                         FROM booking b 
+                                         JOIN pengguna u ON b.id_pengguna=u.id_pengguna 
+                                         JOIN kamar k ON b.id_kamar=k.id_kamar 
+                                         JOIN tipe_kamar t ON k.id_tipe=t.id_tipe 
+                                         WHERE b.status='PENDING' 
+                                         ORDER BY b.tanggal_booking DESC LIMIT ?");
+        $stmt->bind_param('i', $limit);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        
+        $hasil = [];
+        while($row = $res->fetch_assoc()) { $hasil[] = $row; }
+        return $hasil;
+    }
+
 } // <--- Tutup Class Database
 
 // Inisialisasi Objek Global (Biar file lain tinggal pakai $mysqli)

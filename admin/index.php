@@ -4,39 +4,35 @@ require '../inc/koneksi.php';
 require '../inc/guard.php';
 if (!is_admin() && !is_owner()) { header('Location: ../login.php'); exit; }
 
-// --- 1. LOGIKA STATISTIK ---
-$total_kamar = $mysqli->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
-$terisi = $mysqli->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
-$occupancy_rate = ($total_kamar > 0) ? round(($terisi / $total_kamar) * 100) : 0;
+// --- 1. LOGIKA STATISTIK (MVC) ---
+$stats_kamar = $db->get_statistik_kamar();
+$occupancy_rate = $stats_kamar['rate'];
+$terisi = $stats_kamar['terisi'];
+$total_kamar = $stats_kamar['total'];
 
-// --- 2. LOGIKA KEUANGAN ---
+// --- 2. LOGIKA KEUANGAN (MVC) ---
 $bulan_ini = date('m');
 $tahun_ini = date('Y');
+$tahun_pilihan = isset($_GET['tahun']) ? $_GET['tahun'] : $tahun_ini;
 
-// Pemasukan, Pengeluaran, Profit
-$omset_raw = $mysqli->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = '$bulan_ini' AND YEAR(waktu_verifikasi) = '$tahun_ini'")->fetch_row()[0] ?? 0;
-$keluar_raw = $mysqli->query("SELECT SUM(biaya) FROM pengeluaran WHERE MONTH(tanggal) = '$bulan_ini' AND YEAR(tanggal) = '$tahun_ini'")->fetch_row()[0] ?? 0;
-$profit_raw = $omset_raw - $keluar_raw;
+// Ambil Stats (Real Time Bulan Ini)
+$stats_uang = $db->get_statistik_keuangan($bulan_ini, $tahun_ini);
+$omset_raw = $stats_uang['omset'];
+$keluar_raw = $stats_uang['keluar'];
+$profit_raw = $stats_uang['profit'];
 
 function format_uang_singkat($angka) {
     if ($angka >= 1000000) return number_format($angka / 1000000, 1) . " Jt";
     return number_format($angka);
 }
 
-// --- 3. DATA PENDING ---
-$booking = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
-$tagihan_pending = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0];
+// --- 3. DATA PENDING (MVC) ---
+$data_pending = $db->get_pending_counts();
+$booking = $data_pending['booking'];
+$tagihan_pending = $data_pending['tagihan'];
 
-// --- 4. DATA GRAFIK ---
-$data_grafik = [];
-for ($i = 1; $i <= 12; $i++) {
-    $sql_chart = "SELECT SUM(jumlah) FROM pembayaran 
-                  WHERE status='DITERIMA' 
-                  AND MONTH(waktu_verifikasi) = '$i' 
-                  AND YEAR(waktu_verifikasi) = '$tahun_ini'";
-    $val = $mysqli->query($sql_chart)->fetch_row()[0] ?? 0;
-    $data_grafik[] = $val;
-}
+// --- 4. DATA GRAFIK (MVC - Secure Prep Statement) ---
+$data_grafik = $db->get_chart_pendapatan($tahun_pilihan);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -126,7 +122,18 @@ for ($i = 1; $i <= 12; $i++) {
         </div>
 
         <div class="card-white mb-8">
-            <h3 class="font-bold text-lg mb-4">📈 Tren Pendapatan Tahun <?= $tahun_ini ?></h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">📈 Tren Pendapatan Tahun <?= $tahun_pilihan ?></h3>
+                <div class="flex items-center gap-2">
+                    <a href="?tahun=<?= $tahun_pilihan - 1 ?>" class="btn btn-secondary text-xs" style="padding: 6px 12px;" title="Tahun Lalu">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                    <span class="font-bold text-sm bg-slate-100 px-3 py-1 rounded"><?= $tahun_pilihan ?></span>
+                    <a href="?tahun=<?= $tahun_pilihan + 1 ?>" class="btn btn-secondary text-xs" style="padding: 6px 12px;" title="Tahun Depan">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
             <div style="position: relative; height:300px; width:100%">
                 <canvas id="myChart"></canvas>
             </div>
@@ -150,9 +157,9 @@ for ($i = 1; $i <= 12; $i++) {
                     </thead>
                     <tbody>
                         <?php 
-                        $bk = $mysqli->query("SELECT b.*, u.nama, u.no_hp, k.kode_kamar, t.nama_tipe FROM booking b JOIN pengguna u ON b.id_pengguna=u.id_pengguna JOIN kamar k ON b.id_kamar=k.id_kamar JOIN tipe_kamar t ON k.id_tipe=t.id_tipe WHERE b.status='PENDING' ORDER BY b.tanggal_booking DESC LIMIT 5");
-                        if($bk->num_rows > 0) {
-                            while($b = $bk->fetch_assoc()){
+                        $bk = $db->get_booking_terbaru(5);
+                        if(count($bk) > 0) {
+                            foreach($bk as $b){
                         ?>
                         <tr>
                             <td>
@@ -169,8 +176,8 @@ for ($i = 1; $i <= 12; $i++) {
                             </td>
                             <td>
                                 <div class="flex gap-2">
-                                    <a href="booking_proses.php?act=approve&id=<?= $b['id_booking'] ?>" class="text-xs font-bold text-green" style="text-decoration:none;">✓ Terima</a>
-                                    <a href="booking_proses.php?act=reject&id=<?= $b['id_booking'] ?>" class="text-xs font-bold text-red" style="text-decoration:none;">✕ Tolak</a>
+                                    <a href="booking_proses.php?act=approve&id=<?= $b['id_booking'] ?>" class="text-xs font-bold text-green" style="text-decoration:none;" onclick="konfirmasiAksi(event, 'Terima booking dari <?= $b['nama'] ?>?', this.href)">✓ Terima</a>
+                                    <a href="booking_proses.php?act=reject&id=<?= $b['id_booking'] ?>" class="text-xs font-bold text-red" style="text-decoration:none;" onclick="konfirmasiAksi(event, 'Tolak booking dari <?= $b['nama'] ?>?', this.href)">✕ Tolak</a>
                                 </div>
                             </td>
                         </tr>
