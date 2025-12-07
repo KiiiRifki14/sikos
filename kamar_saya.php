@@ -49,148 +49,110 @@ if($row_kamar) {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="assets/css/app.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* CSS KHUSUS HALAMAN INI */
-        .kamar-layout {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr; /* Kiri Foto, Kanan Info */
-            gap: 0;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-        .kamar-foto {
-            position: relative;
-            min-height: 300px;
-            background-color: #f1f5f9;
-        }
-        .kamar-foto img {
-            width: 100%; height: 100%; object-fit: cover; display: block;
-        }
-        .tipe-badge {
-            position: absolute; bottom: 20px; left: 20px;
-            background: rgba(0,0,0,0.7); color: white;
-            padding: 6px 12px; border-radius: 20px;
-            font-size: 12px; font-weight: 600;
-        }
-        .kamar-info { padding: 30px; }
-        .info-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px;
-        }
-        .kode-besar { font-size: 32px; font-weight: 800; color: #1e293b; line-height: 1; margin: 5px 0 0; }
-        .harga-besar { font-size: 20px; font-weight: 700; color: #2563eb; }
-        
-        .grid-info {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
-        }
-        .info-box {
-            background: #f8fafc; padding: 12px; border-radius: 8px;
-        }
-        .info-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
-        .info-val { font-weight: 600; color: #334155; font-size: 14px; margin-top: 4px; }
-        
-        .fasilitas-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
-        .fas-item {
-            font-size: 12px; background: #eff6ff; color: #2563eb;
-            padding: 6px 12px; border-radius: 20px; border: 1px solid #dbeafe;
-            display: flex; align-items: center; gap: 6px;
-        }
-        
-        /* Responsif HP */
-        @media (max-width: 768px) {
-            .kamar-layout { grid-template-columns: 1fr; }
-            .kamar-foto { height: 200px; min-height: auto; }
-        }
-    </style>
 </head>
 <body class="role-penghuni">
   <?php include 'components/sidebar_penghuni.php'; ?>
+  
   <main class="main-content animate-fade-up">
 
     <?php if($row_kamar): ?>
-        <div class="kamar-layout">
-            <div class="kamar-foto">
-                <?php if(!empty($row_kamar['foto_cover'])): ?>
-                    <img src="assets/uploads/kamar/<?= htmlspecialchars($row_kamar['foto_cover']) ?>">
-                <?php else: ?>
-                    <div style="height:100%; display:flex; align-items:center; justify-content:center; color:#94a3b8;">
-                        <i class="fa-regular fa-image" style="font-size:40px;"></i>
-                    </div>
-                <?php endif; ?>
-                <div class="tipe-badge">
-                    <i class="fa-solid fa-tag"></i> <?= htmlspecialchars($row_kamar['nama_tipe']) ?>
-                </div>
-            </div>
-
-            <div class="kamar-info">
-                <div class="info-header">
-                    <div>
-                        <span style="font-size:11px; font-weight:700; color:#2563eb; letter-spacing:1px;">KODE KAMAR</span>
-                        <h2 class="kode-besar"><?= htmlspecialchars($row_kamar['kode_kamar']) ?></h2>
-                    </div>
-                    <div style="text-align:right;">
-                        <span style="display:block; font-size:12px; color:#64748b;">Biaya Sewa</span>
-                        <span class="harga-besar">Rp <?= number_format($row_kamar['harga']) ?></span>
-                    </div>
-                </div>
-
-                <div class="grid-info">
-                    <div class="info-box">
-                        <div class="info-label">Mulai Sewa</div>
-                        <div class="info-val"><?= date('d M Y', strtotime($row_kamar['tanggal_mulai'])) ?></div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Berakhir</div>
-                        <div class="info-val"><?= date('d M Y', strtotime($row_kamar['tanggal_selesai'])) ?></div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Lantai</div>
-                        <div class="info-val"><?= htmlspecialchars($row_kamar['lantai']) ?></div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-label">Luas</div>
-                        <div class="info-val"><?= htmlspecialchars($row_kamar['luas_m2']) ?> m²</div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 10px; font-size: 13px; font-weight: 700; color: #334155;">Fasilitas:</div>
-                <div class="fasilitas-list">
-                    <?php if(!empty($fasilitas)): foreach($fasilitas as $f): ?>
-                        <span class="fas-item">
-                            <i class="fa-solid <?= $f['icon'] ?>"></i> <?= htmlspecialchars($f['nama_fasilitas']) ?>
-                        </span>
-                    <?php endforeach; else: ?>
-                        <span style="font-size:12px; color:#94a3b8;">-</span>
-                    <?php endif; ?>
-                </div>
-
-                <?php if(!empty($row_kamar['catatan'])): ?>
-                <div style="background:#fff7ed; border:1px solid #ffedd5; padding:15px; border-radius:8px;">
-                    <strong style="display:block; font-size:12px; color:#9a3412; margin-bottom:5px;">Catatan:</strong>
-                    <p style="font-size:13px; color:#c2410c; margin:0;"><?= htmlspecialchars($row_kamar['catatan']) ?></p>
-                </div>
-                <?php endif; ?>
+        
+        <div class="card-white" style="overflow:hidden; padding:0; border-radius: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; min-height: 400px;" class="grid-responsive-room">
                 
+                <!-- ROOM IMAGE SECTION -->
+                <div style="background:#f1f5f9; position:relative; min-height:300px;">
+                    <?php if(!empty($row_kamar['foto_cover'])): ?>
+                        <img src="assets/uploads/kamar/<?= htmlspecialchars($row_kamar['foto_cover']) ?>" style="width:100%; height:100%; object-fit:cover; display:block;">
+                    <?php else: ?>
+                        <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8;">
+                            <i class="fa-regular fa-image" style="font-size:64px; margin-bottom:15px; opacity:0.5;"></i>
+                            <span class="text-sm font-bold uppercase">No Image</span>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div style="position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 700; backdrop-filter: blur(5px);">
+                        <i class="fa-solid fa-tag mr-2"></i> <?= htmlspecialchars($row_kamar['nama_tipe']) ?>
+                    </div>
+                </div>
+
+                <!-- ROOM INFO SECTION -->
+                <div style="padding: 40px;">
+                    <div class="flex justify-between items-start mb-8 pb-6 border-b border-gray-100">
+                        <div>
+                            <span class="text-xs font-bold text-primary tracking-widest uppercase mb-1 block">Kode Kamar</span>
+                            <h2 style="font-size: 42px; font-weight: 800; color: var(--text-main); line-height: 1; letter-spacing: -1px;"><?= htmlspecialchars($row_kamar['kode_kamar']) ?></h2>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-xs font-bold text-muted uppercase tracking-wider mb-1">Biaya Sewa</span>
+                            <div class="text-2xl font-bold text-primary">Rp <?= number_format($row_kamar['harga']) ?></div>
+                            <span class="text-xs text-muted">/ bulan</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px;">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div class="text-xs font-bold text-muted uppercase mb-1">Mulai Sewa</div>
+                            <div class="font-bold text-main"><?= date('d F Y', strtotime($row_kamar['tanggal_mulai'])) ?></div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div class="text-xs font-bold text-muted uppercase mb-1">Berakhir</div>
+                            <div class="font-bold text-main"><?= date('d F Y', strtotime($row_kamar['tanggal_selesai'])) ?></div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div class="text-xs font-bold text-muted uppercase mb-1">Lantai</div>
+                            <div class="font-bold text-main"><?= htmlspecialchars($row_kamar['lantai']) ?></div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div class="text-xs font-bold text-muted uppercase mb-1">Luas Kamar</div>
+                            <div class="font-bold text-main"><?= htmlspecialchars($row_kamar['luas_m2']) ?> m²</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="text-sm font-bold text-main mb-3 uppercase tracking-wide">Fasilitas Termasuk</div>
+                        <div class="flex flex-wrap gap-3">
+                            <?php if(!empty($fasilitas)): foreach($fasilitas as $f): ?>
+                                <span style="background: #e0f2fe; color: #0369a1; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid <?= $f['icon'] ?>"></i> <?= htmlspecialchars($f['nama_fasilitas']) ?>
+                                </span>
+                            <?php endforeach; else: ?>
+                                <span class="text-sm text-muted">-</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if(!empty($row_kamar['catatan'])): ?>
+                    <div style="background:#fff7ed; border:1px solid #ffedd5; padding:20px; border-radius:16px;">
+                        <strong style="display:block; font-size:12px; color:#9a3412; margin-bottom:5px; text-transform:uppercase;">Catatan Tambahan</strong>
+                        <p style="font-size:14px; color:#c2410c; margin:0; line-height:1.6;"><?= htmlspecialchars($row_kamar['catatan']) ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                </div>
             </div>
         </div>
 
+        <style>
+            @media (max-width: 900px) {
+                .grid-responsive-room { grid-template-columns: 1fr !important; }
+            }
+        </style>
+
     <?php else: ?>
         
-        <div class="card-white" style="text-align:center; padding:60px 20px;">
-            <div style="margin-bottom:20px;">
-                <i class="fa-solid fa-bed" style="font-size:64px; color:#cbd5e1;"></i>
+        <div class="card-white" style="text-align:center; padding:80px 20px; display:flex; flex-direction:column; align-items:center;">
+            <div style="width:120px; height:120px; background:#f1f5f9; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:30px;">
+                <i class="fa-solid fa-bed" style="font-size:50px; color:#94a3b8;"></i>
             </div>
-            <h3 style="color:#64748b; font-size:18px; font-weight:600; margin-bottom:10px;">
-                Anda belum menyewa kamar.
+            <h3 style="color:#1e293b; font-size:24px; font-weight:800; margin-bottom:10px;">
+                Anda belum menyewa kamar
             </h3>
-            <p style="color:#94a3b8; font-size:14px; margin-bottom:30px;">
-                Silakan cari kamar yang tersedia dan ajukan penyewaan.
+            <p style="color:#64748b; font-size:16px; margin-bottom:40px; max-width:400px; line-height:1.6;">
+                Sepertinya Anda belum memiliki kamar yang aktif saat ini. Yuk cari kamar idamanmu sekarang!
             </p>
             
-            <a href="index.php#kamar" class="btn btn-primary" style="padding: 12px 30px;">
+            <a href="index.php#kamar" class="btn btn-primary" style="padding: 16px 40px; font-size: 16px; border-radius: 50px; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);">
                 <i class="fa-solid fa-magnifying-glass mr-2"></i> Cari Kamar Sekarang
             </a>
         </div>

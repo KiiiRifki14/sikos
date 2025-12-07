@@ -36,9 +36,9 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Tombol Toggle Desktop -->
-<button class="sidebar-toggle" onclick="toggleSidebar()">
+<!-- <button class="sidebar-toggle" onclick="toggleSidebar()">
     <i class="fa-solid fa-bars"></i>
-</button>
+</button> -->
 
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
@@ -53,22 +53,16 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
 </div>
 
 <aside id="sidebar" class="sidebar-penghuni">
-    <div class="sidebar-profile">
-        <a href="profil.php" class="profile-img-box" style="display:block; position:relative; cursor:pointer;" title="Klik untuk Ganti Foto">
-            <?php if(!empty($user_sb['foto_profil'])): ?>
-                <img src="<?= $foto_user ?>" alt="Foto">
-            <?php else: ?>
-                <div class="initial-avatar"><?= strtoupper(substr($nama_user, 0, 1)) ?></div>
-            <?php endif; ?>
-            
-            <div style="position:absolute; bottom:0; right:0; background:#2563eb; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                <i class="fa-solid fa-pencil" style="font-size:10px;"></i>
-            </div>
+    <!-- PROFILE SECTION AS HEADER -->
+    <div class="sidebar-profile" style="padding-top: 30px;">
+        <a href="profil.php" class="profile-img-box" title="Klik untuk Ganti Foto">
+            <img src="<?= $foto_user ?>" alt="Foto">
         </a>
         <div class="profile-info">
-            <h4 title="<?= $nama_user ?>"><?= $nama_user ?></h4>
-            <p>Penghuni Kost</p>
+            <h4 title="<?= $nama_user ?>"><?= explode(' ', $nama_user)[0] ?></h4>
+            <p>Member</p>
         </div>
+        <div class="mini-toggle" onclick="toggleSidebar()" style="margin-left:auto; color:white; opacity:0.7; cursor:pointer; padding:5px;"><i class="fa-solid fa-bars"></i></div>
     </div>
 
     <nav class="sidebar-nav">
@@ -89,13 +83,13 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
                 <span class="badge-notif"><?= $count_tagihan ?></span>
             <?php endif; ?>
         </a>
-<?php
-        // Hitung Keluhan "PROSES" (Sedang dikerjakan admin)
+
+        <?php
         $c_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE id_penghuni=(SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna) AND status='PROSES'")->fetch_row()[0];
-        
-        // Hitung Pengumuman Baru (7 Hari Terakhir)
         $c_info = $mysqli->query("SELECT COUNT(*) FROM pengumuman WHERE is_aktif=1 AND aktif_mulai >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetch_row()[0];
         ?>
+        
+        <div class="nav-label" style="margin-top:20px;">Layanan</div>
         
         <a href="keluhan.php" class="nav-link <?= $page=='keluhan.php'?'active':'' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-screwdriver-wrench"></i></div>
@@ -112,18 +106,16 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
             <?php endif; ?>
         </a>
 
-        <div class="nav-label mt-4">Akun</div>
-        
-        <a href="profil.php" class="nav-link <?= $page=='profil.php'?'active':'' ?>">
-            <div class="icon-wrap"><i class="fa-solid fa-user-gear"></i></div>
-            <span>Edit Profil</span>
-        </a>
-        <a href="logout.php" class="nav-link" style="color: var(--danger); margin-top: 20px;">
-            <div class="icon-wrap" style="color: var(--danger); background: #fee2e2;">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-            </div>
-            <span>Keluar</span>
-        </a>
+        <div style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+            <a href="profil.php" class="nav-link <?= $page=='profil.php'?'active':'' ?>">
+                <div class="icon-wrap"><i class="fa-solid fa-user-gear"></i></div>
+                <span>Edit Profil</span>
+            </a>
+            <a href="logout.php" class="nav-link" style="color: #fda4af;">
+                <div class="icon-wrap" style="color: #fda4af;"><i class="fa-solid fa-right-from-bracket"></i></div>
+                <span>Keluar</span>
+            </a>
+        </div>
     </nav>
 </aside>
 
