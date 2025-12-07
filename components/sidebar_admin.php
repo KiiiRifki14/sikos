@@ -125,6 +125,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             Lainnya
         </div>
 
+        <a href="edit_landing.php" class="sidebar-link <?= $current_page == 'edit_landing.php' ? 'active' : '' ?>">
+            <i class="fa-solid fa-laptop-house"></i>
+            <span>Edit Landing Page</span>
+        </a>
+
         <a href="settings.php" class="sidebar-link <?= $current_page == 'settings.php' ? 'active' : '' ?>">
             <i class="fa-solid fa-sliders"></i>
             <span>Pengaturan</span>

@@ -542,7 +542,12 @@ class Database {
                 'no_hp' => '081234567890',
                 'email' => 'admin@sikos.com',
                 'rek_bank' => 'BCA 123456',
-                'pemilik' => 'Admin'
+                'pemilik' => 'Admin',
+                'no_wa' => '62881011201664',
+                'link_fb' => '#',
+                'link_ig' => '#',
+                'deskripsi_footer' => 'Platform penyewaan kost modern...',
+                'foto_logo' => ''
             ];
         }
         return $res->fetch_assoc();
@@ -552,6 +557,33 @@ class Database {
         $stmt = $this->koneksi->prepare("UPDATE pengaturan SET nama_kos=?, alamat=?, no_hp=?, email=?, rek_bank=?, pemilik=? WHERE id=1");
         $stmt->bind_param('ssssss', $nama, $alamat, $hp, $email, $rek, $pemilik);
         return $stmt->execute();
+    }
+
+    // [NEW] Update Pengaturan Landing Page
+    function update_pengaturan_landing($wa, $fb, $ig, $footer, $logo = null) {
+        if ($logo) {
+            $stmt = $this->koneksi->prepare("UPDATE pengaturan SET no_wa=?, link_fb=?, link_ig=?, deskripsi_footer=?, foto_logo=? WHERE id=1");
+            $stmt->bind_param('sssss', $wa, $fb, $ig, $footer, $logo);
+        } else {
+            $stmt = $this->koneksi->prepare("UPDATE pengaturan SET no_wa=?, link_fb=?, link_ig=?, deskripsi_footer=? WHERE id=1");
+            $stmt->bind_param('ssss', $wa, $fb, $ig, $footer);
+        }
+        return $stmt->execute();
+    }
+
+    // [NEW] Manajemen Fasilitas Umum
+    function get_fasilitas_umum() {
+        return $this->koneksi->query("SELECT * FROM fasilitas_umum ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
+    }
+
+    function tambah_fasilitas($judul, $deskripsi, $icon) {
+        $stmt = $this->koneksi->prepare("INSERT INTO fasilitas_umum (judul, deskripsi, icon) VALUES (?, ?, ?)");
+        $stmt->bind_param('sss', $judul, $deskripsi, $icon);
+        return $stmt->execute();
+    }
+
+    function hapus_fasilitas($id) {
+        return $this->koneksi->query("DELETE FROM fasilitas_umum WHERE id=$id");
     }
     // --- TAMBAHAN UNTUK FIX ERROR PEMBAYARAN ---
     function update_bukti_pembayaran($id_pembayaran, $path) {
