@@ -53,8 +53,15 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
 </div>
 
 <aside id="sidebar" class="sidebar-penghuni">
-    <!-- PROFILE SECTION AS HEADER -->
-    <div class="sidebar-profile" style="padding-top: 30px;">
+    <!-- FIXED HEADER WITH TOGGLE -->
+    <div class="sidebar-header">
+        <div class="toggle-btn-custom" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+    </div>
+
+    <!-- PROFILE SECTION -->
+    <div class="sidebar-profile">
         <a href="profil.php" class="profile-img-box" title="Klik untuk Ganti Foto">
             <img src="<?= $foto_user ?>" alt="Foto">
         </a>
@@ -62,7 +69,6 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
             <h4 title="<?= $nama_user ?>"><?= explode(' ', $nama_user)[0] ?></h4>
             <p>Member</p>
         </div>
-        <div class="mini-toggle" onclick="toggleSidebar()" style="margin-left:auto; color:white; opacity:0.7; cursor:pointer; padding:5px;"><i class="fa-solid fa-bars"></i></div>
     </div>
 
     <nav class="sidebar-nav">

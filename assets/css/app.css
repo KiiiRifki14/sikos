@@ -325,29 +325,41 @@ body.sidebar-collapsed .role-penghuni .main-content {
 body.sidebar-collapsed .sidebar-penghuni .profile-info,
 body.sidebar-collapsed .sidebar-penghuni .nav-label,
 body.sidebar-collapsed .sidebar-penghuni .nav-link span,
-body.sidebar-collapsed .sidebar-penghuni .badge-notif {
-  display: none;
+/* --- HEADER & TOGGLE STYLES --- */
+/* --- HEADER & TOGGLE STYLES --- */
+.sidebar-penghuni .sidebar-header {
+  padding: 15px 0 15px 22px; /* Fixed Left Padding to prevent jump */
+  display: flex; align-items: center; margin-bottom: 5px;
+  height: 60px; /* Fixed height */
+}
+.sidebar-penghuni .toggle-btn-custom {
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer;
+  border-radius: 8px; transition: all 0.2s;
+}
+.sidebar-penghuni .toggle-btn-custom:hover {
+  background: rgba(255,255,255,0.1); color: white;
+}
+
+/* --- COLLAPSED STATE STYLES --- */
+body.sidebar-collapsed .sidebar-penghuni .sidebar-header {
+  /* Keep same padding-left as expanded to "pin" the button visually */
+  padding: 15px 0 15px 22px; 
+  justify-content: flex-start; /* Do NOT center, keep left aligned */
+  margin-bottom: 20px;
+}
+body.sidebar-collapsed .sidebar-penghuni .toggle-btn-custom {
+  background: rgba(255,255,255,0.1); 
+  color: white !important; font-size: 20px;
+  /* Width stays same or slightly larger, but position is pinned by parent padding */
 }
 body.sidebar-collapsed .sidebar-penghuni .sidebar-profile {
-  flex-direction: column-reverse; /* Put toggle above image for better UX */
-  gap: 15px; padding: 20px 0; justify-content: center;
-  border-bottom: none;
+  flex-direction: column; /* Stack image/name vertically */
+  padding: 0; justify-content: center; border-bottom: none;
+  gap: 0;
 }
-body.sidebar-collapsed .sidebar-penghuni .mini-toggle {
-  margin-left: 0 !important; /* Reset inline margin */
-  background: rgba(255,255,255,0.1);
-  width: 36px; height: 36px; border-radius: 8px;
-  display: flex !important; align-items: center; justify-content: center;
-  color: white !important; /* Force white color */
-}
-body.sidebar-collapsed .sidebar-penghuni .mini-toggle i {
-  color: white !important; font-size: 16px !important;
-}
-body.sidebar-collapsed .sidebar-penghuni .nav-link {
-  justify-content: center; padding: 12px 0;
-}
-body.sidebar-collapsed .sidebar-penghuni .icon-wrap {
-  margin-right: 0; font-size: 20px;
+body.sidebar-collapsed .sidebar-penghuni .profile-img-box img {
+    margin: 0 auto 10px; /* Center Image */
 }
 
 /* --- TENANT SIDEBAR (Role Penghuni) --- */
