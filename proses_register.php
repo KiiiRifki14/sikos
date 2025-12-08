@@ -15,8 +15,15 @@ $nama = bersihkan_input($_POST['nama']);
 $no_hp = bersihkan_input($_POST['no_hp']);
 
 // Validasi
-if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) {
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     header('Location: register.php?error=invalid');
+    exit;
+}
+
+// Password Strength: Min 8 chars + Huruf + Angka
+if (strlen($password) < 8 || !preg_match("/[a-z]/i", $password) || !preg_match("/[0-9]/", $password)) {
+    // Kita bisa buat error khusus 'weak_password' tapi untuk sekarang pakai invalid dulu atau msg khusus
+    header('Location: register.php?error=weak_password');
     exit;
 }
 
@@ -37,4 +44,3 @@ $stmt->execute();
 
 // Sukses -> Ke Login
 header('Location: login.php?info=Registrasi sukses, silakan login!');
-?>

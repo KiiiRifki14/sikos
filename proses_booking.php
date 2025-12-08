@@ -15,6 +15,10 @@ $mysqli->begin_transaction();
 
 // [SECURITY] Konversi ke int
 $checkin_rencana = $_POST['checkin_rencana'];
+// Cek masa lalu (Boleh hari ini, tapi tidak boleh kemarin)
+if (strtotime($checkin_rencana) < strtotime(date('Y-m-d'))) {
+    pesan_error("index.php", "Tanggal check-in tidak boleh di masa lalu.");
+}
 $durasi = (int)$_POST['durasi_bulan_rencana'];
 
 try {
