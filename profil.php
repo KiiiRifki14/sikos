@@ -6,14 +6,8 @@ require 'inc/csrf.php';
 if (!isset($_SESSION['id_pengguna'])) { header('Location: login.php'); exit; }
 $id_pengguna = $_SESSION['id_pengguna'];
 
-$q = "SELECT u.*, p.alamat, p.pekerjaan, p.emergency_cp, p.foto_profil 
-      FROM pengguna u 
-      LEFT JOIN penghuni p ON u.id_pengguna = p.id_pengguna 
-      WHERE u.id_pengguna = ?";
-$stmt = $mysqli->prepare($q);
-$stmt->bind_param('i', $id_pengguna);
-$stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
+// [REFACTOR]
+$user = $db->get_profil_penghuni($id_pengguna);
 $foto_url = !empty($user['foto_profil']) ? "assets/uploads/profil/".$user['foto_profil'] : "assets/img/avatar.png";
 ?>
 <!DOCTYPE html>

@@ -593,13 +593,42 @@ class Database {
         return $stmt->execute();
     }
 
+    // [REFACTOR] New Methods for Standard Compliance
+    function get_tagihan_by_kontrak($id_kontrak) {
+        $stmt = $this->koneksi->prepare("SELECT * FROM tagihan WHERE id_kontrak=? ORDER BY bulan_tagih DESC");
+        $stmt->bind_param('i', $id_kontrak);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        
+        $hasil = [];
+        while($row = $res->fetch_assoc()) { $hasil[] = $row; }
+        return $hasil;
+    }
+
+    function get_tagihan_pending_count($id_kontrak) {
+        $stmt = $this->koneksi->prepare("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=? AND status='BELUM'");
+        $stmt->bind_param('i', $id_kontrak);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_row()[0];
+    }
+
+    function get_all_kamar_paginated($start = 0, $limit = 10) {
+        $stmt = $this->koneksi->prepare("SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe ORDER BY k.kode_kamar ASC LIMIT ?, ?");
+        $stmt->bind_param('ii', $start, $limit);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    function get_total_kamar() {
+        return $this->koneksi->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
+    }
 
 
     // ==========================================
     // 11. DASHBOARD ANALYTICS (MVC REFACTOR)
     // ==========================================
     function get_statistik_kamar() {
-        // Tidak perlu params, jadi query langsung aman
+        // [REFACTOR] Tidak perlu params, jadi query langsung aman
         $total = $this->koneksi->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
         $terisi = $this->koneksi->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
         return [
@@ -608,6 +637,183 @@ class Database {
             'rate' => ($total > 0) ? round(($terisi / $total) * 100) : 0
         ];
     }
+    
+    function get_total_booking() {
+        return $this->koneksi->query("SELECT COUNT(DISTINCT b.id_booking) 
+                                      FROM booking b 
+                                      LEFT JOIN pembayaran p ON b.id_booking = p.ref_id AND p.ref_type='BOOKING'
+                                      WHERE b.status != 'PENDING' OR (p.bukti_path IS NOT NULL AND p.bukti_path != '')")->fetch_row()[0];
+    }
+
+    function get_all_booking_paginated($start, $limit) {
+        $sql = "SELECT b.*, g.nama, g.no_hp, k.kode_kamar, p.bukti_path as bukti_bayar
+                FROM booking b 
+                JOIN pengguna g ON b.id_pengguna=g.id_pengguna 
+                JOIN kamar k ON b.id_kamar=k.id_kamar 
+                LEFT JOIN pembayaran p ON b.id_booking = p.ref_id AND p.ref_type='BOOKING'
+                WHERE b.status != 'PENDING' OR (p.bukti_path IS NOT NULL AND p.bukti_path != '')
+                ORDER BY b.tanggal_booking DESC 
+                LIMIT ?, ?";
+        $stmt = $this->koneksi->prepare($sql);
+        $stmt->bind_param('ii', $start, $limit);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    // --- FASILITAS ---
+    function get_all_fasilitas_master() {
+        return $this->koneksi->query("SELECT * FROM fasilitas_master ORDER BY nama_fasilitas ASC");
+    }
+
+    // --- PENGHUNI ---
+    function get_total_penghuni_filtered($cari = "") {
+        $sql = "SELECT COUNT(*) FROM penghuni p 
+                JOIN pengguna u ON p.id_pengguna = u.id_pengguna 
+                LEFT JOIN kontrak ko ON p.id_penghuni = ko.id_penghuni AND ko.status = 'AKTIF'
+                LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar";
+        
+        if (!empty($cari)) {
+            $sql .= " WHERE u.nama LIKE ? OR k.kode_kamar LIKE ?";
+            $stmt = $this->koneksi->prepare($sql);
+            $param = "%$cari%";
+            $stmt->bind_param('ss', $param, $param);
+            $stmt->execute();
+            return $stmt->get_result()->fetch_row()[0];
+        }
+        return $this->koneksi->query($sql)->fetch_row()[0];
+    }
+
+    function get_all_penghuni_paginated($cari, $start, $limit) {
+        $sql = "SELECT p.id_penghuni, u.nama, u.no_hp, k.kode_kamar, ko.tanggal_mulai, ko.tanggal_selesai, ko.status
+                FROM penghuni p
+                JOIN pengguna u ON p.id_pengguna = u.id_pengguna
+                LEFT JOIN kontrak ko ON p.id_penghuni = ko.id_penghuni AND ko.status = 'AKTIF'
+                LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar";
+        
+        if (!empty($cari)) {
+            $sql .= " WHERE u.nama LIKE ? OR k.kode_kamar LIKE ?";
+            $sql .= " ORDER BY u.nama ASC LIMIT ?, ?";
+            $stmt = $this->koneksi->prepare($sql);
+            $param = "%$cari%";
+            $stmt->bind_param('ssii', $param, $param, $start, $limit);
+        } else {
+            $sql .= " ORDER BY u.nama ASC LIMIT ?, ?";
+            $stmt = $this->koneksi->prepare($sql);
+            $stmt->bind_param('ii', $start, $limit);
+        }
+        
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    // --- KEUANGAN ---
+    function get_total_pembayaran_masuk($bulan = null) {
+        if ($bulan) {
+            $stmt = $this->koneksi->prepare("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DATE_FORMAT(waktu_verifikasi, '%Y-%m') = ?");
+            $stmt->bind_param('s', $bulan);
+            $stmt->execute();
+            return $stmt->get_result()->fetch_row()[0] ?? 0;
+        }
+        return $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'")->fetch_row()[0] ?? 0;
+    }
+
+    function get_total_pengeluaran($bulan = null) {
+        if ($bulan) {
+            $stmt = $this->koneksi->prepare("SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = ?");
+            $stmt->bind_param('s', $bulan);
+            $stmt->execute();
+            return $stmt->get_result()->fetch_row()[0] ?? 0;
+        }
+        return $this->koneksi->query("SELECT SUM(biaya) FROM pengeluaran")->fetch_row()[0] ?? 0;
+    }
+    
+    // Tagihan Methods
+    function count_tagihan_by_month($month) {
+        $stmt = $this->koneksi->prepare("SELECT COUNT(*) FROM tagihan WHERE bulan_tagih = ?");
+        $stmt->bind_param('s', $month);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_row()[0];
+    }
+
+    function get_tagihan_by_month_paginated($month, $start, $limit) {
+        $sql = "SELECT t.*, u.nama, k.kode_kamar FROM tagihan t 
+                JOIN kontrak ko ON t.id_kontrak = ko.id_kontrak
+                JOIN penghuni p ON ko.id_penghuni = p.id_penghuni
+                JOIN pengguna u ON p.id_pengguna = u.id_pengguna
+                JOIN kamar k ON ko.id_kamar = k.id_kamar
+                WHERE t.bulan_tagih = ? ORDER BY u.nama ASC 
+                LIMIT ?, ?";
+        $stmt = $this->koneksi->prepare($sql);
+        $stmt->bind_param('sii', $month, $start, $limit);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    // Pengeluaran Methods
+    function count_pengeluaran() {
+        return $this->koneksi->query("SELECT COUNT(*) FROM pengeluaran")->fetch_row()[0];
+    }
+    
+    function get_pengeluaran_paginated($start, $limit) {
+        $stmt = $this->koneksi->prepare("SELECT * FROM pengeluaran ORDER BY tanggal DESC LIMIT ?, ?");
+        $stmt->bind_param('ii', $start, $limit);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    function get_pembayaran_pending() {
+        $sql = "SELECT p.*, u.nama FROM pembayaran p 
+                LEFT JOIN tagihan t ON p.ref_id = t.id_tagihan AND p.ref_type='TAGIHAN'
+                LEFT JOIN booking b ON p.ref_id = b.id_booking AND p.ref_type='BOOKING'
+                LEFT JOIN kontrak k ON t.id_kontrak = k.id_kontrak
+                LEFT JOIN penghuni ph ON k.id_penghuni = ph.id_penghuni
+                LEFT JOIN pengguna u ON (ph.id_pengguna = u.id_pengguna OR b.id_pengguna = u.id_pengguna)
+                WHERE p.status='PENDING' ORDER BY p.id_pembayaran DESC";
+        return $this->koneksi->query($sql);
+    }
+
+    function get_cash_flow_report($month_filter) {
+        // Prepare Statement untuk Union Query yang kompleks ini agak tricky karena parameternya dipakai 2x
+        // Jadi kita manual escape saja untuk bulan filter karena formatnya Y-m (cukup aman jika validasi di controller)
+        // [SECURITY] Tambahan validasi bulan
+        if (!preg_match('/^\d{4}-\d{2}$/', $month_filter)) return false;
+
+        $q_union = "
+            SELECT 
+                p.waktu_verifikasi as tgl, 
+                p.jumlah as nominal, 
+                'MASUK' as tipe,
+                p.metode as metode,
+                CONCAT(
+                    COALESCE(u.nama, 'User'), ' - ', 
+                    p.ref_type, 
+                    IF(km.kode_kamar IS NOT NULL, CONCAT(' (Kamar ', km.kode_kamar, ')'), '')
+                ) as deskripsi
+            FROM pembayaran p
+            LEFT JOIN booking b ON p.ref_id=b.id_booking AND p.ref_type='BOOKING'
+            LEFT JOIN tagihan t ON p.ref_id=t.id_tagihan AND p.ref_type='TAGIHAN'
+            LEFT JOIN kontrak k ON t.id_kontrak=k.id_kontrak
+            LEFT JOIN kamar km ON (b.id_kamar = km.id_kamar OR k.id_kamar = km.id_kamar)
+            LEFT JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
+            LEFT JOIN pengguna u ON (ph.id_pengguna=u.id_pengguna OR b.id_pengguna=u.id_pengguna)
+            WHERE p.status='DITERIMA' AND DATE_FORMAT(p.waktu_verifikasi, '%Y-%m') = '$month_filter'
+
+            UNION ALL
+
+            SELECT 
+                e.tanggal as tgl, 
+                e.biaya as nominal, 
+                'KELUAR' as tipe,
+                'KAS' as metode,
+                CONCAT(e.judul, IF(e.deskripsi != '', CONCAT(' - ', e.deskripsi), '')) as deskripsi
+            FROM pengeluaran e
+            WHERE DATE_FORMAT(e.tanggal, '%Y-%m') = '$month_filter'
+
+            ORDER BY tgl DESC
+        ";
+        return $this->koneksi->query($q_union);
+    }
+
 
     function get_statistik_keuangan($bulan, $tahun) {
         // [SECURITY] Gunakan Prepared Statement untuk Profit/Loss
@@ -666,6 +872,91 @@ class Database {
         $hasil = [];
         while($row = $res->fetch_assoc()) { $hasil[] = $row; }
         return $hasil;
+    }
+
+    // --- TENANT HELPERS ---
+    function get_user_by_id($id) {
+        $stmt = $this->koneksi->prepare("SELECT * FROM pengguna WHERE id_pengguna=?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+    
+    function get_id_penghuni_by_user($id_pengguna) {
+        // [SECURITY] ID Integer
+        $id_pengguna = (int)$id_pengguna;
+        $res = $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna");
+        return ($res && $res->num_rows > 0) ? $res->fetch_object()->id_penghuni : 0;
+    }
+
+    function get_kamar_penghuni_detail($id_penghuni) {
+         $sql = "SELECT k.*, t.nama_tipe, ko.tanggal_mulai, ko.tanggal_selesai, ko.id_kontrak, ko.status as status_kontrak, k.harga
+                FROM kontrak ko 
+                JOIN kamar k ON ko.id_kamar = k.id_kamar 
+                JOIN tipe_kamar t ON k.id_tipe = t.id_tipe 
+                WHERE ko.id_penghuni = ? AND ko.status = 'AKTIF'";
+         $stmt = $this->koneksi->prepare($sql);
+         $stmt->bind_param('i', $id_penghuni);
+         $stmt->execute();
+         return $stmt->get_result()->fetch_assoc();
+    }
+
+    function get_fasilitas_kamar($id_kamar) {
+        $stmt = $this->koneksi->prepare("SELECT f.nama_fasilitas, f.icon FROM kamar_fasilitas kf JOIN fasilitas_master f ON kf.id_fasilitas=f.id_fasilitas WHERE kf.id_kamar=?");
+        $stmt->bind_param('i', $id_kamar);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $hasil = [];
+        while($row = $res->fetch_assoc()) { $hasil[] = $row; }
+        return $hasil;
+    }
+
+    function get_keluhan_by_penghuni($id_penghuni) {
+        $stmt = $this->koneksi->prepare("SELECT * FROM keluhan WHERE id_penghuni=? ORDER BY dibuat_at DESC");
+        $stmt->bind_param('i', $id_penghuni);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    function insert_keluhan($id_penghuni, $judul, $deskripsi, $prioritas, $foto_path) {
+        $stmt = $this->koneksi->prepare("INSERT INTO keluhan (id_penghuni, judul, deskripsi, prioritas, status, foto_path) VALUES (?, ?, ?, ?, 'BARU', ?)");
+        $stmt->bind_param('issss', $id_penghuni, $judul, $deskripsi, $prioritas, $foto_path);
+        return $stmt->execute();
+    }
+
+    function get_profil_penghuni($id_pengguna) {
+        $q = "SELECT u.*, p.alamat, p.pekerjaan, p.emergency_cp, p.foto_profil 
+              FROM pengguna u 
+              LEFT JOIN penghuni p ON u.id_pengguna = p.id_pengguna 
+              WHERE u.id_pengguna = ?";
+        $stmt = $this->koneksi->prepare($q);
+        $stmt->bind_param('i', $id_pengguna);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+
+     function get_pengumuman_terbaru($limit=2) {
+        return $this->koneksi->query("SELECT * FROM pengumuman WHERE is_aktif=1 ORDER BY aktif_mulai DESC LIMIT $limit");
+    }
+
+    function can_user_book($id_pengguna) {
+        // 1. Cek Pending Booking
+        $stmt = $this->koneksi->prepare("SELECT COUNT(*) FROM booking WHERE id_pengguna=? AND status='PENDING'");
+        $stmt->bind_param('i', $id_pengguna);
+        $stmt->execute();
+        if ($stmt->get_result()->fetch_row()[0] > 0) return false;
+
+        // 2. Cek Active Contract (Tenant)
+        // Ambil id_penghuni dulu
+        $id_penghuni = $this->get_id_penghuni_by_user($id_pengguna);
+        if ($id_penghuni) {
+            $stmt2 = $this->koneksi->prepare("SELECT COUNT(*) FROM kontrak WHERE id_penghuni=? AND status='AKTIF'");
+            $stmt2->bind_param('i', $id_penghuni);
+            $stmt2->execute();
+            if ($stmt2->get_result()->fetch_row()[0] > 0) return false;
+        }
+
+        return true;
     }
 
 } // <--- Tutup Class Database

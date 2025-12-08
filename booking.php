@@ -90,12 +90,12 @@ if (!$row) pesan_error("index.php", "Maaf, data kamar tersebut tidak ditemukan."
                     <div>
                         <label for="durasi_bulan_rencana" class="form-label">Durasi Sewa</label>
                         <div style="position: relative;">
-                            <input id="durasi_bulan_rencana" type="number" name="durasi_bulan_rencana" min="1" value="12" required 
-                                   oninput="this.value = !!this.value && Math.abs(this.value) >= 1 ? Math.abs(this.value) : 1" 
+                            <input id="durasi_bulan_rencana" type="number" name="durasi_bulan_rencana" min="1" max="36" value="12" required 
+                                   oninput="this.value = !!this.value && Math.abs(this.value) >= 1 ? Math.abs(this.value) : 1; if(this.value > 36) this.value = 36;" 
                                    class="form-input" style="padding-left: 42px;">
                             <span style="position: absolute; left: 14px; top: 12px; color: #94a3b8; font-size: 12px; font-weight: bold;">BLN</span>
                         </div>
-                        <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Minimal 1 bulan.</p>
+                        <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Minimal 1 bulan, Maksimal 36 bulan.</p>
                     </div>
                 </div>
 

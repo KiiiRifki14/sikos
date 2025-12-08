@@ -9,11 +9,12 @@ $batas = 10;
 $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
 if ($halaman < 1) $halaman = 1;
 $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
-$total_data = $mysqli->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
+
+// [REFACTOR] Gunakan Method Class Database
+$total_data = $db->get_total_kamar();
 $total_halaman = $total_data > 0 ? ceil($total_data / $batas) : 1;
 
-$sql = "SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe ORDER BY k.kode_kamar ASC LIMIT $halaman_awal, $batas";
-$res = $mysqli->query($sql);
+$res = $db->get_all_kamar_paginated($halaman_awal, $batas);
 $nomor = $halaman_awal + 1;
 ?>
 <!DOCTYPE html>

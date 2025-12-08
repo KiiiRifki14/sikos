@@ -30,8 +30,10 @@ if (!empty($_GET['max_harga'])) {
 }
 
 // Logic Urutan
-$order_param = $_GET['order'] ?? 'terbaru';
-$order_sql = "k.status_kamar ASC, k.kode_kamar ASC";
+$order_param = $_GET['order'] ?? 'default';
+// PRIORITASKAN TERSEDIA DULUAN (CASE WHEN), BARU ALFABET
+$order_sql = "CASE WHEN k.status_kamar = 'TERSEDIA' THEN 1 ELSE 2 END ASC, k.kode_kamar ASC";
+
 if ($order_param === 'harga_asc') {
     $order_sql = "k.harga ASC";
 } elseif ($order_param === 'harga_desc') {
@@ -42,11 +44,12 @@ if ($order_param === 'harga_asc') {
 
 // Query Utama dengan LIMIT & OFFSET
 // Query Utama dengan LIMIT & OFFSET
-// MODIFIKASI: Filter kamar yang sedang PENDING booking
-$sql = "SELECT k.*, t.nama_tipe 
+// MODIFIKASI: Tampilkan kamar PENDING tapi beri flag
+$sql = "SELECT k.*, t.nama_tipe,
+        (SELECT COUNT(*) FROM booking b WHERE b.id_kamar = k.id_kamar AND b.status = 'PENDING') as is_pending
         FROM kamar k 
         JOIN tipe_kamar t ON k.id_tipe=t.id_tipe
-        WHERE k.id_kamar NOT IN (SELECT id_kamar FROM booking WHERE status='PENDING')";
+        WHERE 1=1";
 
 if ($where) $sql .= " AND " . implode(" AND ", $where); // Ganti WHERE jadi AND
 $sql .= " ORDER BY " . $order_sql;

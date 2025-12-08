@@ -6,17 +6,19 @@ require 'inc/utils.php';
 if (!isset($_SESSION['id_pengguna']) || $_SESSION['peran']!='PENGHUNI') { header('Location: login.php'); exit; }
 
 $id_pengguna = $_SESSION['id_pengguna'];
-$user = $mysqli->query("SELECT * FROM pengguna WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-$id_penghuni = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
+$user = $db->get_user_by_id($id_pengguna);
+$id_penghuni = $db->get_id_penghuni_by_user($id_pengguna);
 
 $kontrak = null;
 if($id_penghuni) {
-    $kontrak = $mysqli->query("SELECT k.*, km.kode_kamar, km.harga FROM kontrak k JOIN kamar km ON k.id_kamar=km.id_kamar WHERE k.id_penghuni=$id_penghuni AND k.status='AKTIF'")->fetch_assoc();
+if($id_penghuni) {
+    $kontrak = $db->get_kamar_penghuni_detail($id_penghuni);
+}
 }
 
 $tagihan_pending = 0;
 if ($kontrak) {
-    $tagihan_pending = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} AND status='BELUM'")->fetch_row()[0];
+    $tagihan_pending = $db->get_tagihan_pending_count($kontrak['id_kontrak']);
 }
 ?>
 <!DOCTYPE html>
@@ -109,7 +111,7 @@ if ($kontrak) {
           </div>
 
           <?php
-            $res = $mysqli->query("SELECT * FROM pengumuman WHERE is_aktif=1 ORDER BY aktif_mulai DESC LIMIT 2");
+            $res = $db->get_pengumuman_terbaru(2);
             if($res->num_rows > 0):
                 while($r = $res->fetch_assoc()):
             ?>

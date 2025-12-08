@@ -16,8 +16,17 @@
       </div>
     <?php endif; ?>
 
-    <div class="room-tag <?= ($row['status_kamar'] === 'TERSEDIA') ? 'tag-avail' : 'tag-booked' ?>">
-      <?= ($row['status_kamar'] === 'TERSEDIA') ? 'Tersedia' : 'Terisi' ?>
+    <div class="room-tag <?= ($row['status_kamar'] === 'TERSEDIA' && $row['is_pending'] == 0) ? 'tag-avail' : (($row['is_pending'] > 0) ? 'tag-booked' : 'tag-booked') ?>"
+         style="<?= ($row['is_pending'] > 0) ? 'background:#f59e0b; color:white;' : '' ?>">
+      <?php 
+        if ($row['is_pending'] > 0) {
+            echo "Sedang Dipesan";
+        } elseif ($row['status_kamar'] === 'TERSEDIA') {
+            echo "Tersedia";
+        } else {
+            echo "Terisi";
+        }
+      ?>
     </div>
   </div>
 
@@ -40,7 +49,11 @@
             Rp <?= number_format((int)$row['harga'], 0, ',', '.') ?><span>/bln</span>
         </div>
         
-        <?php if($row['status_kamar'] === 'TERSEDIA'): ?>
+        <?php if($row['is_pending'] > 0): ?>
+          <button disabled class="btn btn-secondary" style="padding: 8px 16px; font-size:13px; opacity:0.8; cursor:not-allowed; background:#f59e0b; border-color:#f59e0b; color:white;">
+            <i class="fa-solid fa-clock"></i> Menunggu Konfirmasi
+          </button>
+        <?php elseif($row['status_kamar'] === 'TERSEDIA'): ?>
           <a href="detail_kamar.php?id=<?= (int)$row['id_kamar'] ?>" class="btn btn-primary" style="padding: 8px 16px; font-size:13px;">
             Lihat Detail & Pesan
           </a>

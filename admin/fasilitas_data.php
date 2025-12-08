@@ -40,8 +40,9 @@ if (!is_admin()) { die('Forbidden'); }
                 </thead>
                 <tbody>
                 <?php
-                $q = $mysqli->query("SELECT * FROM fasilitas_master ORDER BY nama_fasilitas ASC");
-                if ($q->num_rows > 0) {
+                // [REFACTOR]
+                $q = $db->get_all_fasilitas_master();
+                if ($q && $q->num_rows > 0) {
                     while ($row = $q->fetch_assoc()) {
                 ?>
                     <tr>

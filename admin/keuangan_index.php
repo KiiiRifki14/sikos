@@ -12,17 +12,15 @@ $tab = $_GET['tab'] ?? 'verifikasi';
 // --- LOGIKA DATA LAPORAN ---
 if ($tab == 'laporan') {
     $bulan_ini = date('Y-m');
-    $total_masuk = $mysqli->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'")->fetch_row()[0] ?? 0;
+    $total_masuk = $db->get_total_pembayaran_masuk();
     
     $bulan_lap = $_GET['bulan'] ?? date('Y-m');
     
     // Total Masuk Bulan Ini
-    $q_total_bln = "SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DATE_FORMAT(waktu_verifikasi, '%Y-%m') = '$bulan_lap'";
-    $total_masuk_bln = $mysqli->query($q_total_bln)->fetch_row()[0] ?? 0;
+    $total_masuk_bln = $db->get_total_pembayaran_masuk($bulan_lap);
 
     // Total Keluar Bulan Ini (Untuk Laba Bersih)
-    $q_keluar_bln = "SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = '$bulan_lap'";
-    $total_keluar_bln = $mysqli->query($q_keluar_bln)->fetch_row()[0] ?? 0;
+    $total_keluar_bln = $db->get_total_pengeluaran($bulan_lap);
 }
 
 // --- LOGIKA DATA TAGIHAN (PAGINATION) ---
@@ -34,8 +32,7 @@ if ($tab == 'tagihan') {
     if($halaman < 1) $halaman = 1;
     $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
 
-    $q_count = "SELECT COUNT(*) FROM tagihan t WHERE t.bulan_tagih = '$bulan_filter'";
-    $total_data = $mysqli->query($q_count)->fetch_row()[0];
+    $total_data = $db->count_tagihan_by_month($bulan_filter);
     $total_halaman = ceil($total_data / $batas);
     $nomor = $halaman_awal + 1;
 }
@@ -46,17 +43,16 @@ if ($tab == 'pengeluaran') {
     $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
     $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
 
-    $total_data = $mysqli->query("SELECT COUNT(*) FROM pengeluaran")->fetch_row()[0];
+    $total_data = $db->count_pengeluaran();
     $total_halaman = ceil($total_data / $batas);
 
     // Query Data Pengeluaran
-    $q_pengeluaran = "SELECT * FROM pengeluaran ORDER BY tanggal DESC LIMIT $halaman_awal, $batas";
-    $res_pengeluaran = $mysqli->query($q_pengeluaran);
+    $res_pengeluaran = $db->get_pengeluaran_paginated($halaman_awal, $batas);
     $nomor = $halaman_awal + 1;
 
     // Hitung Total Pengeluaran Bulan Ini (Statistik)
     $bulan_ini = date('Y-m');
-    $total_keluar = $mysqli->query("SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = '$bulan_ini'")->fetch_row()[0] ?? 0;
+    $total_keluar = $db->get_total_pengeluaran($bulan_ini);
 }
 ?>
 <!DOCTYPE html>
@@ -138,15 +134,7 @@ if ($tab == 'pengeluaran') {
                     </thead>
                     <tbody>
                     <?php
-                    $q = "SELECT p.*, u.nama FROM pembayaran p 
-                          LEFT JOIN tagihan t ON p.ref_id = t.id_tagihan AND p.ref_type='TAGIHAN'
-                          LEFT JOIN booking b ON p.ref_id = b.id_booking AND p.ref_type='BOOKING'
-                          LEFT JOIN kontrak k ON t.id_kontrak = k.id_kontrak
-                          LEFT JOIN penghuni ph ON k.id_penghuni = ph.id_penghuni
-                          LEFT JOIN pengguna u ON (ph.id_pengguna = u.id_pengguna OR b.id_pengguna = u.id_pengguna)
-                          WHERE p.status='PENDING' ORDER BY p.id_pembayaran DESC";
-                    
-                    $res = $mysqli->query($q);
+                    $res = $db->get_pembayaran_pending();
                     if ($res->num_rows > 0) {
                         while($row = $res->fetch_assoc()){
                     ?>
@@ -236,14 +224,7 @@ if ($tab == 'pengeluaran') {
                     </thead>
                     <tbody>
                     <?php
-                    $q_tagihan = "SELECT t.*, u.nama, k.kode_kamar FROM tagihan t 
-                                  JOIN kontrak ko ON t.id_kontrak = ko.id_kontrak
-                                  JOIN penghuni p ON ko.id_penghuni = p.id_penghuni
-                                  JOIN pengguna u ON p.id_pengguna = u.id_pengguna
-                                  JOIN kamar k ON ko.id_kamar = k.id_kamar
-                                  WHERE t.bulan_tagih = '$bulan_filter' ORDER BY u.nama ASC 
-                                  LIMIT $halaman_awal, $batas";
-                    $res_tagihan = $mysqli->query($q_tagihan);
+                    $res_tagihan = $db->get_tagihan_by_month_paginated($bulan_filter, $halaman_awal, $batas);
                     
                     if($res_tagihan->num_rows > 0) {
                         while($t = $res_tagihan->fetch_assoc()){
@@ -504,41 +485,7 @@ if ($tab == 'pengeluaran') {
                             <?php
                             // QUERY COMPLEX: Menggabungkan (UNION) Pemasukan dan Pengeluaran
                             // Bagian 1: Ambil Pemasukan
-                            $q_union = "
-                                SELECT 
-                                    p.waktu_verifikasi as tgl, 
-                                    p.jumlah as nominal, 
-                                    'MASUK' as tipe,
-                                    p.metode as metode,
-                                    CONCAT(
-                                        COALESCE(u.nama, 'User'), ' - ', 
-                                        p.ref_type, 
-                                        IF(km.kode_kamar IS NOT NULL, CONCAT(' (Kamar ', km.kode_kamar, ')'), '')
-                                    ) as deskripsi
-                                FROM pembayaran p
-                                LEFT JOIN booking b ON p.ref_id=b.id_booking AND p.ref_type='BOOKING'
-                                LEFT JOIN tagihan t ON p.ref_id=t.id_tagihan AND p.ref_type='TAGIHAN'
-                                LEFT JOIN kontrak k ON t.id_kontrak=k.id_kontrak
-                                LEFT JOIN kamar km ON (b.id_kamar = km.id_kamar OR k.id_kamar = km.id_kamar)
-                                LEFT JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
-                                LEFT JOIN pengguna u ON (ph.id_pengguna=u.id_pengguna OR b.id_pengguna=u.id_pengguna)
-                                WHERE p.status='DITERIMA' AND DATE_FORMAT(p.waktu_verifikasi, '%Y-%m') = '$bulan_lap'
-
-                                UNION ALL
-
-                                SELECT 
-                                    e.tanggal as tgl, 
-                                    e.biaya as nominal, 
-                                    'KELUAR' as tipe,
-                                    'KAS' as metode,
-                                    CONCAT(e.judul, IF(e.deskripsi != '', CONCAT(' - ', e.deskripsi), '')) as deskripsi
-                                FROM pengeluaran e
-                                WHERE DATE_FORMAT(e.tanggal, '%Y-%m') = '$bulan_lap'
-
-                                ORDER BY tgl DESC
-                            ";
-
-                            $res_union = $mysqli->query($q_union);
+                            $res_union = $db->get_cash_flow_report($bulan_lap);
                             
                             if($res_union && $res_union->num_rows > 0){
                                 while($d = $res_union->fetch_assoc()){

@@ -14,34 +14,11 @@ $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
 
 $cari = isset($_GET['cari']) ? $_GET['cari'] : "";
 
-// Query Dasar
-$sql_base = "SELECT p.id_penghuni, u.nama, u.no_hp, k.kode_kamar, ko.tanggal_mulai, ko.tanggal_selesai, ko.status
-             FROM penghuni p
-             JOIN pengguna u ON p.id_pengguna = u.id_pengguna
-             LEFT JOIN kontrak ko ON p.id_penghuni = ko.id_penghuni AND ko.status = 'AKTIF'
-             LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar";
-
-// Filter WHERE
-$where = [];
-if (!empty($cari)) {
-    // escape sederhana (idealnya prepared statements)
-    $escaped = $mysqli->real_escape_string($cari);
-    $where[] = "u.nama LIKE '%$escaped%'";
-    $where[] = "k.kode_kamar LIKE '%$escaped%'";
-}
-if (!empty($where)) {
-    $sql_base .= " WHERE (" . implode(" OR ", $where) . ")";
-}
-
-// Hitung Total Data
-$sql_count = "SELECT COUNT(*) as total FROM (" . $sql_base . ") AS subcount";
-$total_data_res = $mysqli->query($sql_count);
-$total_data = ($total_data_res && $total_data_res->num_rows) ? (int)$total_data_res->fetch_assoc()['total'] : 0;
+// [REFACTOR] Gunakan Method Database
+$total_data = $db->get_total_penghuni_filtered($cari);
 $total_halaman = $total_data > 0 ? (int)ceil($total_data / $batas) : 1;
 
-// Query Final
-$sql_final = $sql_base . " ORDER BY u.nama ASC LIMIT $halaman_awal, $batas";
-$res = $mysqli->query($sql_final);
+$res = $db->get_all_penghuni_paginated($cari, $halaman_awal, $batas);
 
 $nomor = $halaman_awal + 1;
 ?>

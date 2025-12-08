@@ -27,14 +27,19 @@ if (!empty($_GET['max_harga'])) {
   $types .= 'i';
 }
 
-$order_param = $_GET['order'] ?? 'terbaru';
-$order_sql = "k.status_kamar ASC, k.kode_kamar ASC";
+$order_param = $_GET['order'] ?? 'default';
+// PRIORITASKAN TERSEDIA DULUAN (CASE WHEN), BARU ALFABET
+$order_sql = "CASE WHEN k.status_kamar = 'TERSEDIA' THEN 1 ELSE 2 END ASC, k.kode_kamar ASC"; 
+
 if ($order_param === 'harga_asc') $order_sql = "k.harga ASC";
 elseif ($order_param === 'harga_desc') $order_sql = "k.harga DESC";
 elseif ($order_param === 'terbaru') $order_sql = "k.id_kamar DESC";
 
 // QUERY DATA
-$sql = "SELECT k.*, t.nama_tipe FROM kamar k JOIN tipe_kamar t ON k.id_tipe=t.id_tipe";
+$sql = "SELECT k.*, t.nama_tipe, 
+        (SELECT COUNT(*) FROM booking b WHERE b.id_kamar = k.id_kamar AND b.status = 'PENDING') as is_pending
+        FROM kamar k 
+        JOIN tipe_kamar t ON k.id_tipe=t.id_tipe";
 if ($where) $sql .= " WHERE " . implode(" AND ", $where);
 $sql .= " ORDER BY " . $order_sql . " LIMIT 6";
 
@@ -154,11 +159,12 @@ $wa_link = "https://wa.me/" . ($pengaturan['no_wa'] ?? '62881011201664');
         <?php
         // LOGIC PHP UNTUK MENAMPILKAN 6 KAMAR PERTAMA
         // (Mirip dengan ajax_kamar.php tapi versi inisial)
-        $sql_awal = "SELECT k.*, t.nama_tipe 
+        $sql_awal = "SELECT k.*, t.nama_tipe,
+                     (SELECT COUNT(*) FROM booking b WHERE b.id_kamar = k.id_kamar AND b.status = 'PENDING') as is_pending 
                      FROM kamar k 
                      JOIN tipe_kamar t ON k.id_tipe=t.id_tipe
-                     WHERE k.id_kamar NOT IN (SELECT id_kamar FROM booking WHERE status='PENDING')
-                     ORDER BY k.status_kamar ASC, k.kode_kamar ASC
+                     WHERE 1=1
+                     ORDER BY CASE WHEN k.status_kamar = 'TERSEDIA' THEN 1 ELSE 2 END ASC, k.kode_kamar ASC
                      LIMIT 6";
         $res_awal = $db->koneksi->query($sql_awal);
         
@@ -209,42 +215,67 @@ $wa_link = "https://wa.me/" . ($pengaturan['no_wa'] ?? '62881011201664');
   <?php include 'components/footer.php'; ?>
 
   <script>
-    /* Logic Load More (Sama seperti sebelumnya) */
+    /* Logic Filter & Load More */
     let currentOffset = 6;
     const limit = 6;
-    const urlParams = new URLSearchParams(window.location.search);
-
-    function loadMore() {
-        const btn = document.getElementById('btn-load-more');
+    
+    // Function to load filtered rooms
+    function loadKamar(reset = false) {
+        const form = document.getElementById('filterForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
         const spinner = document.getElementById('loading-spinner');
-        
-        btn.classList.add('hidden');
-        spinner.classList.remove('hidden');
+        const btn = document.getElementById('btn-load-more');
+        const container = document.getElementById('kamar-container');
 
-        urlParams.set('offset', currentOffset);
+        if (reset) {
+            currentOffset = 0; // Reset offset
+            container.innerHTML = ''; // Clear container
+            document.getElementById('load-more-wrapper').innerHTML = `
+                <button id="btn-load-more" onclick="loadMore()" class="btn btn-secondary px-8 py-3 rounded-full">
+                    Lihat Lebih Banyak <i class="fa-solid fa-chevron-down ml-2"></i>
+                </button>
+                <div id="loading-spinner" class="hidden">
+                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-primary"></i>
+                </div>`;
+            // Re-select btn and spinner after rewrite
+        }
 
-        fetch(`ajax_kamar.php?${urlParams.toString()}`)
+        params.set('offset', currentOffset);
+
+        // Show spinner
+        const currentBtn = document.getElementById('btn-load-more');
+        const currentSpinner = document.getElementById('loading-spinner');
+        if(currentBtn) currentBtn.classList.add('hidden');
+        if(currentSpinner) currentSpinner.classList.remove('hidden');
+
+        fetch(`ajax_kamar.php?${params.toString()}`)
             .then(response => response.text())
             .then(data => {
+                if(currentSpinner) currentSpinner.classList.add('hidden');
+                
                 if (data.trim().length > 0) {
-                    document.getElementById('kamar-container').insertAdjacentHTML('beforeend', data);
+                    container.insertAdjacentHTML('beforeend', data);
                     currentOffset += limit;
-                    spinner.classList.add('hidden');
-                    btn.classList.remove('hidden');
-                    
-                    // Update counter sisa (Opsional, simple logic)
-                    btn.innerHTML = "Lihat Lebih Banyak";
+                    if(currentBtn) currentBtn.classList.remove('hidden');
                 } else {
-                    spinner.classList.add('hidden');
-                    document.getElementById('load-more-wrapper').innerHTML = '<p class="text-muted text-sm">Semua kamar sudah ditampilkan.</p>';
+                    if (reset) {
+                        container.innerHTML = '<p class="col-span-3 text-center text-muted">Tidak ada kamar yang cocok.</p>';
+                    }
+                    if(document.getElementById('load-more-wrapper')) {
+                        document.getElementById('load-more-wrapper').innerHTML = '<p class="text-muted text-sm">Semua kamar sudah ditampilkan.</p>';
+                    }
                 }
             })
             .catch(err => {
                 console.error(err);
-                spinner.classList.add('hidden');
-                btn.classList.remove('hidden');
                 alert('Gagal memuat data.');
             });
+    }
+
+    // Load More Wrapper
+    function loadMore() {
+        loadKamar(false);
     }
   </script>
 </body>

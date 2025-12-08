@@ -9,16 +9,11 @@ $batas = 10;
 $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
 if ($halaman < 1) $halaman = 1;
 $halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
-$total_data = $mysqli->query("SELECT COUNT(*) FROM booking")->fetch_row()[0];
+// [REFACTOR] Gunakan Method Database
+$total_data = $db->get_total_booking();
 $total_halaman = $total_data > 0 ? ceil($total_data / $batas) : 1;
 
-$sql = "SELECT b.*, g.nama, g.no_hp, k.kode_kamar 
-        FROM booking b 
-        JOIN pengguna g ON b.id_pengguna=g.id_pengguna 
-        JOIN kamar k ON b.id_kamar=k.id_kamar 
-        ORDER BY b.tanggal_booking DESC 
-        LIMIT $halaman_awal, $batas";
-$res = $mysqli->query($sql);
+$res = $db->get_all_booking_paginated($halaman_awal, $batas);
 ?>
 <!DOCTYPE html>
 <html lang="id">

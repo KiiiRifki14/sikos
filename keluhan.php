@@ -16,12 +16,12 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
         $prioritas = $_POST['prioritas'];
         $foto_path = !empty($_FILES['foto']['name']) ? upload_process($_FILES['foto'], 'keluhan') : null;
         
-        $row_p = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_assoc();
-        if ($row_p) {
-            $id_penghuni = $row_p['id_penghuni'];
-            $stmt = $mysqli->prepare("INSERT INTO keluhan (id_penghuni, judul, deskripsi, prioritas, status, foto_path) VALUES (?, ?, ?, ?, 'BARU', ?)");
-            $stmt->bind_param('issss', $id_penghuni, $judul, $desk, $prioritas, $foto_path);
-            if($stmt->execute()) echo "<script>alert('Keluhan terkirim!'); window.location='keluhan.php';</script>";
+        // [REFACTOR]
+        $id_penghuni = $db->get_id_penghuni_by_user($id_pengguna);
+        if ($id_penghuni) {
+            if($db->insert_keluhan($id_penghuni, $judul, $desk, $prioritas, $foto_path)) {
+                echo "<script>alert('Keluhan terkirim!'); window.location='keluhan.php';</script>";
+            }
         }
     }
 }
@@ -65,8 +65,9 @@ if ($_SERVER['REQUEST_METHOD']=='POST' && isset($_POST['act']) && $_POST['act']=
 
     <div style="display:flex; flex-direction:column; gap:15px;">
         <?php
-        $idp = $mysqli->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna")->fetch_object()->id_penghuni ?? 0;
-        $res = $mysqli->query("SELECT * FROM keluhan WHERE id_penghuni=$idp ORDER BY dibuat_at DESC");
+        // [REFACTOR]
+        $idp = $db->get_id_penghuni_by_user($id_pengguna);
+        $res = $db->get_keluhan_by_penghuni($idp);
         
         if($res->num_rows > 0){
             while($row = $res->fetch_assoc()){

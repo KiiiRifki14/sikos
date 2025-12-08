@@ -13,7 +13,20 @@ $id_kamar = intval($_POST['id_kamar']);
 // --- SECURITY: TRANSAKSI & ROW LOCKING ---
 $mysqli->begin_transaction();
 
+// [SECURITY] Konversi ke int
+$checkin_rencana = $_POST['checkin_rencana'];
+$durasi = (int)$_POST['durasi_bulan_rencana'];
+
 try {
+    // 0. Validasi Aturan Bisnis
+    // A. Cek Kepemilikan (Satu kamar per user)
+    if (!$db->can_user_book($_SESSION['id_pengguna'])) {
+        throw new Exception("Anda sudah memiliki booking aktif atau sedang menyewa kamar. Tidak bisa memesan lebih dari satu kamar.");
+    }
+    // B. Cek Durasi
+    if ($durasi < 1 || $durasi > 36) {
+        throw new Exception("Durasi sewa minimal 1 bulan dan maksimal 36 bulan.");
+    }
     // 1. Cek Ketersediaan & Lock Row (Cegah Race Condition)
     // Menggunakan FOR UPDATE agar proses lain menunggu sampai transaksi ini selesai
     $q_cek = "SELECT 
@@ -42,7 +55,7 @@ try {
 
     // 3. Insert Booking
     $stmt = $mysqli->prepare("INSERT INTO booking (id_pengguna, id_kamar, checkin_rencana, durasi_bulan_rencana, status, ktp_path_opt, tanggal_booking) VALUES (?, ?, ?, ?, 'PENDING', ?, NOW())");
-    $stmt->bind_param('iisis', $_SESSION['id_pengguna'], $id_kamar, $_POST['checkin_rencana'], $_POST['durasi_bulan_rencana'], $ktp_path);
+    $stmt->bind_param('iisis', $_SESSION['id_pengguna'], $id_kamar, $checkin_rencana, $durasi, $ktp_path);
     
     if (!$stmt->execute()) {
         throw new Exception("Terjadi kesalahan sistem saat menyimpan booking.");

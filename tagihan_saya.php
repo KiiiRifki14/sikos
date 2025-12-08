@@ -53,9 +53,11 @@ $kontrak = $mysqli->query($q_kontrak)->fetch_assoc();
                     </thead>
                     <tbody>
                     <?php
-                    $res = $mysqli->query("SELECT * FROM tagihan WHERE id_kontrak={$kontrak['id_kontrak']} ORDER BY bulan_tagih DESC");
-                    if($res->num_rows > 0) {
-                        while($row = $res->fetch_assoc()){
+                    // [REFACTOR] Gunakan Method dari Class Database
+                    $tagihan_list = $db->get_tagihan_by_kontrak($kontrak['id_kontrak']);
+                    
+                    if(count($tagihan_list) > 0) {
+                        foreach($tagihan_list as $row){
                             $statusBayar = $db->cek_status_pembayaran_terakhir($row['id_tagihan']);
                             
                             // Tentukan Warna Badge
