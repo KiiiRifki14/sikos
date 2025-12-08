@@ -26,41 +26,76 @@ function get_pay_info($mysqli, $id)
 
 // 1. TERIMA PEMBAYARAN
 if ($act == 'terima' && $id) {
-    $info = get_pay_info($mysqli, $id);
-    $nominal = number_format($info['jumlah'] ?? 0);
-    $nama = $info['nama'] ?? 'User';
+    // [SECURITY] Start Transaction
+    $mysqli->begin_transaction();
 
-    // Update status pembayaran
-    $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+    try {
+        $info = get_pay_info($mysqli, $id);
+        $nominal = number_format($info['jumlah'] ?? 0);
+        $nama = $info['nama'] ?? 'User';
 
-    // Cek Tipe untuk aksi lanjutan (Booking/Tagihan)
-    $cek = $mysqli->query("SELECT ref_type, ref_id FROM pembayaran WHERE id_pembayaran=$id")->fetch_assoc();
+        // Cek Tipe dulu
+        $cek = $mysqli->query("SELECT ref_type, ref_id FROM pembayaran WHERE id_pembayaran=$id")->fetch_assoc();
 
-    if ($cek['ref_type'] == 'BOOKING') {
-        $db->setujui_booking_dan_buat_kontrak($cek['ref_id']);
-    } else if ($cek['ref_type'] == 'TAGIHAN') {
-        // [SECURITY] Cek Nominal Tagihan Asli
-        $q_tag = $mysqli->query("SELECT nominal FROM tagihan WHERE id_tagihan={$cek['ref_id']}");
-        $d_tag = $q_tag->fetch_assoc();
+        if ($cek['ref_type'] == 'BOOKING') {
+            // [LOGIC] Booking punya transaction sendiri di method-nya
+            // Jadi kita commit dulu update pembayaran, ATAU panggil method dulu baru update?
+            // Aman: Panggil method dulu. Jika sukses, baru update pembayaran.
 
-        if ($d_tag && $info['jumlah'] < $d_tag['nominal']) {
-            // Jika kurang bayar, jangan lunaskan. 
-            // Opsional: Bisa partial payment, tapi untuk sekarang kita Block agar aman.
-            pesan_error("keuangan_index.php?tab=verifikasi", "❌ Gagal Verifikasi! Nominal bayar (Rp $nominal) lebih kecil dari tagihan asli (Rp " . number_format($d_tag['nominal']) . "). Silakan TOLAK pembayaran ini.");
+            // Commit transaction awal ini agar tidak locking saat panggil method lain
+            $mysqli->commit();
+
+            // Panggil Logical Process (Method ini punya transaction sendiri)
+            $sukses_booking = $db->setujui_booking_dan_buat_kontrak($cek['ref_id']);
+
+            if ($sukses_booking) {
+                // Jika sukses kontrak, baru tandai bayar DITERIMA
+                $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+            } else {
+                throw new Exception("Gagal memproses data booking/kontrak. Pembayaran tidak diverifikasi.");
+            }
+        } else if ($cek['ref_type'] == 'TAGIHAN') {
+            // [LOGIC] Tagihan butuh Atomic Transaction (Bayar + Lunas)
+
+            // 1. Cek Nominal
+            $q_tag = $mysqli->query("SELECT nominal FROM tagihan WHERE id_tagihan={$cek['ref_id']}");
+            $d_tag = $q_tag->fetch_assoc();
+
+            if ($d_tag && $info['jumlah'] < $d_tag['nominal']) {
+                throw new Exception("Nominal bayar (Rp $nominal) kurang dari tagihan (Rp " . number_format($d_tag['nominal']) . "). Silakan TOLAK.");
+            }
+
+            // 2. Update Pembayaran
+            $res1 = $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+
+            // 3. Update Tagihan
+            $res2 = $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan={$cek['ref_id']}");
+
+            if (!$res1 || !$res2) {
+                throw new Exception("Gagal update database.");
+            }
+
+            $mysqli->commit();
+        } else {
+            // Tipe Lain (Default update payment only)
+            $mysqli->query("UPDATE pembayaran SET status='DITERIMA', waktu_verifikasi=NOW() WHERE id_pembayaran=$id");
+            $mysqli->commit();
         }
 
-        $mysqli->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan={$cek['ref_id']}");
+        // LOG (Setelah sukses commit)
+        $db->catat_log($_SESSION['id_pengguna'], 'VERIFIKASI BAYAR', "Menerima pembayaran Rp $nominal dari $nama (ID: $id)");
+
+        $_SESSION['swal_title'] = "Berhasil Diverifikasi!";
+        $_SESSION['swal_text'] = "Pembayaran sebesar Rp $nominal telah diterima.";
+        $_SESSION['swal_icon'] = "success";
+
+        header("Location: keuangan_index.php?tab=verifikasi");
+        exit;
+    } catch (Exception $e) {
+        // [SECURITY] Rollback jika ada error
+        $mysqli->rollback();
+        pesan_error("keuangan_index.php?tab=verifikasi", "❌ Gagal: " . $e->getMessage());
     }
-
-    // LOG
-    $db->catat_log($_SESSION['id_pengguna'], 'VERIFIKASI BAYAR', "Menerima pembayaran Rp $nominal dari $nama (ID: $id)");
-
-    $_SESSION['swal_title'] = "Berhasil Diverifikasi!";
-    $_SESSION['swal_text'] = "Pembayaran sebesar Rp $nominal telah diterima.";
-    $_SESSION['swal_icon'] = "success";
-
-    header("Location: keuangan_index.php?tab=verifikasi");
-    exit;
 }
 // 2. TOLAK PEMBAYARAN
 else if ($act == 'tolak' && $id) {

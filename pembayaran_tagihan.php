@@ -70,9 +70,14 @@ if ($id_tagihan < 1) {
     pesan_error("tagihan_saya.php", "ID Tagihan tidak valid.");
 }
 
-// Ambil Detail Tagihan
-$stmt = $mysqli->prepare("SELECT t.*, k.kode_kamar FROM tagihan t JOIN kontrak ko ON t.id_kontrak=ko.id_kontrak JOIN kamar k ON ko.id_kamar=k.id_kamar WHERE t.id_tagihan=?");
-$stmt->bind_param('i', $id_tagihan);
+// Ambil Detail Tagihan (Dengan Validasi Kepemilikan)
+$stmt = $mysqli->prepare("SELECT t.*, k.kode_kamar 
+                          FROM tagihan t 
+                          JOIN kontrak ko ON t.id_kontrak=ko.id_kontrak 
+                          JOIN kamar k ON ko.id_kamar=k.id_kamar 
+                          JOIN penghuni p ON ko.id_penghuni = p.id_penghuni
+                          WHERE t.id_tagihan=? AND p.id_pengguna=?");
+$stmt->bind_param('ii', $id_tagihan, $_SESSION['id_pengguna']);
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
 
