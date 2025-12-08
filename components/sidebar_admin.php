@@ -18,14 +18,16 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <i class="fa-solid fa-building-user text-xl"></i>
             </div>
             <div>
-                <h1 style="color: white; font-size: 18px; margin: 0; font-weight: 700;">SIKOS Admin</h1>
-                <p style="color: rgba(255,255,255,0.5); font-size: 11px; margin: 0;">Management Panel</p>
+                <a href="../index.php" style="text-decoration: none;">
+                    <h1 style="color: white; font-size: 18px; margin: 0; font-weight: 700;">SIKOS Admin</h1>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 11px; margin: 0;">Management Panel</p>
+                </a>
             </div>
         </div>
     </div>
 
     <nav style="flex:1; overflow-y:auto; padding-bottom: 20px;">
-        
+
         <div style="padding: 16px 24px 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">
             Menu Utama
         </div>
@@ -38,14 +40,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fa-solid fa-house-chimney"></i>
             <span>Kelola Kamar</span>
         </a>
-        
-        <?php 
-            $count_booking = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0]; 
+
+        <?php
+        $count_booking = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
         ?>
         <a href="booking_data.php" class="sidebar-link <?= strpos($current_page, 'booking') !== false ? 'active' : '' ?>">
             <i class="fa-solid fa-clipboard-list"></i>
             <span>Booking</span>
-            <?php if($count_booking > 0): ?>
+            <?php if ($count_booking > 0): ?>
                 <span class="badge-notif"><?= $count_booking ?></span>
             <?php endif; ?>
         </a>
@@ -56,37 +58,37 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
 
         <?php
-            // Hitung Pending Pembayaran & Tagihan
-            $c_bayar = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0]; 
-            $c_tagih = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE status='BELUM'")->fetch_row()[0];
-            $total_keuangan = $c_bayar + $c_tagih;
+        // Hitung Pending Pembayaran & Tagihan
+        $c_bayar = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0];
+        $c_tagih = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE status='BELUM'")->fetch_row()[0];
+        $total_keuangan = $c_bayar + $c_tagih;
         ?>
 
         <div class="sidebar-dropdown">
-            <button class="sidebar-link w-full justify-between <?= ($current_page == 'keuangan_index.php') ? 'active' : '' ?>" 
-                    onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.arrow').classList.toggle('rotate');">
+            <button class="sidebar-link w-full justify-between <?= ($current_page == 'keuangan_index.php') ? 'active' : '' ?>"
+                onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.arrow').classList.toggle('rotate');">
                 <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-sack-dollar"></i> 
+                    <i class="fa-solid fa-sack-dollar"></i>
                     <span>Pusat Keuangan</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <?php if($total_keuangan > 0): ?>
+                    <?php if ($total_keuangan > 0): ?>
                         <span class="badge-notif" style="background: var(--warning); color: black;"><?= $total_keuangan ?></span>
                     <?php endif; ?>
                     <i class="fa-solid fa-chevron-down arrow text-xs"></i>
                 </div>
             </button>
-            
+
             <div class="dropdown-content <?= ($current_page == 'keuangan_index.php') ? 'open' : '' ?>">
                 <a href="keuangan_index.php?tab=verifikasi" class="sidebar-sublink <?= (isset($_GET['tab']) && $_GET['tab'] == 'verifikasi') ? 'active' : '' ?>">
                     <span>Verifikasi Bayar</span>
-                    <?php if($c_bayar > 0): ?>
+                    <?php if ($c_bayar > 0): ?>
                         <span class="badge-notif"><?= $c_bayar ?></span>
                     <?php endif; ?>
                 </a>
                 <a href="keuangan_index.php?tab=tagihan" class="sidebar-sublink <?= (isset($_GET['tab']) && $_GET['tab'] == 'tagihan') ? 'active' : '' ?>">
                     <span>Kelola Tagihan</span>
-                    <?php if($c_tagih > 0): ?>
+                    <?php if ($c_tagih > 0): ?>
                         <span class="badge-notif"><?= $c_tagih ?></span>
                     <?php endif; ?>
                 </a>
@@ -108,14 +110,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fa-solid fa-users"></i>
             <span>Penghuni</span>
         </a>
-        
-        <?php 
-            $count_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE status='BARU'")->fetch_row()[0]; 
+
+        <?php
+        $count_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE status='BARU'")->fetch_row()[0];
         ?>
         <a href="keluhan_data.php" class="sidebar-link <?= strpos($current_page, 'keluhan') !== false ? 'active' : '' ?>">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span>Komplain</span>
-            <?php if($count_keluhan > 0): ?>
+            <?php if ($count_keluhan > 0): ?>
                 <span class="badge-notif"><?= $count_keluhan ?></span>
             <?php endif; ?>
         </a>
@@ -141,6 +143,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <a href="fasilitas_data.php" class="sidebar-link <?= strpos($current_page, 'fasilitas') !== false ? 'active' : '' ?>">
             <i class="fa-solid fa-list-check"></i>
             <span>Master Fasilitas</span>
+        </a>
+
+        <a href="../index.php" class="sidebar-link">
+            <i class="fa-solid fa-globe"></i>
+            <span>Lihat Website</span>
         </a>
 
     </nav>

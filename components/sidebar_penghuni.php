@@ -11,9 +11,9 @@ $page = basename($_SERVER['PHP_SELF']);
 // echo '<script>document.body.classList.add("role-penghuni");</script>';
 
 global $mysqli;
-if(!isset($mysqli)) { 
-    $db = new Database(); 
-    $mysqli = $db->koneksi; 
+if (!isset($mysqli)) {
+    $db = new Database();
+    $mysqli = $db->koneksi;
 }
 
 $q_user = "SELECT u.nama, p.foto_profil 
@@ -23,7 +23,7 @@ $q_user = "SELECT u.nama, p.foto_profil
 $user_sb = $mysqli->query($q_user)->fetch_assoc();
 $nama_user = htmlspecialchars($user_sb['nama'] ?? 'Pengguna');
 // Gunakan path absolut web root untuk gambar agar aman di subfolder
-$foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/".$user_sb['foto_profil'] : "assets/img/avatar.png"; 
+$foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/" . $user_sb['foto_profil'] : "assets/img/avatar.png";
 
 // Hitung Tagihan Belum Bayar
 $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t 
@@ -73,19 +73,19 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
 
     <nav class="sidebar-nav">
         <div class="nav-label">Menu Utama</div>
-        
-        <a href="penghuni_dashboard.php" class="nav-link <?= $page=='penghuni_dashboard.php'?'active':'' ?>">
+
+        <a href="penghuni_dashboard.php" class="nav-link <?= $page == 'penghuni_dashboard.php' ? 'active' : '' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-house"></i></div>
             <span>Dashboard</span>
         </a>
-        <a href="kamar_saya.php" class="nav-link <?= $page=='kamar_saya.php'?'active':'' ?>">
+        <a href="kamar_saya.php" class="nav-link <?= $page == 'kamar_saya.php' ? 'active' : '' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-bed"></i></div>
             <span>Kamar Saya</span>
         </a>
-        <a href="tagihan_saya.php" class="nav-link <?= $page=='tagihan_saya.php'?'active':'' ?>">
+        <a href="tagihan_saya.php" class="nav-link <?= $page == 'tagihan_saya.php' ? 'active' : '' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-file-invoice-dollar"></i></div>
             <span>Tagihan</span>
-            <?php if($count_tagihan > 0): ?>
+            <?php if ($count_tagihan > 0): ?>
                 <span class="badge-notif"><?= $count_tagihan ?></span>
             <?php endif; ?>
         </a>
@@ -94,26 +94,30 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
         $c_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE id_penghuni=(SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna) AND status='PROSES'")->fetch_row()[0];
         $c_info = $mysqli->query("SELECT COUNT(*) FROM pengumuman WHERE is_aktif=1 AND aktif_mulai >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetch_row()[0];
         ?>
-        
+
         <div class="nav-label" style="margin-top:20px;">Layanan</div>
-        
-        <a href="keluhan.php" class="nav-link <?= $page=='keluhan.php'?'active':'' ?>">
+
+        <a href="keluhan.php" class="nav-link <?= $page == 'keluhan.php' ? 'active' : '' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-screwdriver-wrench"></i></div>
             <span>Lapor Keluhan</span>
-            <?php if($c_keluhan > 0): ?>
+            <?php if ($c_keluhan > 0): ?>
                 <span class="badge-notif"><?= $c_keluhan ?></span>
             <?php endif; ?>
         </a>
-        <a href="pengumuman.php" class="nav-link <?= $page=='pengumuman.php'?'active':'' ?>">
+        <a href="pengumuman.php" class="nav-link <?= $page == 'pengumuman.php' ? 'active' : '' ?>">
             <div class="icon-wrap"><i class="fa-solid fa-bullhorn"></i></div>
             <span>Info & Pengumuman</span>
-            <?php if($c_info > 0): ?>
+            <?php if ($c_info > 0): ?>
                 <span class="badge-notif" style="background:#f59e0b;">New</span>
             <?php endif; ?>
         </a>
 
         <div style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
-            <a href="profil.php" class="nav-link <?= $page=='profil.php'?'active':'' ?>">
+            <a href="index.php" class="nav-link">
+                <div class="icon-wrap"><i class="fa-solid fa-globe"></i></div>
+                <span>Lihat Website</span>
+            </a>
+            <a href="profil.php" class="nav-link <?= $page == 'profil.php' ? 'active' : '' ?>">
                 <div class="icon-wrap"><i class="fa-solid fa-user-gear"></i></div>
                 <span>Edit Profil</span>
             </a>
@@ -130,7 +134,7 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
         // Toggle untuk Mobile
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('sidebarOverlay').classList.toggle('active');
-        
+
         // Toggle untuk Desktop (Memperluas konten)
         document.body.classList.toggle('sidebar-collapsed');
     }
