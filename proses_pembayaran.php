@@ -30,15 +30,18 @@ $path = upload_process($_FILES['bukti_tf'], 'bukti_tf');
 if ($path) {
     // --- PERBAIKAN UTAMA: PANGGIL METHOD DARI CLASS DATABASE ---
     $db = new Database();
-    
+
     // Method ini harus sudah ada di inc/koneksi.php (Lihat langkah 3)
     $sukses = $db->update_bukti_pembayaran($id_pembayaran, $path);
-    
+
     if ($sukses) {
-        header('Location: penghuni_dashboard.php?msg=pembayaran_berhasil');
+        $_SESSION['swal_title'] = "Pembayaran Diterima!";
+        $_SESSION['swal_text'] = "Bukti pembayaran Anda berhasil kami terima. Admin sedang memverifikasi pesanan Anda, mohon tunggu update selanjutnya di halaman ini.";
+        $_SESSION['swal_icon'] = "success";
+
+        header('Location: kamar_saya.php');
         exit;
     } else {
         pesan_error("pembayaran.php?booking=$id_pembayaran", "Gagal update database. Hubungi Admin.");
     }
 }
-?>

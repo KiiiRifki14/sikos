@@ -3,9 +3,11 @@ session_start();
 require '../inc/utils.php';
 require '../inc/koneksi.php';
 require '../inc/guard.php';
-require '../inc/upload.php'; 
+require '../inc/upload.php';
 
-if (!is_admin()) { die('Forbidden'); }
+if (!is_admin()) {
+    die('Forbidden');
+}
 
 $db = new Database();
 $act = $_GET['act'] ?? '';
@@ -19,7 +21,7 @@ if ($act == 'tambah') {
 
     $stmt = $mysqli->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, 'TERSEDIA', ?, ?)");
     $stmt->bind_param('siidiss', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $foto_cover, $_POST['catatan']);
-    
+
     if ($stmt->execute()) {
         $id_kamar_baru = $stmt->insert_id;
         if (isset($_POST['fasilitas']) && is_array($_POST['fasilitas'])) {
@@ -34,7 +36,7 @@ if ($act == 'tambah') {
         if (!empty($_FILES['foto_galeri']['name'][0])) {
             $files = $_FILES['foto_galeri'];
             $count = count($files['name']);
-            
+
             $stmt_gal = $mysqli->prepare("INSERT INTO kamar_foto (id_kamar, file_nama) VALUES (?, ?)");
 
             for ($i = 0; $i < $count; $i++) {
@@ -47,7 +49,7 @@ if ($act == 'tambah') {
                         'error'    => $files['error'][$i],
                         'size'     => $files['size'][$i]
                     ];
-                    
+
                     $uploaded = upload_process($file_item, 'kamar'); // Reuse existing function
                     if ($uploaded) {
                         $stmt_gal->bind_param('is', $id_kamar_baru, $uploaded);
@@ -57,11 +59,15 @@ if ($act == 'tambah') {
             }
         }
         // -----------------------------------
-        
+
         // LOG
         $db->catat_log($_SESSION['id_pengguna'], 'TAMBAH KAMAR', "Menambah kamar " . $_POST['kode_kamar']);
         header('Location: kamar_data.php');
     } else {
+        // [FIX] Hapus file jika gagal insert
+        if ($foto_cover && file_exists("../assets/uploads/kamar/$foto_cover")) {
+            unlink("../assets/uploads/kamar/$foto_cover");
+        }
         echo "<script>alert('Gagal tambah! Kode kamar mungkin duplikat.'); window.history.back();</script>";
     }
 }
@@ -70,7 +76,7 @@ if ($act == 'tambah') {
 elseif ($act == 'edit') {
     $id_kamar = intval($_POST['id_kamar']);
     $foto_cover = null;
-    
+
     // Cek jika ada upload foto cover baru
     if (!empty($_FILES['foto_cover']['name'])) {
         // --- LOGIKA BARU: HAPUS FOTO LAMA ---
@@ -90,9 +96,11 @@ elseif ($act == 'edit') {
     }
 
     $query = "UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, catatan=?";
-    if ($foto_cover) { $query .= ", foto_cover=?"; }
+    if ($foto_cover) {
+        $query .= ", foto_cover=?";
+    }
     $query .= " WHERE id_kamar=?";
-    
+
     $stmt = $mysqli->prepare($query);
     if ($foto_cover) {
         $stmt->bind_param('siidissi', $_POST['kode_kamar'], $_POST['id_tipe'], $_POST['lantai'], $_POST['luas_m2'], $_POST['harga'], $_POST['catatan'], $foto_cover, $id_kamar);
@@ -113,7 +121,7 @@ elseif ($act == 'edit') {
         if (!empty($_FILES['foto_galeri']['name'][0])) {
             $files = $_FILES['foto_galeri'];
             $count = count($files['name']);
-            
+
             $stmt_gal = $mysqli->prepare("INSERT INTO kamar_foto (id_kamar, file_nama) VALUES (?, ?)");
 
             for ($i = 0; $i < $count; $i++) {
@@ -125,7 +133,7 @@ elseif ($act == 'edit') {
                         'error'    => $files['error'][$i],
                         'size'     => $files['size'][$i]
                     ];
-                    
+
                     $uploaded = upload_process($file_item, 'kamar');
                     if ($uploaded) {
                         $stmt_gal->bind_param('is', $id_kamar, $uploaded);
@@ -148,14 +156,14 @@ elseif ($act == 'edit') {
 // 3. HAPUS KAMAR (DENGAN VALIDASI)
 elseif ($act == 'hapus') {
     $id = intval($_GET['id']);
-    
+
     // Ambil kode kamar dulu buat log (sebelum dihapus)
     $k = $mysqli->query("SELECT kode_kamar FROM kamar WHERE id_kamar=$id")->fetch_object();
     $kode = $k ? $k->kode_kamar : 'Unknown';
 
     // Panggil fungsi hapus yang sudah kita revisi di koneksi.php
     $hasil = $db->hapus_kamar($id);
-    
+
     if ($hasil == "SUKSES") {
         // Jika sukses, catat log dan redirect
         $db->catat_log($_SESSION['id_pengguna'], 'HAPUS KAMAR', "Menghapus kamar $kode");
@@ -179,10 +187,9 @@ elseif ($act == 'hapus_foto') {
         if (file_exists($path)) unlink($path);
     }
     $mysqli->query("DELETE FROM kamar_foto WHERE id_foto=$id_foto");
-    
+
     // LOG (Opsional, tapi bagus ada)
     $db->catat_log($_SESSION['id_pengguna'], 'HAPUS FOTO', "Menghapus foto galeri kamar ID $id_kamar");
-    
+
     header("Location: kamar_edit.php?id=$id_kamar");
 }
-?>

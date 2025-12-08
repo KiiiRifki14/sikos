@@ -17,7 +17,7 @@ $db = new Database();
 // ==========================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 2. Ambil Token CSRF
-    $token = $_POST['csrf'] ?? ''; 
+    $token = $_POST['csrf'] ?? '';
 
     // 3. Validasi Token
     if (!csrf_check($token)) {
@@ -49,9 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($simpan === "DUPLIKAT") {
         pesan_error("tagihan_saya.php", "Anda sudah mengirim bukti untuk tagihan ini dan sedang menunggu verifikasi admin.");
-    }
-    else if ($simpan) {
-        header('Location: tagihan_saya.php?status=sukses');
+    } else if ($simpan) {
+        $_SESSION['swal_title'] = "Pembayaran Diproses!";
+        $_SESSION['swal_text'] = "Bukti pembayaran Anda berhasil dikirim. Admin akan segera memverifikasi tagihan ini.";
+        $_SESSION['swal_icon'] = "success";
+
+        header('Location: tagihan_saya.php');
         exit;
     } else {
         pesan_error("pembayaran_tagihan.php?id=$id_tagihan", "Terjadi kesalahan database saat menyimpan pembayaran.");
@@ -79,28 +82,78 @@ if (!$row) {
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="utf-8">
     <title>Bayar Tagihan</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="stylesheet" href="assets/css/app.css"/>
+    <link rel="stylesheet" href="assets/css/app.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .pay-card { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .pay-header { text-align: center; margin-bottom: 30px; }
-        .pay-amount { font-size: 32px; font-weight: 800; color: #2563eb; margin: 10px 0; }
-        .pay-detail { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #475569; }
-        .pay-detail div { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .pay-detail div:last-child { margin-bottom: 0; }
-        .rek-box { border: 2px dashed #cbd5e1; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 25px; background: #f1f5f9; }
-        .btn-upload { width: 100%; padding: 12px; font-size: 16px; font-weight: 600; }
+        .pay-card {
+            max-width: 500px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .pay-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .pay-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: #2563eb;
+            margin: 10px 0;
+        }
+
+        .pay-detail {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .pay-detail div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .pay-detail div:last-child {
+            margin-bottom: 0;
+        }
+
+        .rek-box {
+            border: 2px dashed #cbd5e1;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+        }
+
+        .btn-upload {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
     </style>
 </head>
+
 <body>
     <?php include 'components/sidebar_penghuni.php'; ?>
-    
+
     <main class="main-content animate-fade-up" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
-        
+
         <div class="pay-card">
             <div class="pay-header">
                 <i class="fa-solid fa-file-invoice-dollar" style="font-size: 48px; color: #64748b; margin-bottom: 15px;"></i>
@@ -116,8 +169,8 @@ if (!$row) {
                 <div><span>Jatuh Tempo</span> <strong><?= date('d M Y', strtotime($row['jatuh_tempo'])) ?></strong></div>
             </div>
 
-            <?php 
-            $pengaturan = $db->ambil_pengaturan(); 
+            <?php
+            $pengaturan = $db->ambil_pengaturan();
             ?>
             <div class="rek-box">
                 <div style="font-size:12px; color:#64748b; margin-bottom:5px;">Transfer ke Rekening:</div>
@@ -145,4 +198,5 @@ if (!$row) {
 
     </main>
 </body>
+
 </html>

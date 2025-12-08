@@ -41,12 +41,32 @@ if ($row_kamar) {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="assets/css/app.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body class="role-penghuni">
     <?php include 'components/sidebar_penghuni.php'; ?>
 
     <main class="main-content animate-fade-up">
+
+        <?php
+        if (isset($_SESSION['swal_title'])) {
+            echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    title: '{$_SESSION['swal_title']}',
+                    text: '{$_SESSION['swal_text']}',
+                    icon: '{$_SESSION['swal_icon']}',
+                    confirmButtonColor: '#3b82f6',
+                    confirmButtonText: 'Siap, Ditunggu!'
+                });
+            });
+        </script>";
+            unset($_SESSION['swal_title']);
+            unset($_SESSION['swal_text']);
+            unset($_SESSION['swal_icon']);
+        }
+        ?>
 
         <?php if ($row_kamar): ?>
 
@@ -145,7 +165,43 @@ if ($row_kamar) {
 
             <?php if ($row_booking): ?>
 
-                <?php if (!empty($row_booking['bukti_path'])): ?>
+                <?php if ($row_booking['status_bayar'] == 'DITOLAK'): ?>
+                    <!-- STATE: PEMBAYARAN DITOLAK -->
+                    <div class="card-white" style="text-align:center; padding:60px 20px; display:flex; flex-direction:column; align-items:center;">
+                        <div style="width:100px; height:100px; background:#fef2f2; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
+                            <i class="fa-solid fa-circle-xmark" style="font-size:40px; color:#ef4444;"></i>
+                        </div>
+
+                        <h3 style="color:#1e293b; font-size:22px; font-weight:800; margin-bottom:8px;">
+                            Pembayaran Ditolak
+                        </h3>
+                        <p style="color:#64748b; margin-bottom: 30px; max-width:500px;">
+                            Mohon maaf, bukti pembayaran Anda ditolak oleh admin.
+                            <br>Hal ini mungkin karena bukti buram, nominal tidak sesuai, atau rekening tujuan salah. Silakan lakukan pembayaran/upload ulang.
+                        </p>
+
+                        <div class="bg-slate-50 border p-4 rounded-lg mb-8 text-left w-full max-w-md">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs text-muted font-bold uppercase">Kamar Booking</span>
+                                <span class="text-sm font-bold"><?= htmlspecialchars($row_booking['kode_kamar']) ?></span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-xs text-muted font-bold uppercase">Status</span>
+                                <span class="text-sm font-bold text-red-500">Ditolak Admin</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 flex-wrap justify-center">
+                            <a href="pembayaran.php?booking=<?= $row_booking['id_booking'] ?>" class="btn btn-primary px-8 py-3 rounded-full">
+                                <i class="fa-solid fa-rotate-right mr-2"></i> Upload Ulang Bukti
+                            </a>
+                            <a href="https://wa.me/6281234567890" target="_blank" class="btn btn-secondary px-6 py-2 rounded-full text-sm">
+                                <i class="fa-brands fa-whatsapp mr-2"></i> Tanya Admin
+                            </a>
+                        </div>
+                    </div>
+
+                <?php elseif (!empty($row_booking['bukti_path'])): ?>
                     <!-- STATE: SUDAH UPLOAD -->
                     <div class="card-white" style="text-align:center; padding:60px 20px; display:flex; flex-direction:column; align-items:center;">
                         <div style="width:100px; height:100px; background:#e0f2fe; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
