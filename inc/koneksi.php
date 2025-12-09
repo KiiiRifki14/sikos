@@ -1032,7 +1032,7 @@ class Database
 
     function get_pengumuman_terbaru($limit = 2)
     {
-        return $this->koneksi->query("SELECT * FROM pengumuman WHERE is_aktif=1 ORDER BY aktif_mulai DESC LIMIT $limit");
+        return $this->koneksi->query("SELECT * FROM pengumuman WHERE is_aktif=1 AND aktif_selesai >= CURDATE() ORDER BY aktif_mulai DESC LIMIT $limit");
     }
 
     function can_user_book($id_pengguna)

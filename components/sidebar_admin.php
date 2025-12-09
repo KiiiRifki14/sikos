@@ -122,6 +122,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <?php endif; ?>
         </a>
 
+        <a href="pengumuman_data.php" class="sidebar-link <?= strpos($current_page, 'pengumuman') !== false ? 'active' : '' ?>">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>Pengumuman</span>
+        </a>
+
         <!-- SYSTEM -->
         <div style="padding: 24px 24px 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">
             Lainnya
