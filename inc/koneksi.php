@@ -2,18 +2,28 @@
 // Panggil file konfigurasi (opsional, jika ingin tetap pakai konstanta)
 require_once __DIR__ . '/config.php';
 
-class Database
+// ===================================================================================
+// BAGIAN 1: ABSTRACTION (INTERFACE) [MATERI: ABSTRACTION]
+// ===================================================================================
+interface SikosDatabaseInterface
 {
-    // PENERAPAN ENKAPSULASI (Pertemuan 7)
-    // Property dibuat private agar aman dan hanya bisa diakses class ini    
-    // Property koneksi dibuat public agar bisa dipakai di file lain (mysqli query)
-    public $koneksi;
+    public function get_statistik_kamar();
+    public function get_total_booking();
+}
 
-    // PENERAPAN CONSTRUCTOR (Pertemuan 6)
+// ===================================================================================
+// BAGIAN 2: PARENT CLASS (INHERITANCE) [MATERI: INHERITANCE]
+// ===================================================================================
+class KoneksiDasar
+{
+    // [MATERI: ENCAPSULATION]
+    // Property dibuat PROTECTED agar aman tapi bisa diwariskan ke Child Class
+    protected $koneksi;
+
+    // [MATERI: POLYMORPHISM - CONSTRUCTOR]
     function __construct()
     {
-        // PENERAPAN EXCEPTION HANDLING (Pertemuan 8)
-        // Menggunakan Try-Catch untuk menangkap error koneksi
+        // [MATERI: EXCEPTION HANDLING]
         try {
             // @ sebelum new mysqli berguna untuk menahan error bawaan PHP agar ditangkap catch
             $this->koneksi = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -23,16 +33,51 @@ class Database
                 throw new Exception("Koneksi Database Gagal: " . $this->koneksi->connect_error);
             }
         } catch (Exception $e) {
-            // [UPDATE] Error Handling Profesional
-            // 1. Log error ke file server (agar admin bisa cek, tapi user tidak lihat)
             error_log("Database Error: " . $e->getMessage());
-
-            // 2. Tampilkan pesan user-friendly
             die('<div style="font-family: sans-serif; text-align: center; padding: 50px;">
                     <h1>Layanan Sedang Pemeliharaan</h1>
                     <p>Maaf, saat ini sistem sedang tidak dapat diakses.</p>
                     <p style="color: #666; font-size: 12px;">(Error Code: DB_CONN_ERR)</p>
                 </div>');
+        }
+    }
+
+    // [MATERI: MAGIC METHODS - DESTRUCTOR]
+    // Otomatis menutup koneksi saat objek dihapus/script selesai
+    function __destruct()
+    {
+        if ($this->koneksi) {
+            $this->koneksi->close();
+        }
+    }
+
+    // [MATERI: MAGIC METHODS - GETTER]
+    // Trik agar file lain yang memanggil $db->koneksi (public) TIDAK ERROR
+    // meskipun aslinya properti ini protected.
+    public function __get($name)
+    {
+        if ($name == 'koneksi') {
+            return $this->koneksi;
+        }
+        return null;
+    }
+}
+
+// ===================================================================================
+// BAGIAN 3: CHILD CLASS (UTAMA) [MATERI: INHERITANCE]
+// ===================================================================================
+class Database extends KoneksiDasar implements SikosDatabaseInterface
+{
+    // [MATERI: POLYMORPHISM - OVERRIDING]
+    function __construct()
+    {
+        // Memanggil constructor milik Parent Class (KoneksiDasar)
+        parent::__construct();
+
+        // Tambahan logika khusus Child Class (Overriding behavior)
+        if ($this->koneksi) {
+            // Set Charset agar support emoji/karakter khusus
+            $this->koneksi->set_charset("utf8mb4");
         }
     }
 
@@ -1075,6 +1120,7 @@ class Database
 
 // Inisialisasi Objek Global (Biar file lain tinggal pakai $mysqli)
 $db = new Database();
+// [REFACTOR NOTE] Karena 'protected $koneksi', kita akses via Magic Method __get()
 $mysqli = $db->koneksi;
 
 // Fungsi Helper Global (Bukan method class, tapi helper biasa)
