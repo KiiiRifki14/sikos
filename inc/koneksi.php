@@ -17,10 +17,8 @@ interface SikosDatabaseInterface
 class KoneksiDasar
 {
     // [MATERI: ENCAPSULATION]
-    // 'protected': Bisa diakses class ini & class warisan (Database)
     protected $koneksi;
 
-    // 'private': Hanya bisa diakses di class ini saja (KoneksiDasar)
     // [MATERI: ACCESS MODIFIER PRIVATE]
     private $appVersion = "1.0.0";
     private $debugMode = false;
@@ -30,18 +28,15 @@ class KoneksiDasar
     {
         // [MATERI: EXCEPTION HANDLING]
         try {
-            // @ menahan error native PHP, biar ditangkap catch
             $this->koneksi = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
             if ($this->koneksi->connect_error) {
                 throw new Exception("Koneksi Database Gagal: " . $this->koneksi->connect_error);
             }
         } catch (Exception $e) {
-            // Jika debugMode aktif (via setter), tampilkan error asli
             if ($this->debugMode) {
                 die("Error: " . $e->getMessage());
             } else {
-                // Tampilan user friendly
                 die('<div style="text-align: center; padding: 50px;">
                         <h1>Layanan Sedang Pemeliharaan</h1>
                         <p>Maaf, saat ini sistem sedang tidak dapat diakses.</p>
@@ -52,16 +47,16 @@ class KoneksiDasar
     }
 
     // [MATERI: MAGIC METHODS - DESTRUCTOR]
-    // Otomatis dipanggil saat object dihancurkan (misal di akhir script)
     function __destruct()
     {
-        if ($this->koneksi) {
-            $this->koneksi->close();
-        }
+        // [FIX CRITICAL ERROR]
+        // Jangan tutup koneksi otomatis jika file lain masih butuh akses via global $mysqli
+        // if ($this->koneksi) {
+        //     $this->koneksi->close();
+        // }
     }
 
     // [MATERI: SETTER & GETTER STANDAR]
-    // Digunakan untuk memanipulasi property private $debugMode
     public function setDebugMode($status)
     {
         $this->debugMode = $status;
@@ -73,7 +68,6 @@ class KoneksiDasar
     }
 
     // [MATERI: MAGIC METHODS - GETTER]
-    // Agar property 'koneksi' (protected) bisa dibaca dari luar seolah-olah public
     public function __get($name)
     {
         if ($name == 'koneksi') {
@@ -91,10 +85,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     // [MATERI: OVERRIDING CONSTRUCTOR]
     function __construct()
     {
-        // Panggil constructor Parent dulu (super)
         parent::__construct();
-
-        // Tambahan logika khusus Child
         if ($this->koneksi) {
             $this->koneksi->set_charset("utf8mb4");
         }
@@ -106,7 +97,6 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     public function get_status_label($status)
     {
         $label = "";
-        // [MATERI: SWITCH CASE]
         switch ($status) {
             case 'PENDING':
                 $label = '<span class="badge badge-warning">Menunggu</span>';
@@ -523,8 +513,6 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
             $stmt->bind_param('sii', $tgl_baru, $durasi_bulan, $id_kontrak);
             $stmt->execute();
 
-            // Generate tagihan baru steps here... simplified for brevity, assume logic same
-            // (Re-using logic from original file)
             $start = strtotime("+1 month", strtotime($kontrak['tanggal_selesai']));
             $end   = strtotime($tgl_baru);
             $harga = $this->koneksi->query("SELECT harga FROM kamar WHERE id_kamar={$kontrak['id_kamar']}")->fetch_object()->harga;
@@ -648,11 +636,64 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         return $stmt->execute();
     }
 
-    // Helper Retrieve Data (Simplified)
+    // Helper Retrieve Data (FIXED RETURN TYPES TO ARRAY)
     function get_tagihan_by_kontrak($id)
     {
         return $this->koneksi->query("SELECT * FROM tagihan WHERE id_kontrak=$id ORDER BY bulan_tagih DESC")->fetch_all(MYSQLI_ASSOC);
     }
+
+    // [FIX MISSING METHOD 1]
+    function count_tagihan_by_month($month)
+    {
+        $stmt = $this->koneksi->prepare("SELECT COUNT(*) FROM tagihan WHERE bulan_tagih = ?");
+        $stmt->bind_param('s', $month);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_row()[0];
+    }
+
+    // [FIX MISSING METHOD 2]
+    function count_pengeluaran()
+    {
+        return $this->koneksi->query("SELECT COUNT(*) FROM pengeluaran")->fetch_row()[0];
+    }
+
+    // [FIX MISSING METHOD 3, 4, 5, 6 for Keuangan]
+    function get_pembayaran_pending()
+    {
+        $sql = "SELECT p.*, u.nama FROM pembayaran p 
+                LEFT JOIN tagihan t ON p.ref_id = t.id_tagihan AND p.ref_type='TAGIHAN' 
+                LEFT JOIN booking b ON p.ref_id = b.id_booking AND p.ref_type='BOOKING' 
+                LEFT JOIN kontrak k ON t.id_kontrak = k.id_kontrak 
+                LEFT JOIN penghuni ph ON k.id_penghuni = ph.id_penghuni 
+                LEFT JOIN pengguna u ON (ph.id_pengguna = u.id_pengguna OR b.id_pengguna = u.id_pengguna) 
+                WHERE p.status='PENDING' ORDER BY p.id_pembayaran DESC";
+        return $this->koneksi->query($sql);
+    }
+
+    function get_tagihan_by_month_paginated($month, $start, $limit)
+    {
+        $stmt = $this->koneksi->prepare("SELECT t.*, u.nama, k.kode_kamar FROM tagihan t JOIN kontrak ko ON t.id_kontrak = ko.id_kontrak JOIN penghuni p ON ko.id_penghuni = p.id_penghuni JOIN pengguna u ON p.id_pengguna = u.id_pengguna JOIN kamar k ON ko.id_kamar = k.id_kamar WHERE t.bulan_tagih = ? ORDER BY u.nama ASC LIMIT ?, ?");
+        $stmt->bind_param('sii', $month, $start, $limit);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    function get_pengeluaran_paginated($start, $limit)
+    {
+        $stmt = $this->koneksi->prepare("SELECT * FROM pengeluaran ORDER BY tanggal DESC LIMIT ?, ?");
+        $stmt->bind_param('ii', $start, $limit);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    function get_cash_flow_report($month_filter)
+    {
+        if (!preg_match('/^\d{4}-\d{2}$/', $month_filter)) return false;
+        $q = "SELECT p.waktu_verifikasi as tgl, p.jumlah as nominal, 'MASUK' as tipe, p.metode as metode, CONCAT(COALESCE(u.nama, 'User'), ' - ', p.ref_type) as deskripsi FROM pembayaran p LEFT JOIN booking b ON p.ref_id=b.id_booking AND p.ref_type='BOOKING' LEFT JOIN tagihan t ON p.ref_id=t.id_tagihan AND p.ref_type='TAGIHAN' LEFT JOIN kontrak k ON t.id_kontrak=k.id_kontrak LEFT JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni LEFT JOIN pengguna u ON (ph.id_pengguna=u.id_pengguna OR b.id_pengguna=u.id_pengguna) WHERE p.status='DITERIMA' AND DATE_FORMAT(p.waktu_verifikasi, '%Y-%m') = '$month_filter' UNION ALL SELECT e.tanggal as tgl, e.biaya as nominal, 'KELUAR' as tipe, 'KAS' as metode, CONCAT(e.judul, IF(e.deskripsi != '', CONCAT(' - ', e.deskripsi), '')) as deskripsi FROM pengeluaran e WHERE DATE_FORMAT(e.tanggal, '%Y-%m') = '$month_filter' ORDER BY tgl DESC";
+        return $this->koneksi->query($q);
+    }
+
+
     function get_tagihan_pending_count($id)
     {
         return $this->koneksi->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=$id AND status='BELUM'")->fetch_row()[0];
@@ -681,7 +722,6 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
     function get_all_booking_paginated($start, $limit)
     {
-        // ... (Keep implementation but shortened for brevity if possible, keeping safety)
         $sql = "SELECT b.*, g.nama, g.no_hp, k.kode_kamar, p.bukti_path as bukti_bayar FROM booking b JOIN pengguna g ON b.id_pengguna=g.id_pengguna JOIN kamar k ON b.id_kamar=k.id_kamar LEFT JOIN pembayaran p ON b.id_booking = p.ref_id AND p.ref_type='BOOKING' WHERE b.status != 'PENDING' OR (p.bukti_path IS NOT NULL) ORDER BY b.tanggal_booking DESC LIMIT $start, $limit";
         return $this->koneksi->query($sql);
     }
@@ -693,7 +733,6 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
     function get_total_penghuni_filtered($cari = "")
     {
-        /* simplified */
         $sql = "SELECT COUNT(*) FROM penghuni p JOIN pengguna u ON p.id_pengguna = u.id_pengguna LEFT JOIN kontrak ko ON p.id_penghuni = ko.id_penghuni AND ko.status = 'AKTIF' LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar";
         if ($cari) $sql .= " WHERE u.nama LIKE '%$cari%' OR k.kode_kamar LIKE '%$cari%'";
         return $this->koneksi->query($sql)->fetch_row()[0];
@@ -728,7 +767,6 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function get_chart_pendapatan($tahun)
     {
         $data = [];
-        // [OPTIMIZATION] Loop 12x is allowed for small dataset
         for ($i = 1; $i <= 12; $i++) {
             $data[] = $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = $i AND YEAR(waktu_verifikasi) = $tahun")->fetch_row()[0] ?? 0;
         }
@@ -753,9 +791,15 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         ];
     }
 
+    // [FIX RETURN TYPE FOR ADMIN/INDEX.PHP]
     function get_booking_terbaru($limit = 5)
     {
-        return $this->koneksi->query("SELECT b.*, u.nama, u.no_hp, k.kode_kamar, t.nama_tipe FROM booking b JOIN pengguna u ON b.id_pengguna=u.id_pengguna JOIN kamar k ON b.id_kamar=k.id_kamar JOIN tipe_kamar t ON k.id_tipe=t.id_tipe WHERE b.status='PENDING' ORDER BY b.tanggal_booking DESC LIMIT $limit");
+        $res = $this->koneksi->query("SELECT b.*, u.nama, u.no_hp, k.kode_kamar, t.nama_tipe FROM booking b JOIN pengguna u ON b.id_pengguna=u.id_pengguna JOIN kamar k ON b.id_kamar=k.id_kamar JOIN tipe_kamar t ON k.id_tipe=t.id_tipe WHERE b.status='PENDING' ORDER BY b.tanggal_booking DESC LIMIT $limit");
+        $hasil = [];
+        while ($row = $res->fetch_assoc()) {
+            $hasil[] = $row;
+        }
+        return $hasil;
     }
 
     // Tenant Helpers
@@ -805,7 +849,8 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
 // Inisialisasi Objek Global
 $db = new Database();
-$mysqli = $db->koneksi; // Akses via Magic Method __get()
+// [PENTING] Akses via Getter agar bisa dipakai di file yg butuh $mysqli
+$mysqli = $db->koneksi;
 
 function pesan_error($url, $pesan)
 {
