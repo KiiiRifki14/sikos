@@ -10,26 +10,31 @@ $page = basename($_SERVER['PHP_SELF']);
 // Inject class khusus ke body (Opsional, tapi CSS baru sudah support tanpa ini via class sidebar)
 // echo '<script>document.body.classList.add("role-penghuni");</script>';
 
-global $mysqli;
-if (!isset($mysqli)) {
+// Ensure DB Object exists
+global $db;
+if (!isset($db)) {
     $db = new Database();
-    $mysqli = $db->koneksi;
 }
+// Init mysqli for legacy parts if needed
+global $mysqli;
+$mysqli = $db->koneksi;
 
+// SAFE QUERIES using $db helpers
 $q_user = "SELECT u.nama, p.foto_profil 
            FROM pengguna u 
            LEFT JOIN penghuni p ON u.id_pengguna = p.id_pengguna 
            WHERE u.id_pengguna = $id_pengguna";
-$user_sb = $mysqli->query($q_user)->fetch_assoc();
+$user_sb = $db->fetch_row_assoc($q_user);
+
 $nama_user = htmlspecialchars($user_sb['nama'] ?? 'Pengguna');
 // Gunakan path absolut web root untuk gambar agar aman di subfolder
 $foto_user = !empty($user_sb['foto_profil']) ? "assets/uploads/profil/" . $user_sb['foto_profil'] : "assets/img/avatar.png";
 
 // Hitung Tagihan Belum Bayar
-$count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t 
+$count_tagihan = $db->fetch_single_value("SELECT COUNT(*) FROM tagihan t 
     JOIN kontrak k ON t.id_kontrak = k.id_kontrak 
     WHERE k.status='AKTIF' AND t.status='BELUM' 
-    AND k.id_penghuni = (SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna)")->fetch_row()[0];
+    AND k.id_penghuni = (SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna)");
 ?>
 
 <!-- SweetAlert2 CDN -->
@@ -91,8 +96,8 @@ $count_tagihan = $mysqli->query("SELECT COUNT(*) FROM tagihan t
         </a>
 
         <?php
-        $c_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE id_penghuni=(SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna) AND status='PROSES'")->fetch_row()[0];
-        $c_info = $mysqli->query("SELECT COUNT(*) FROM pengumuman WHERE is_aktif=1 AND aktif_selesai >= CURDATE() AND aktif_mulai >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetch_row()[0];
+        $c_keluhan = $db->fetch_single_value("SELECT COUNT(*) FROM keluhan WHERE id_penghuni=(SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id_pengguna) AND status='PROSES'");
+        $c_info = $db->fetch_single_value("SELECT COUNT(*) FROM pengumuman WHERE is_aktif=1 AND aktif_selesai >= CURDATE() AND aktif_mulai >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
         ?>
 
         <div class="nav-label" style="margin-top:20px;">Layanan</div>

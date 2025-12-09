@@ -1,5 +1,9 @@
 <?php
 $current_page = basename($_SERVER['PHP_SELF']);
+global $db; // Pastikan akses ke $db
+if (!isset($db)) {
+    require_once __DIR__ . '/../inc/koneksi.php';
+}
 ?>
 
 <!-- SweetAlert2 CDN -->
@@ -42,7 +46,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
 
         <?php
-        $count_booking = $mysqli->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
+        // SAFE REFACTOR
+        $count_booking = $db->fetch_single_value("SELECT COUNT(*) FROM booking WHERE status='PENDING'");
         ?>
         <a href="booking_data.php" class="sidebar-link <?= strpos($current_page, 'booking') !== false ? 'active' : '' ?>">
             <i class="fa-solid fa-clipboard-list"></i>
@@ -58,9 +63,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
 
         <?php
-        // Hitung Pending Pembayaran & Tagihan
-        $c_bayar = $mysqli->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0];
-        $c_tagih = $mysqli->query("SELECT COUNT(*) FROM tagihan WHERE status='BELUM'")->fetch_row()[0];
+        // SAFE REFACTOR
+        $c_bayar = $db->fetch_single_value("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'");
+        $c_tagih = $db->fetch_single_value("SELECT COUNT(*) FROM tagihan WHERE status='BELUM'");
         $total_keuangan = $c_bayar + $c_tagih;
         ?>
 
@@ -112,7 +117,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
 
         <?php
-        $count_keluhan = $mysqli->query("SELECT COUNT(*) FROM keluhan WHERE status='BARU'")->fetch_row()[0];
+        // SAFE REFACTOR
+        $count_keluhan = $db->fetch_single_value("SELECT COUNT(*) FROM keluhan WHERE status='BARU'");
         ?>
         <a href="keluhan_data.php" class="sidebar-link <?= strpos($current_page, 'keluhan') !== false ? 'active' : '' ?>">
             <i class="fa-solid fa-triangle-exclamation"></i>

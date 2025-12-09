@@ -3,38 +3,38 @@ session_start();
 require '../inc/koneksi.php';
 require '../inc/guard.php';
 
-// Validasi Admin/Owner
-if (!is_admin() && !is_owner()) die('Forbidden');
+if (!is_admin() && !is_owner()) {
+    header("Location: ../login.php");
+    exit;
+}
 
 $db = new Database();
+$mysqli = $db->koneksi;
 
-// --- PAGINATION ---
-$batas = 10; // Menampilkan 20 log per halaman
-$halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
-$halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 20;
+$offset = ($page - 1) * $limit;
 
-// Hitung Total Data
-$total_data = $mysqli->query("SELECT COUNT(*) FROM log_aktivitas l LEFT JOIN pengguna u ON l.id_pengguna = u.id_pengguna WHERE u.peran IN ('ADMIN', 'OWNER')")->fetch_row()[0];
-$total_halaman = ceil($total_data / $batas);
+// SAFE REFACTOR
+$total_data = $db->fetch_single_value("SELECT COUNT(*) FROM log_aktivitas l LEFT JOIN pengguna u ON l.id_pengguna = u.id_pengguna WHERE u.peran IN ('ADMIN', 'OWNER')");
+$total_pages = ceil($total_data / $limit);
 
-// Query Data Log
 $sql = "SELECT l.*, u.nama 
         FROM log_aktivitas l 
         LEFT JOIN pengguna u ON l.id_pengguna = u.id_pengguna 
         WHERE u.peran IN ('ADMIN', 'OWNER')
         ORDER BY l.waktu DESC 
-        LIMIT $halaman_awal, $batas";
-
-$res = $mysqli->query($sql);
-$nomor = $halaman_awal + 1;
+        LIMIT $offset, $limit";
+$logs = $mysqli->query($sql);
 ?>
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
-    <title>Log Aktivitas Sistem</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../assets/css/app.css" />
+    <title>Log Aktivitas Admin - SIKOS</title>
+    <link rel="stylesheet" href="../assets/css/app.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="../assets/js/main.js"></script>
 </head>
@@ -42,95 +42,78 @@ $nomor = $halaman_awal + 1;
 <body class="dashboard-body">
 
     <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-
     <?php include '../components/sidebar_admin.php'; ?>
 
-    <main class="main-content animate-fade-up">
+    <main class="main-content">
         <div class="mb-8">
-            <h1 class="font-bold text-xl">Log Aktivitas</h1>
-            <p class="text-xs text-muted">Rekam jejak aktivitas pengguna di dalam sistem.</p>
+            <h1 class="font-bold text-xl">Log Aktivitas Admin</h1>
+            <p class="text-xs text-muted">Rekaman jejak aktivitas admin dan owner.</p>
         </div>
 
-        <div class="card-white">
+        <div class="card-white" style="padding: 0;">
             <div style="overflow-x: auto;">
                 <table style="width:100%;">
                     <thead>
                         <tr>
-                            <th>NO</th>
-                            <th>WAKTU</th>
-                            <th>USER</th>
-                            <th>AKSI</th>
-                            <th>KETERANGAN</th>
+                            <th style="padding: 16px 24px;">WAKTU</th>
+                            <th style="padding: 16px 24px;">ADMIN</th>
+                            <th style="padding: 16px 24px;">AKSI</th>
+                            <th style="padding: 16px 24px;">KETERANGAN</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php
-                        if ($res->num_rows > 0) {
-                            while ($log = $res->fetch_assoc()) {
-                        ?>
-                                <tr>
-                                    <td class="text-center" style="color:var(--text-muted);"><?= $nomor++ ?></td>
-                                    <td style="white-space: nowrap;">
-                                        <div class="text-sm font-bold"><?= date('d/m/Y', strtotime($log['waktu'])) ?></div>
-                                        <div class="text-xs text-muted"><?= date('H:i:s', strtotime($log['waktu'])) ?></div>
+                    <tbody style="font-size: 14px;">
+                        <?php if ($logs->num_rows > 0): ?>
+                            <?php while ($row = $logs->fetch_assoc()): ?>
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 12px 24px; color: #64748b;">
+                                        <?= date('d M Y H:i', strtotime($row['waktu'])) ?>
                                     </td>
-                                    <td>
-                                        <div class="font-bold text-sm"><?= htmlspecialchars($log['nama'] ?? 'System') ?></div>
+                                    <td style="padding: 12px 24px; font-weight: bold;">
+                                        <?= htmlspecialchars($row['nama']) ?>
                                     </td>
-                                    <td>
-                                        <span style="background:#eff6ff; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; text-transform:uppercase;">
-                                            <?= htmlspecialchars($log['aksi']) ?>
+                                    <td style="padding: 12px 24px;">
+                                        <?php
+                                        $badgeClass = 'background:#f1f5f9; color:#475569;';
+                                        if (strpos($row['aksi'], 'LOGIN') !== false) $badgeClass = 'background:#dbeafe; color:#1e40af;';
+                                        elseif (strpos($row['aksi'], 'DELETE') !== false) $badgeClass = 'background:#fee2e2; color:#991b1b;';
+                                        elseif (strpos($row['aksi'], 'UPDATE') !== false) $badgeClass = 'background:#fef3c7; color:#92400e;';
+                                        ?>
+                                        <span style="<?= $badgeClass ?> padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                                            <?= $row['aksi'] ?>
                                         </span>
                                     </td>
-                                    <td class="text-sm text-muted">
-                                        <?= htmlspecialchars($log['keterangan']) ?>
+                                    <td style="padding: 12px 24px; color: #475569;">
+                                        <?= htmlspecialchars($row['keterangan']) ?>
                                     </td>
                                 </tr>
-                        <?php
-                            }
-                        } else {
-                            echo "<tr><td colspan='5' class='text-center p-8 text-muted'>Belum ada aktivitas terekam.</td></tr>";
-                        }
-                        ?>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4" style="text-align:center; padding: 40px; color: #94a3b8; font-style: italic;">
+                                    Belum ada aktivitas terekam.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
-            <div class="pagination-container" style="margin-top: 20px; display:flex; gap:5px; justify-content:center;">
-                <?php
-                $qs = $_GET;
-                $prev = max(1, $halaman - 1);
-                $next = min($total_halaman, $halaman + 1);
-
-                $qs['halaman'] = $prev;
-                $href_prev = ($halaman > 1) ? '?' . http_build_query($qs) : '#';
-
-                $qs['halaman'] = $next;
-                $href_next = ($halaman < $total_halaman) ? '?' . http_build_query($qs) : '#';
-                ?>
-
-                <a href="<?= $href_prev ?>"
-                    class="btn btn-secondary text-xs <?= ($halaman <= 1) ? 'disabled' : '' ?>"
-                    style="padding:6px 12px;">
-                    <i class="fa-solid fa-chevron-left"></i> Prev
-                </a>
-
-                <?php for ($x = 1; $x <= $total_halaman; $x++):
-                    $qs = $_GET;
-                    $qs['halaman'] = $x;
-                    $href_page = '?' . http_build_query($qs);
-                ?>
-                    <a href="<?= $href_page ?>"
-                        class="btn text-xs <?= ($halaman == $x) ? 'btn-primary' : 'btn-secondary' ?>"
-                        style="padding:6px 12px;"><?= $x ?></a>
-                <?php endfor; ?>
-
-                <a href="<?= $href_next ?>"
-                    class="btn btn-secondary text-xs <?= ($halaman >= $total_halaman) ? 'disabled' : '' ?>"
-                    style="padding:6px 12px;">
-                    Next <i class="fa-solid fa-chevron-right"></i>
-                </a>
-            </div>
+            <?php if ($total_pages > 1): ?>
+                <div style="padding: 20px 24px; display: flex; justify-content: center; gap: 8px;">
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?page=<?= $i ?>" style="
+                        padding: 6px 12px; 
+                        border-radius: 6px; 
+                        font-size: 12px; 
+                        font-weight: bold;
+                        text-decoration: none;
+                        <?= $i == $page ? 'background: var(--primary); color: white;' : 'background: #f1f5f9; color: #475569;' ?>
+                    ">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 

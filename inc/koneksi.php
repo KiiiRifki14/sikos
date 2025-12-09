@@ -91,6 +91,25 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         }
     }
 
+    // [SAFETY HELPER] Mencegah Fatal Error jika query gagal
+    public function fetch_single_value($sql)
+    {
+        if (!$this->koneksi) return 0;
+        $res = $this->koneksi->query($sql);
+        if ($res && $res->num_rows > 0) {
+            $row = $res->fetch_row();
+            return $row[0] ?? 0;
+        }
+        return 0;
+    }
+
+    public function fetch_row_assoc($sql)
+    {
+        if (!$this->koneksi) return null;
+        $res = $this->koneksi->query($sql);
+        return ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+    }
+
     // ==========================================
     // CONTOH PEMAKAIAN SWITCH CASE [MATERI: PERCABANGAN]
     // ==========================================
@@ -123,6 +142,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function login($email, $password)
     {
         $stmt = $this->koneksi->prepare("SELECT id_pengguna, password_hash, peran, status FROM pengguna WHERE email=?");
+        if (!$stmt) return false;
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
@@ -136,12 +156,15 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function register($nama, $email, $hp, $password)
     {
         $cek = $this->koneksi->prepare("SELECT id_pengguna FROM pengguna WHERE email=?");
-        $cek->bind_param('s', $email);
-        $cek->execute();
-        if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+        if ($cek) {
+            $cek->bind_param('s', $email);
+            $cek->execute();
+            if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+        }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $this->koneksi->prepare("INSERT INTO pengguna (nama, email, no_hp, password_hash, peran, status) VALUES (?, ?, ?, ?, 'PENGHUNI', 1)");
+        if (!$stmt) return false;
         $stmt->bind_param('ssss', $nama, $email, $hp, $hash);
         return $stmt->execute();
     }
@@ -158,8 +181,10 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         $res = mysqli_query($this->koneksi, $query);
 
         $hasil = [];
-        while ($row = mysqli_fetch_assoc($res)) {
-            $hasil[] = $row;
+        if ($res) {
+            while ($row = mysqli_fetch_assoc($res)) {
+                $hasil[] = $row;
+            }
         }
         return $hasil;
     }
@@ -180,6 +205,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function ambil_kamar_by_id($id)
     {
         $stmt = $this->koneksi->prepare("SELECT * FROM kamar WHERE id_kamar=?");
+        if (!$stmt) return null;
         $stmt->bind_param('i', $id);
         $stmt->execute();
         return $stmt->get_result()->fetch_assoc();
@@ -188,12 +214,15 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function tambah_kamar($kode, $tipe, $lantai, $luas, $harga, $foto, $catatan)
     {
         $cek = $this->koneksi->prepare("SELECT 1 FROM kamar WHERE kode_kamar=?");
-        $cek->bind_param('s', $kode);
-        $cek->execute();
-        if ($cek->get_result()->fetch_assoc()) return false;
+        if ($cek) {
+            $cek->bind_param('s', $kode);
+            $cek->execute();
+            if ($cek->get_result()->fetch_assoc()) return false;
+        }
 
         $status = 'TERSEDIA';
         $stmt = $this->koneksi->prepare("INSERT INTO kamar (kode_kamar, id_tipe, lantai, luas_m2, harga, status_kamar, foto_cover, catatan) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) return false;
         $stmt->bind_param('siidisss', $kode, $tipe, $lantai, $luas, $harga, $status, $foto, $catatan);
         return $stmt->execute();
     }
@@ -201,40 +230,44 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function edit_kamar($id, $kode, $tipe, $lantai, $luas, $harga, $foto, $catatan)
     {
         $cek = $this->koneksi->prepare("SELECT 1 FROM kamar WHERE kode_kamar=? AND id_kamar!=?");
-        $cek->bind_param('si', $kode, $id);
-        $cek->execute();
-        if ($cek->get_result()->fetch_assoc()) return false;
+        if ($cek) {
+            $cek->bind_param('si', $kode, $id);
+            $cek->execute();
+            if ($cek->get_result()->fetch_assoc()) return false;
+        }
 
         if (!empty($foto)) {
             $stmt = $this->koneksi->prepare("UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, foto_cover=?, catatan=? WHERE id_kamar=?");
-            $stmt->bind_param('siidissi', $kode, $tipe, $lantai, $luas, $harga, $foto, $catatan, $id);
+            if ($stmt) $stmt->bind_param('siidissi', $kode, $tipe, $lantai, $luas, $harga, $foto, $catatan, $id);
         } else {
             $stmt = $this->koneksi->prepare("UPDATE kamar SET kode_kamar=?, id_tipe=?, lantai=?, luas_m2=?, harga=?, catatan=? WHERE id_kamar=?");
-            $stmt->bind_param('siidssi', $kode, $tipe, $lantai, $luas, $harga, $catatan, $id);
+            if ($stmt) $stmt->bind_param('siidssi', $kode, $tipe, $lantai, $luas, $harga, $catatan, $id);
         }
-        return $stmt->execute();
+        return $stmt ? $stmt->execute() : false;
     }
 
     function hapus_kamar($id)
     {
         $cek_booking = $this->koneksi->query("SELECT 1 FROM booking WHERE id_kamar=$id AND status='PENDING'");
-        if ($cek_booking->num_rows > 0) return "GAGAL: Kamar sedang dipesan (Booking Pending).";
+        if ($cek_booking && $cek_booking->num_rows > 0) return "GAGAL: Kamar sedang dipesan (Booking Pending).";
 
         $cek_kontrak = $this->koneksi->query("SELECT 1 FROM kontrak WHERE id_kamar=$id AND status='AKTIF'");
-        if ($cek_kontrak->num_rows > 0) return "GAGAL: Kamar sedang terisi (Kontrak Aktif).";
+        if ($cek_kontrak && $cek_kontrak->num_rows > 0) return "GAGAL: Kamar sedang terisi (Kontrak Aktif).";
 
         // Hapus Cover
         $q_cover = $this->koneksi->query("SELECT foto_cover FROM kamar WHERE id_kamar=$id");
-        if ($row = $q_cover->fetch_assoc()) {
+        if ($q_cover && $row = $q_cover->fetch_assoc()) {
             $path_cover = __DIR__ . "/../assets/uploads/kamar/" . $row['foto_cover'];
             if (!empty($row['foto_cover']) && file_exists($path_cover)) unlink($path_cover);
         }
 
         // Hapus Galeri
         $q_galeri = $this->koneksi->query("SELECT file_nama FROM kamar_foto WHERE id_kamar=$id");
-        while ($row = $q_galeri->fetch_assoc()) {
-            $path_galeri = __DIR__ . "/../assets/uploads/kamar/" . $row['file_nama'];
-            if (!empty($row['file_nama']) && file_exists($path_galeri)) unlink($path_galeri);
+        if ($q_galeri) {
+            while ($row = $q_galeri->fetch_assoc()) {
+                $path_galeri = __DIR__ . "/../assets/uploads/kamar/" . $row['file_nama'];
+                if (!empty($row['file_nama']) && file_exists($path_galeri)) unlink($path_galeri);
+            }
         }
 
         $this->koneksi->query("DELETE FROM kamar_fasilitas WHERE id_kamar=$id");
@@ -255,8 +288,10 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
                 ORDER BY b.tanggal_booking DESC";
         $res = $this->koneksi->query($sql);
         $hasil = [];
-        while ($row = $res->fetch_assoc()) {
-            $hasil[] = $row;
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $hasil[] = $row;
+            }
         }
         return $hasil;
     }
@@ -264,6 +299,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function tambah_booking($id_user, $id_kamar, $checkin, $durasi, $ktp)
     {
         $stmt = $this->koneksi->prepare("INSERT INTO booking (id_pengguna, id_kamar, checkin_rencana, durasi_bulan_rencana, status, ktp_path_opt) VALUES (?, ?, ?, ?, 'PENDING', ?)");
+        if (!$stmt) return false;
         $stmt->bind_param('iisis', $id_user, $id_kamar, $checkin, $durasi, $ktp);
         return $stmt->execute();
     }
@@ -271,6 +307,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function verifikasi_booking($id_booking, $status)
     {
         $stmt = $this->koneksi->prepare("UPDATE booking SET status=? WHERE id_booking=?");
+        if (!$stmt) return false;
         $stmt->bind_param('si', $status, $id_booking);
         return $stmt->execute();
     }
@@ -288,8 +325,10 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
                 ORDER BY u.nama ASC";
         $res = $this->koneksi->query($sql);
         $hasil = [];
-        while ($row = $res->fetch_assoc()) {
-            $hasil[] = $row;
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $hasil[] = $row;
+            }
         }
         return $hasil;
     }
@@ -305,12 +344,14 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
                 JOIN penghuni ph ON k.id_penghuni=ph.id_penghuni
                 JOIN pengguna p ON ph.id_pengguna=p.id_pengguna
                 WHERE k.status='AKTIF'";
-        return $this->koneksi->query($sql)->fetch_all(MYSQLI_ASSOC);
+        $res = $this->koneksi->query($sql);
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
 
     function generate_tagihan($id_kontrak, $bulan)
     {
         $stmt = $this->koneksi->prepare("SELECT ka.harga FROM kontrak k JOIN kamar ka ON k.id_kamar=ka.id_kamar WHERE k.id_kontrak=?");
+        if (!$stmt) return false;
         $stmt->bind_param('i', $id_kontrak);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
@@ -320,11 +361,14 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         $jatuh_tempo = $bulan . "-10";
 
         $cek = $this->koneksi->prepare("SELECT id_tagihan FROM tagihan WHERE id_kontrak=? AND bulan_tagih=?");
-        $cek->bind_param('is', $id_kontrak, $bulan);
-        $cek->execute();
-        if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+        if ($cek) {
+            $cek->bind_param('is', $id_kontrak, $bulan);
+            $cek->execute();
+            if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+        }
 
         $ins = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
+        if (!$ins) return false;
         $ins->bind_param('isis', $id_kontrak, $bulan, $nominal, $jatuh_tempo);
         return $ins->execute();
     }
@@ -337,11 +381,15 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
                 WHERE k.status = 'AKTIF'";
 
         $res = $this->koneksi->query($sql);
+        if (!$res) return 0;
+
         $jumlah_sukses = 0;
         $jatuh_tempo = $bulan_tagih . "-10";
 
         $cek_stmt = $this->koneksi->prepare("SELECT id_tagihan FROM tagihan WHERE id_kontrak=? AND bulan_tagih=?");
         $ins_stmt = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
+
+        if (!$cek_stmt || !$ins_stmt) return 0;
 
         while ($row = $res->fetch_assoc()) {
             $id_kontrak = $row['id_kontrak'];
@@ -365,11 +413,14 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function tambah_pembayaran_tagihan($id_tagihan, $jumlah, $bukti, $metode = 'TRANSFER')
     {
         $cek = $this->koneksi->prepare("SELECT id_pembayaran FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id=? AND status='PENDING'");
-        $cek->bind_param('i', $id_tagihan);
-        $cek->execute();
-        if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+        if ($cek) {
+            $cek->bind_param('i', $id_tagihan);
+            $cek->execute();
+            if ($cek->get_result()->num_rows > 0) return "DUPLIKAT";
+        }
 
         $stmt = $this->koneksi->prepare("INSERT INTO pembayaran (ref_type, ref_id, metode, jumlah, bukti_path, status) VALUES ('TAGIHAN', ?, ?, ?, ?, 'PENDING')");
+        if (!$stmt) return false;
         $stmt->bind_param('isis', $id_tagihan, $metode, $jumlah, $bukti);
         return $stmt->execute();
     }
@@ -377,6 +428,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function cek_status_pembayaran_terakhir($id_tagihan)
     {
         $stmt = $this->koneksi->prepare("SELECT status FROM pembayaran WHERE ref_type='TAGIHAN' AND ref_id=? ORDER BY id_pembayaran DESC LIMIT 1");
+        if (!$stmt) return null;
         $stmt->bind_param('i', $id_tagihan);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
@@ -385,11 +437,15 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
     function bayar_tagihan_cash($id_tagihan, $catatan_admin = 'Pembayaran Tunai ke Admin')
     {
-        $data_tagihan = $this->koneksi->query("SELECT nominal FROM tagihan WHERE id_tagihan=$id_tagihan")->fetch_assoc();
+        $res = $this->koneksi->query("SELECT nominal FROM tagihan WHERE id_tagihan=$id_tagihan");
+        if (!$res) return false;
+
+        $data_tagihan = $res->fetch_assoc();
         if (!$data_tagihan) return false;
         $jumlah = $data_tagihan['nominal'];
 
         $stmt = $this->koneksi->prepare("INSERT INTO pembayaran (ref_type, ref_id, metode, jumlah, status, waktu_verifikasi) VALUES ('TAGIHAN', ?, 'CASH', ?, 'DITERIMA', NOW())");
+        if (!$stmt) return false;
         $stmt->bind_param('ii', $id_tagihan, $jumlah);
         if ($stmt->execute()) {
             $this->koneksi->query("UPDATE tagihan SET status='LUNAS' WHERE id_tagihan=$id_tagihan");
@@ -406,7 +462,8 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         $this->koneksi->begin_transaction();
         try {
             // Ambil Info Booking
-            $booking = $this->koneksi->query("SELECT b.*, k.harga FROM booking b JOIN kamar k ON b.id_kamar=k.id_kamar WHERE id_booking = $id_booking")->fetch_assoc();
+            $res = $this->koneksi->query("SELECT b.*, k.harga FROM booking b JOIN kamar k ON b.id_kamar=k.id_kamar WHERE id_booking = $id_booking");
+            $booking = $res ? $res->fetch_assoc() : null;
             if (!$booking) throw new Exception("Booking tidak valid");
 
             $id_pengguna = $booking['id_pengguna'];
@@ -418,7 +475,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
             // Cek Penghuni
             $q_penghuni = $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna = $id_pengguna");
-            if ($q_penghuni->num_rows > 0) {
+            if ($q_penghuni && $q_penghuni->num_rows > 0) {
                 $id_penghuni = $q_penghuni->fetch_object()->id_penghuni;
             } else {
                 $this->koneksi->query("INSERT INTO penghuni (id_pengguna) VALUES ($id_pengguna)");
@@ -430,6 +487,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
             // Buat Kontrak
             $stmt_kontrak = $this->koneksi->prepare("INSERT INTO kontrak (id_penghuni, id_kamar, tanggal_mulai, tanggal_selesai, durasi_bulan, status) VALUES (?, ?, ?, ?, ?, 'AKTIF')");
+            if (!$stmt_kontrak) throw new Exception("Failed prepare contract");
             $stmt_kontrak->bind_param('iisss', $id_penghuni, $id_kamar, $tgl_mulai, $tgl_selesai, $durasi);
             $stmt_kontrak->execute();
             $id_kontrak_baru = $this->koneksi->insert_id;
@@ -439,16 +497,18 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
             $this->koneksi->query("UPDATE booking SET status='SELESAI' WHERE id_booking = $id_booking");
 
             // Tagihan Awal (Hitung sisa jika ada DP)
-            $dp_amount = $this->koneksi->query("SELECT sum(jumlah) FROM pembayaran WHERE ref_type='BOOKING' AND ref_id=$id_booking AND status='DITERIMA'")->fetch_row()[0] ?? 0;
-            $sisa_tagihan = $harga_kamar - $dp_amount;
+            $dp = $this->fetch_single_value("SELECT sum(jumlah) FROM pembayaran WHERE ref_type='BOOKING' AND ref_id=$id_booking AND status='DITERIMA'");
+            $sisa_tagihan = $harga_kamar - $dp;
 
             $bulan_pertama = date('Y-m', strtotime($tgl_mulai));
             $jatuh_tempo = date('Y-m-d', strtotime($tgl_mulai . ' + 5 days'));
 
             if ($sisa_tagihan > 0) {
                 $stmt_tagihan = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
-                $stmt_tagihan->bind_param('isis', $id_kontrak_baru, $bulan_pertama, $sisa_tagihan, $jatuh_tempo);
-                $stmt_tagihan->execute();
+                if ($stmt_tagihan) {
+                    $stmt_tagihan->bind_param('isis', $id_kontrak_baru, $bulan_pertama, $sisa_tagihan, $jatuh_tempo);
+                    $stmt_tagihan->execute();
+                }
             }
 
             $this->koneksi->commit();
@@ -465,8 +525,10 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function catat_log($id_user, $aksi, $keterangan)
     {
         $stmt = $this->koneksi->prepare("INSERT INTO log_aktivitas (id_pengguna, aksi, keterangan, waktu) VALUES (?, ?, ?, NOW())");
-        $stmt->bind_param('iss', $id_user, $aksi, $keterangan);
-        $stmt->execute();
+        if ($stmt) {
+            $stmt->bind_param('iss', $id_user, $aksi, $keterangan);
+            $stmt->execute();
+        }
     }
 
     function ambil_log_aktivitas()
@@ -474,7 +536,9 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         $sql = "SELECT l.*, u.nama FROM log_aktivitas l LEFT JOIN pengguna u ON l.id_pengguna = u.id_pengguna ORDER BY l.waktu DESC";
         $res = $this->koneksi->query($sql);
         $hasil = [];
-        while ($row = $res->fetch_assoc()) $hasil[] = $row;
+        if ($res) {
+            while ($row = $res->fetch_assoc()) $hasil[] = $row;
+        }
         return $hasil;
     }
 
@@ -503,30 +567,34 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     {
         $this->koneksi->begin_transaction();
         try {
-            $kontrak = $this->koneksi->query("SELECT * FROM kontrak WHERE id_penghuni=$id_penghuni AND status='AKTIF'")->fetch_assoc();
+            $res_kontrak = $this->koneksi->query("SELECT * FROM kontrak WHERE id_penghuni=$id_penghuni AND status='AKTIF'");
+            $kontrak = $res_kontrak ? $res_kontrak->fetch_assoc() : null;
             if (!$kontrak) throw new Exception("No active contract");
 
             $id_kontrak = $kontrak['id_kontrak'];
             $tgl_baru = date('Y-m-d', strtotime("+$durasi_bulan months", strtotime($kontrak['tanggal_selesai'])));
 
             $stmt = $this->koneksi->prepare("UPDATE kontrak SET tanggal_selesai=?, durasi_bulan = durasi_bulan + ? WHERE id_kontrak=?");
+            if (!$stmt) throw new Exception("Error prepare");
             $stmt->bind_param('sii', $tgl_baru, $durasi_bulan, $id_kontrak);
             $stmt->execute();
 
             $start = strtotime("+1 month", strtotime($kontrak['tanggal_selesai']));
             $end   = strtotime($tgl_baru);
-            $harga = $this->koneksi->query("SELECT harga FROM kamar WHERE id_kamar={$kontrak['id_kamar']}")->fetch_object()->harga;
+            $harga = $this->fetch_single_value("SELECT harga FROM kamar WHERE id_kamar={$kontrak['id_kamar']}");
 
             $current = $start;
             while ($current <= $end) {
                 $bulan_tagih = date('Y-m', $current);
                 $jatuh_tempo = date('Y-m-d', strtotime(date('Y-m-10', $current)));
 
-                $cek = $this->koneksi->query("SELECT 1 FROM tagihan WHERE id_kontrak=$id_kontrak AND bulan_tagih='$bulan_tagih'");
-                if ($cek->num_rows == 0) {
+                $cek = $this->fetch_single_value("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=$id_kontrak AND bulan_tagih='$bulan_tagih'");
+                if ($cek == 0) {
                     $ins = $this->koneksi->prepare("INSERT INTO tagihan (id_kontrak, bulan_tagih, nominal, jatuh_tempo, status) VALUES (?, ?, ?, ?, 'BELUM')");
-                    $ins->bind_param('isis', $id_kontrak, $bulan_tagih, $harga, $jatuh_tempo);
-                    $ins->execute();
+                    if ($ins) {
+                        $ins->bind_param('isis', $id_kontrak, $bulan_tagih, $harga, $jatuh_tempo);
+                        $ins->execute();
+                    }
                 }
                 $current = strtotime("+1 month", $current);
             }
@@ -543,7 +611,9 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     {
         $this->koneksi->begin_transaction();
         try {
-            $data = $this->koneksi->query("SELECT id_kontrak, id_kamar FROM kontrak WHERE id_penghuni=$id_penghuni AND status='AKTIF'")->fetch_object();
+            $res = $this->koneksi->query("SELECT id_kontrak, id_kamar FROM kontrak WHERE id_penghuni=$id_penghuni AND status='AKTIF'");
+            $data = $res ? $res->fetch_object() : null;
+
             if ($data) {
                 $this->koneksi->query("UPDATE kontrak SET status='SELESAI' WHERE id_kontrak={$data->id_kontrak}");
                 $this->koneksi->query("UPDATE kamar SET status_kamar='TERSEDIA' WHERE id_kamar={$data->id_kamar}");
@@ -598,6 +668,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function update_pengaturan($nama, $alamat, $hp, $email, $rek, $pemilik)
     {
         $stmt = $this->koneksi->prepare("UPDATE pengaturan SET nama_kos=?, alamat=?, no_hp=?, email=?, rek_bank=?, pemilik=? WHERE id=1");
+        if (!$stmt) return false;
         $stmt->bind_param('ssssss', $nama, $alamat, $hp, $email, $rek, $pemilik);
         return $stmt->execute();
     }
@@ -606,21 +677,24 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     {
         if ($logo) {
             $stmt = $this->koneksi->prepare("UPDATE pengaturan SET no_wa=?, link_fb=?, link_ig=?, deskripsi_footer=?, foto_logo=? WHERE id=1");
-            $stmt->bind_param('sssss', $wa, $fb, $ig, $footer, $logo);
+            if ($stmt) $stmt->bind_param('sssss', $wa, $fb, $ig, $footer, $logo);
         } else {
             $stmt = $this->koneksi->prepare("UPDATE pengaturan SET no_wa=?, link_fb=?, link_ig=?, deskripsi_footer=? WHERE id=1");
-            $stmt->bind_param('ssss', $wa, $fb, $ig, $footer);
+            if ($stmt) $stmt->bind_param('ssss', $wa, $fb, $ig, $footer);
         }
-        return $stmt->execute();
+        return $stmt ? $stmt->execute() : false;
     }
 
     function get_fasilitas_umum()
     {
-        return $this->koneksi->query("SELECT * FROM fasilitas_umum ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
+        $res = $this->koneksi->query("SELECT * FROM fasilitas_umum ORDER BY id ASC");
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
+
     function tambah_fasilitas($judul, $deskripsi, $icon)
     {
         $stmt = $this->koneksi->prepare("INSERT INTO fasilitas_umum (judul, deskripsi, icon) VALUES (?, ?, ?)");
+        if (!$stmt) return false;
         $stmt->bind_param('sss', $judul, $deskripsi, $icon);
         return $stmt->execute();
     }
@@ -632,6 +706,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function update_bukti_pembayaran($id_pembayaran, $path)
     {
         $stmt = $this->koneksi->prepare("UPDATE pembayaran SET bukti_path = ?, status = 'PENDING', waktu_verifikasi = NOW() WHERE id_pembayaran = ?");
+        if (!$stmt) return false;
         $stmt->bind_param('si', $path, $id_pembayaran);
         return $stmt->execute();
     }
@@ -639,22 +714,25 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     // Helper Retrieve Data (FIXED RETURN TYPES TO ARRAY)
     function get_tagihan_by_kontrak($id)
     {
-        return $this->koneksi->query("SELECT * FROM tagihan WHERE id_kontrak=$id ORDER BY bulan_tagih DESC")->fetch_all(MYSQLI_ASSOC);
+        $res = $this->koneksi->query("SELECT * FROM tagihan WHERE id_kontrak=$id ORDER BY bulan_tagih DESC");
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     }
 
-    // [FIX MISSING METHOD 1]
+    // [FIX MISSING METHOD 1 - SAFER]
     function count_tagihan_by_month($month)
     {
         $stmt = $this->koneksi->prepare("SELECT COUNT(*) FROM tagihan WHERE bulan_tagih = ?");
+        if (!$stmt) return 0;
         $stmt->bind_param('s', $month);
         $stmt->execute();
-        return $stmt->get_result()->fetch_row()[0];
+        $res = $stmt->get_result();
+        return ($res && $res->num_rows > 0) ? $res->fetch_row()[0] : 0;
     }
 
-    // [FIX MISSING METHOD 2]
+    // [FIX MISSING METHOD 2 - SAFER]
     function count_pengeluaran()
     {
-        return $this->koneksi->query("SELECT COUNT(*) FROM pengeluaran")->fetch_row()[0];
+        return $this->fetch_single_value("SELECT COUNT(*) FROM pengeluaran");
     }
 
     // [FIX MISSING METHOD 3, 4, 5, 6 for Keuangan]
@@ -673,6 +751,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function get_tagihan_by_month_paginated($month, $start, $limit)
     {
         $stmt = $this->koneksi->prepare("SELECT t.*, u.nama, k.kode_kamar FROM tagihan t JOIN kontrak ko ON t.id_kontrak = ko.id_kontrak JOIN penghuni p ON ko.id_penghuni = p.id_penghuni JOIN pengguna u ON p.id_pengguna = u.id_pengguna JOIN kamar k ON ko.id_kamar = k.id_kamar WHERE t.bulan_tagih = ? ORDER BY u.nama ASC LIMIT ?, ?");
+        if (!$stmt) return false;
         $stmt->bind_param('sii', $month, $start, $limit);
         $stmt->execute();
         return $stmt->get_result();
@@ -681,6 +760,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function get_pengeluaran_paginated($start, $limit)
     {
         $stmt = $this->koneksi->prepare("SELECT * FROM pengeluaran ORDER BY tanggal DESC LIMIT ?, ?");
+        if (!$stmt) return false;
         $stmt->bind_param('ii', $start, $limit);
         $stmt->execute();
         return $stmt->get_result();
@@ -696,7 +776,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
     function get_tagihan_pending_count($id)
     {
-        return $this->koneksi->query("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=$id AND status='BELUM'")->fetch_row()[0];
+        return $this->fetch_single_value("SELECT COUNT(*) FROM tagihan WHERE id_kontrak=$id AND status='BELUM'");
     }
     function get_all_kamar_paginated($start = 0, $limit = 10)
     {
@@ -704,20 +784,20 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     }
     function get_total_kamar()
     {
-        return $this->koneksi->query("SELECT COUNT(*) FROM kamar")->fetch_row()[0];
+        return $this->fetch_single_value("SELECT COUNT(*) FROM kamar");
     }
 
-    // Analytics
+    // Analytics (SAFER)
     function get_statistik_kamar()
     {
         $total = $this->get_total_kamar();
-        $terisi = $this->koneksi->query("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'")->fetch_row()[0];
+        $terisi = $this->fetch_single_value("SELECT COUNT(*) FROM kamar WHERE status_kamar='TERISI'");
         return ['total' => $total, 'terisi' => $terisi, 'rate' => ($total > 0) ? round(($terisi / $total) * 100) : 0];
     }
 
     function get_total_booking()
     {
-        return $this->koneksi->query("SELECT COUNT(DISTINCT b.id_booking) FROM booking b LEFT JOIN pembayaran p ON b.id_booking = p.ref_id AND p.ref_type='BOOKING' WHERE b.status != 'PENDING' OR (p.bukti_path IS NOT NULL)")->fetch_row()[0];
+        return $this->fetch_single_value("SELECT COUNT(DISTINCT b.id_booking) FROM booking b LEFT JOIN pembayaran p ON b.id_booking = p.ref_id AND p.ref_type='BOOKING' WHERE b.status != 'PENDING' OR (p.bukti_path IS NOT NULL)");
     }
 
     function get_all_booking_paginated($start, $limit)
@@ -735,7 +815,9 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     {
         $sql = "SELECT COUNT(*) FROM penghuni p JOIN pengguna u ON p.id_pengguna = u.id_pengguna LEFT JOIN kontrak ko ON p.id_penghuni = ko.id_penghuni AND ko.status = 'AKTIF' LEFT JOIN kamar k ON ko.id_kamar = k.id_kamar";
         if ($cari) $sql .= " WHERE u.nama LIKE '%$cari%' OR k.kode_kamar LIKE '%$cari%'";
-        return $this->koneksi->query($sql)->fetch_row()[0];
+        // SAFER: Use fetch_single_value equivalent logic (although method is for simple queries, here we use direct query safely)
+        $res = $this->koneksi->query($sql);
+        return ($res && $res->num_rows > 0) ? $res->fetch_row()[0] : 0;
     }
     function get_all_penghuni_paginated($cari, $start, $limit)
     {
@@ -747,20 +829,20 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
     function get_total_pembayaran_masuk($bulan = null)
     {
-        if ($bulan) return $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DATE_FORMAT(waktu_verifikasi, '%Y-%m') = '$bulan'")->fetch_row()[0] ?? 0;
-        return $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'")->fetch_row()[0] ?? 0;
+        if ($bulan) return $this->fetch_single_value("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DATE_FORMAT(waktu_verifikasi, '%Y-%m') = '$bulan'");
+        return $this->fetch_single_value("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA'");
     }
     function get_total_pengeluaran($bulan = null)
     {
-        if ($bulan) return $this->koneksi->query("SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = '$bulan'")->fetch_row()[0] ?? 0;
-        return $this->koneksi->query("SELECT SUM(biaya) FROM pengeluaran")->fetch_row()[0] ?? 0;
+        if ($bulan) return $this->fetch_single_value("SELECT SUM(biaya) FROM pengeluaran WHERE DATE_FORMAT(tanggal, '%Y-%m') = '$bulan'");
+        return $this->fetch_single_value("SELECT SUM(biaya) FROM pengeluaran");
     }
 
-    // Charting Helpers
+    // Charting Helpers (SAFER)
     function get_statistik_keuangan($bulan, $tahun)
     {
-        $masuk = $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = $bulan AND YEAR(waktu_verifikasi) = $tahun")->fetch_row()[0] ?? 0;
-        $keluar = $this->koneksi->query("SELECT SUM(biaya) FROM pengeluaran WHERE MONTH(tanggal) = $bulan AND YEAR(tanggal) = $tahun")->fetch_row()[0] ?? 0;
+        $masuk = $this->fetch_single_value("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = $bulan AND YEAR(waktu_verifikasi) = $tahun");
+        $keluar = $this->fetch_single_value("SELECT SUM(biaya) FROM pengeluaran WHERE MONTH(tanggal) = $bulan AND YEAR(tanggal) = $tahun");
         return ['omset' => $masuk, 'keluar' => $keluar, 'profit' => $masuk - $keluar];
     }
 
@@ -768,7 +850,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     {
         $data = [];
         for ($i = 1; $i <= 12; $i++) {
-            $data[] = $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = $i AND YEAR(waktu_verifikasi) = $tahun")->fetch_row()[0] ?? 0;
+            $data[] = $this->fetch_single_value("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND MONTH(waktu_verifikasi) = $i AND YEAR(waktu_verifikasi) = $tahun");
         }
         return $data;
     }
@@ -778,7 +860,7 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
         $data = [];
         $days = cal_days_in_month(CAL_GREGORIAN, $bulan, $tahun);
         for ($d = 1; $d <= $days; $d++) {
-            $data[] = $this->koneksi->query("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DAY(waktu_verifikasi) = $d AND MONTH(waktu_verifikasi) = $bulan AND YEAR(waktu_verifikasi) = $tahun")->fetch_row()[0] ?? 0;
+            $data[] = $this->fetch_single_value("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DAY(waktu_verifikasi) = $d AND MONTH(waktu_verifikasi) = $bulan AND YEAR(waktu_verifikasi) = $tahun");
         }
         return $data;
     }
@@ -786,8 +868,8 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function get_pending_counts()
     {
         return [
-            'booking' => $this->koneksi->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0],
-            'tagihan' => $this->koneksi->query("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")->fetch_row()[0]
+            'booking' => $this->fetch_single_value("SELECT COUNT(*) FROM booking WHERE status='PENDING'"),
+            'tagihan' => $this->fetch_single_value("SELECT COUNT(*) FROM pembayaran WHERE status='PENDING'")
         ];
     }
 
@@ -796,8 +878,10 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     {
         $res = $this->koneksi->query("SELECT b.*, u.nama, u.no_hp, k.kode_kamar, t.nama_tipe FROM booking b JOIN pengguna u ON b.id_pengguna=u.id_pengguna JOIN kamar k ON b.id_kamar=k.id_kamar JOIN tipe_kamar t ON k.id_tipe=t.id_tipe WHERE b.status='PENDING' ORDER BY b.tanggal_booking DESC LIMIT $limit");
         $hasil = [];
-        while ($row = $res->fetch_assoc()) {
-            $hasil[] = $row;
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $hasil[] = $row;
+            }
         }
         return $hasil;
     }
@@ -805,15 +889,18 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     // Tenant Helpers
     function get_user_by_id($id)
     {
-        return $this->koneksi->query("SELECT * FROM pengguna WHERE id_pengguna=$id")->fetch_assoc();
+        $res = $this->koneksi->query("SELECT * FROM pengguna WHERE id_pengguna=$id");
+        return $res ? $res->fetch_assoc() : null;
     }
     function get_id_penghuni_by_user($id)
     {
-        return $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id")->fetch_object()->id_penghuni ?? 0;
+        $res = $this->koneksi->query("SELECT id_penghuni FROM penghuni WHERE id_pengguna=$id");
+        return $res ? ($res->fetch_object()->id_penghuni ?? 0) : 0;
     }
     function get_kamar_penghuni_detail($id)
     {
-        return $this->koneksi->query("SELECT k.*, t.nama_tipe, ko.tanggal_mulai, ko.tanggal_selesai, ko.id_kontrak, ko.status as status_kontrak, k.harga FROM kontrak ko JOIN kamar k ON ko.id_kamar = k.id_kamar JOIN tipe_kamar t ON k.id_tipe = t.id_tipe WHERE ko.id_penghuni = $id AND ko.status = 'AKTIF'")->fetch_assoc();
+        $res = $this->koneksi->query("SELECT k.*, t.nama_tipe, ko.tanggal_mulai, ko.tanggal_selesai, ko.id_kontrak, ko.status as status_kontrak, k.harga FROM kontrak ko JOIN kamar k ON ko.id_kamar = k.id_kamar JOIN tipe_kamar t ON k.id_tipe = t.id_tipe WHERE ko.id_penghuni = $id AND ko.status = 'AKTIF'");
+        return $res ? $res->fetch_assoc() : null;
     }
     function get_fasilitas_kamar($id)
     {
@@ -826,12 +913,14 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
     function insert_keluhan($id, $j, $d, $p, $f)
     {
         $stmt = $this->koneksi->prepare("INSERT INTO keluhan (id_penghuni, judul, deskripsi, prioritas, status, foto_path) VALUES (?, ?, ?, ?, 'BARU', ?)");
+        if (!$stmt) return false;
         $stmt->bind_param('issss', $id, $j, $d, $p, $f);
         return $stmt->execute();
     }
     function get_profil_penghuni($id)
     {
-        return $this->koneksi->query("SELECT u.*, p.alamat, p.pekerjaan, p.emergency_cp, p.foto_profil FROM pengguna u LEFT JOIN penghuni p ON u.id_pengguna = p.id_pengguna WHERE u.id_pengguna = $id")->fetch_assoc();
+        $res = $this->koneksi->query("SELECT u.*, p.alamat, p.pekerjaan, p.emergency_cp, p.foto_profil FROM pengguna u LEFT JOIN penghuni p ON u.id_pengguna = p.id_pengguna WHERE u.id_pengguna = $id");
+        return $res ? $res->fetch_assoc() : null;
     }
     function get_pengumuman_terbaru($limit = 2)
     {
@@ -840,9 +929,9 @@ class Database extends KoneksiDasar implements SikosDatabaseInterface
 
     function can_user_book($id)
     {
-        if ($this->koneksi->query("SELECT COUNT(*) FROM booking WHERE id_pengguna=$id AND status='PENDING'")->fetch_row()[0] > 0) return false;
+        if ($this->fetch_single_value("SELECT COUNT(*) FROM booking WHERE id_pengguna=$id AND status='PENDING'") > 0) return false;
         $id_p = $this->get_id_penghuni_by_user($id);
-        if ($id_p && $this->koneksi->query("SELECT COUNT(*) FROM kontrak WHERE id_penghuni=$id_p AND status='AKTIF'")->fetch_row()[0] > 0) return false;
+        if ($id_p && $this->fetch_single_value("SELECT COUNT(*) FROM kontrak WHERE id_penghuni=$id_p AND status='AKTIF'") > 0) return false;
         return true;
     }
 }
