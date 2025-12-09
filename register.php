@@ -288,7 +288,7 @@ if (isset($_SESSION['id_pengguna'])) {
 
           <div class="form-group">
             <label class="form-label">Nama Lengkap</label>
-            <input type="text" name="nama" class="form-input" placeholder="Contoh: Budi Santoso" required>
+            <input type="text" name="nama" class="form-input" placeholder="Contoh: Budi Santoso" maxlength="30" oninput="validateName(this)" required>
           </div>
 
           <div class="grid-2">
@@ -298,7 +298,7 @@ if (isset($_SESSION['id_pengguna'])) {
             </div>
             <div class="form-group">
               <label class="form-label">No. WhatsApp</label>
-              <input type="text" name="no_hp" class="form-input" placeholder="0812..." required>
+              <input type="tel" name="no_hp" class="form-input" placeholder="0812..." maxlength="17" oninput="validatePhone(this)" required>
             </div>
           </div>
 
@@ -333,6 +333,15 @@ if (isset($_SESSION['id_pengguna'])) {
     </div>
   </div>
 
+  <script>
+    function validateName(input) {
+      input.value = input.value.replace(/[^a-zA-Z\s]/g, '');
+    }
+
+    function validatePhone(input) {
+      input.value = input.value.replace(/[^0-9]/g, '');
+    }
+  </script>
 </body>
 
 </html>

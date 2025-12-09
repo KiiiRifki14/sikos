@@ -933,6 +933,22 @@ class Database
         return $data;
     }
 
+    function get_chart_pendapatan_harian($bulan, $tahun)
+    {
+        $data = [];
+        $days_in_month = cal_days_in_month(CAL_GREGORIAN, $bulan, $tahun);
+
+        $stmt = $this->koneksi->prepare("SELECT SUM(jumlah) FROM pembayaran WHERE status='DITERIMA' AND DAY(waktu_verifikasi) = ? AND MONTH(waktu_verifikasi) = ? AND YEAR(waktu_verifikasi) = ?");
+
+        for ($d = 1; $d <= $days_in_month; $d++) {
+            $stmt->bind_param('iis', $d, $bulan, $tahun);
+            $stmt->execute();
+            $val = $stmt->get_result()->fetch_row()[0] ?? 0;
+            $data[] = $val;
+        }
+        return $data;
+    }
+
     function get_pending_counts()
     {
         $booking = $this->koneksi->query("SELECT COUNT(*) FROM booking WHERE status='PENDING'")->fetch_row()[0];
