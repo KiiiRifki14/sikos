@@ -1,52 +1,79 @@
 <?php
+// [OOP: Session Management] Memulai sesi untuk menyimpan state login pengguna antar halaman
 session_start();
+
+// [OOP: Modularization] Mengimpor file koneksi database yang berisi Class Database
 require '../inc/koneksi.php';
+
+// [OOP: Modularization] Mengimpor fungsi keamanan untuk mengecek status login & role
 require '../inc/guard.php';
+
+// [Security: RBAC] Memastikan hanya pengguna dengan role ADMIN atau OWNER yang bisa mengakses halaman ini
+// Jika bukan, paksa redirect ke halaman login
 if (!is_admin() && !is_owner()) {
     header('Location: ../login.php');
     exit;
 }
 
-// --- 1. LOGIKA STATISTIK (MVC) ---
+// ==========================================================================
+// BAGIAN 1: PENGAMBILAN DATA STATISTIK UTAMA (DASHBOARD)
+// ==========================================================================
+// [OOP: Method Call] Memanggil method khusus untuk menghitung okupansi kamar
+// Tujuannya agar logika hitung-hitungan tidak menumpuk di file tampilan (View)
 $stats_kamar = $db->get_statistik_kamar();
-$occupancy_rate = $stats_kamar['rate'];
-$terisi = $stats_kamar['terisi'];
-$total_kamar = $stats_kamar['total'];
+$occupancy_rate = $stats_kamar['rate']; // Persentase kamar terisi
+$terisi = $stats_kamar['terisi'];       // Jumlah kamar ada penghuninya
+$total_kamar = $stats_kamar['total'];   // Total seluruh kamar
 
-// --- 2. LOGIKA KEUANGAN (MVC) ---
+// ==========================================================================
+// BAGIAN 2: LOGIKA KEUANGAN & FILTER TAHUNAN
+// ==========================================================================
+// Mengambil waktu saat ini sebagai default filter
 $bulan_ini = date('m');
 $tahun_ini = date('Y');
+// Menangkap input filter tahun dari URL (GET request), jika tidak ada gunakan tahun ini
 $tahun_pilihan = isset($_GET['tahun']) ? $_GET['tahun'] : $tahun_ini;
 
-// Ambil Stats (Real Time Bulan Ini)
+// [OOP: Business Logic] Mengambil ringkasan keuangan (Omset, Pengeluaran, Profit)
+// Data ini dihitung realtime berdasarkan transaksi di database untuk bulan & tahun terpilih
 $stats_uang = $db->get_statistik_keuangan($bulan_ini, $tahun_ini);
 $omset_raw = $stats_uang['omset'];
 $keluar_raw = $stats_uang['keluar'];
 $profit_raw = $stats_uang['profit'];
 
+// Helper Function: Memformat angka jutaan menjadi "X.X Jt" agar lebih rapi di UI card kecil
 function format_uang_singkat($angka)
 {
     if ($angka >= 1000000) return number_format($angka / 1000000, 1) . " Jt";
     return number_format($angka);
 }
 
-// --- 3. DATA PENDING (MVC) ---
+// ==========================================================================
+// BAGIAN 3: NOTIFIKASI & TUGAS PENDING (TODO LIST ADMIN)
+// ==========================================================================
+// [OOP: Method Call] Mengambil jumlah tugas yang belum diselesaikan admin
+// Contoh: Booking baru yang belum diapprove, atau Tagihan yang belum dibayar
 $data_pending = $db->get_pending_counts();
 $booking = $data_pending['booking'];
 $tagihan_pending = $data_pending['tagihan'];
 
-// --- 4. DATA GRAFIK (MVC - Secure Prep Statement) ---
+// ==========================================================================
+// BAGIAN 4: PERSIAPAN DATA UNTUK GRAFIK (CHART.JS)
+// ==========================================================================
+// Menentukan mode grafik: apakah tampil per 'tahunan' (Jan-Des) atau 'bulanan' (tgl 1-31)
 $mode = isset($_GET['mode']) ? $_GET['mode'] : 'tahunan';
 $bulan_pilihan = isset($_GET['bulan']) ? (int)$_GET['bulan'] : (int)$date_now_m = date('m');
 
 if ($mode == 'bulanan') {
-    // Mode Bulanan (Tampilkan Harian 1-31)
+    // [Logic] Jika mode bulanan, ambil data pendapatan harian
+    // Digunakan untuk melihat performa pendapatan per tanggal spesifik
     $data_grafik = $db->get_chart_pendapatan_harian($bulan_pilihan, $tahun_pilihan);
     $jumlah_hari = cal_days_in_month(CAL_GREGORIAN, $bulan_pilihan, $tahun_pilihan);
-    $labels_grafik = range(1, $jumlah_hari);
+    $labels_grafik = range(1, $jumlah_hari); // Label sumbu X: 1, 2, 3 ... 31
     $chart_label = "Pendapatan Bulan " . date('F', mktime(0, 0, 0, $bulan_pilihan, 10)) . " $tahun_pilihan";
 } else {
-    // Mode Tahunan (Tampilkan Bulanan Jan-Des)
+    // [Logic] Jika mode tahunan, ambil data akumulasi per bulan
+    // Digunakan untuk melihat trend bisnis sepanjang tahun
     $data_grafik = $db->get_chart_pendapatan($tahun_pilihan);
     $labels_grafik = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     $chart_label = "Pendapatan Tahun $tahun_pilihan";
@@ -129,8 +156,10 @@ if ($mode == 'bulanan') {
             <p style="color: var(--text-muted); font-size: 0.875rem;">Ringkasan performa bisnis kos Anda bulan ini.</p>
         </div>
 
+        <!-- GRID STATISTIK UTAMA -->
         <div class="grid-stats">
-            <!-- Occupancy Rate -->
+            <!-- Kartu 1: Occupancy Rate (Keterisian Kamar) -->
+            <!-- Memberikan insight cepat seberapa penuh kos saat ini -->
             <div class="card-white card-gradient-purple text-center" style="border:none;">
                 <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Occupancy Rate</div>
                 <div class="stat-value" style="font-size: 2.5rem;"><?= $occupancy_rate ?>%</div>
@@ -138,7 +167,8 @@ if ($mode == 'bulanan') {
                 <i class="fa-solid fa-bed" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
 
-            <!-- Pemasukan -->
+            <!-- Kartu 2: Pemasukan (Omset) -->
+            <!-- Total uang masuk dari pembayaran tagihan/DP yang SUDAH diverifikasi -->
             <div class="card-white card-gradient-blue text-center" style="border:none;">
                 <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Pemasukan</div>
                 <div class="stat-value" style="font-size: 1.8rem;"><?= format_uang_singkat($omset_raw) ?></div>
@@ -146,7 +176,8 @@ if ($mode == 'bulanan') {
                 <i class="fa-solid fa-wallet" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
 
-            <!-- Pengeluaran -->
+            <!-- Kartu 3: Pengeluaran -->
+            <!-- Total biaya operasional (listrik, air, maintenance) yang dicatat bulan ini -->
             <div class="card-white card-gradient-orange text-center" style="border:none;">
                 <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Pengeluaran</div>
                 <div class="stat-value" style="font-size: 1.8rem;"><?= format_uang_singkat($keluar_raw) ?></div>
@@ -154,7 +185,8 @@ if ($mode == 'bulanan') {
                 <i class="fa-solid fa-money-bill-transfer" style="position:absolute; right:10px; bottom:10px; font-size:40px; opacity:0.2;"></i>
             </div>
 
-            <!-- Laba Bersih -->
+            <!-- Kartu 4: Laba Bersih (Profit) -->
+            <!-- Selisih Pemasukan - Pengeluaran. Indikator kesehatan bisnis. -->
             <div class="card-white card-gradient-emerald text-center" style="border:none;">
                 <div class="text-xs font-bold mb-2 uppercase" style="color: rgba(255,255,255,0.8);">Laba Bersih</div>
                 <div class="stat-value" style="font-size: 1.8rem;"><?= format_uang_singkat($profit_raw) ?></div>
@@ -163,29 +195,37 @@ if ($mode == 'bulanan') {
             </div>
         </div>
 
+        <!-- ALERT / NOTIFIKASI PENDING -->
+        <!-- Bagian ini muncul untuk mengingatkan admin ada tugas yang harus segera diproses -->
         <div class="alert-grid">
+            <!-- Notifikasi Booking Baru -->
             <div class="alert-box alert-orange">
                 <div>
                     <div class="font-bold text-lg"><?= $booking ?> Booking Baru</div>
                     <div class="text-sm">Menunggu persetujuan Anda</div>
                 </div>
+                <!-- Tombol aksi langsung ke halaman booking -->
                 <a href="booking_data.php" class="btn btn-secondary text-xs">Cek</a>
             </div>
 
+            <!-- Notifikasi Pembayaran Masuk -->
             <div class="alert-box alert-blue">
                 <div>
                     <div class="font-bold text-lg"><?= $tagihan_pending ?> Bukti Bayar</div>
                     <div class="text-sm">Perlu verifikasi pembayaran</div>
                 </div>
+                <!-- Tombol aksi langsung ke halaman verifikasi keuangan -->
                 <a href="keuangan_index.php?tab=verifikasi" class="btn btn-secondary text-xs">Cek</a>
             </div>
         </div>
 
+        <!-- GRAFIK PENDAPATAN (CANVAS CHART.JS) -->
         <div class="card-white mb-8">
             <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <div>
                     <h3 class="font-bold text-lg">📈 Tren Pendapatan</h3>
                     <div class="flex gap-2 mt-2">
+                        <!-- Toggle Mode Grafik: Tahunan vs Bulanan -->
                         <a href="?mode=tahunan&tahun=<?= $tahun_pilihan ?>" class="btn text-xs <?= $mode == 'tahunan' ? 'btn-primary' : 'btn-secondary' ?>">Tahunan</a>
                         <a href="?mode=bulanan&bulan=<?= $bulan_ini ?>&tahun=<?= $tahun_pilihan ?>" class="btn text-xs <?= $mode == 'bulanan' ? 'btn-primary' : 'btn-secondary' ?>">Bulanan</a>
                     </div>
@@ -193,18 +233,18 @@ if ($mode == 'bulanan') {
 
                 <div class="flex items-center gap-2">
                     <?php if ($mode == 'bulanan'): ?>
-                        <!-- Navigasi Bulan -->
+                        <!-- Navigasi Prev/Next Bulan untuk Grafik Bulanan -->
                         <?php
                         $prev_m = $bulan_pilihan - 1;
                         $prev_y = $tahun_pilihan;
-                        if ($prev_m < 1) {
+                        if ($prev_m < 1) { // Mundur tahun jika < Januari
                             $prev_m = 12;
                             $prev_y--;
                         }
 
                         $next_m = $bulan_pilihan + 1;
                         $next_y = $tahun_pilihan;
-                        if ($next_m > 12) {
+                        if ($next_m > 12) { // Maju tahun jika > Desember
                             $next_m = 1;
                             $next_y++;
                         }
@@ -215,7 +255,7 @@ if ($mode == 'bulanan') {
                             <a href="?mode=bulanan&bulan=<?= $next_m ?>&tahun=<?= $next_y ?>" class="btn btn-secondary text-xs p-1 px-2"><i class="fa-solid fa-chevron-right"></i></a>
                         </div>
                     <?php else: ?>
-                        <!-- Navigasi Tahun -->
+                        <!-- Navigasi Prev/Next Tahun untuk Grafik Tahunan -->
                         <div class="flex items-center bg-slate-100 rounded p-1 gap-2">
                             <a href="?mode=tahunan&tahun=<?= $tahun_pilihan - 1 ?>" class="btn btn-secondary text-xs p-1 px-2" title="Tahun Lalu">
                                 <i class="fa-solid fa-chevron-left"></i>
@@ -229,10 +269,12 @@ if ($mode == 'bulanan') {
                 </div>
             </div>
             <div style="position: relative; height:300px; width:100%">
+                <!-- Canvas tempat Chart.js dirender -->
                 <canvas id="myChart"></canvas>
             </div>
         </div>
 
+        <!-- TABEL LIST BOOKING TERBARU -->
         <div class="card-white">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-lg">📝 Booking Terbaru</h3>
@@ -251,6 +293,7 @@ if ($mode == 'bulanan') {
                     </thead>
                     <tbody>
                         <?php
+                        // [OOP: Method Call] Mengambil data booking terbaru limit 5
                         $bk = $db->get_booking_terbaru(5);
                         if (count($bk) > 0) {
                             foreach ($bk as $b) {
@@ -270,6 +313,8 @@ if ($mode == 'bulanan') {
                                     </td>
                                     <td>
                                         <div class="flex gap-2">
+                                            <!-- Link Aksi: Approve/Reject -->
+                                            <!-- Menggunakan fungsi JS konfirmasiAksi() untuk mencegah salah klik -->
                                             <a href="booking_proses.php?act=approve&id=<?= $b['id_booking'] ?>" class="text-xs font-bold text-green" style="text-decoration:none;" onclick="konfirmasiAksi(event, 'Terima booking dari <?= $b['nama'] ?>?', this.href)">✓ Terima</a>
                                             <a href="booking_proses.php?act=reject&id=<?= $b['id_booking'] ?>" class="text-xs font-bold text-red" style="text-decoration:none;" onclick="konfirmasiAksi(event, 'Tolak booking dari <?= $b['nama'] ?>?', this.href)">✕ Tolak</a>
                                         </div>
@@ -287,23 +332,25 @@ if ($mode == 'bulanan') {
         </div>
     </main>
 
+    <!-- SCRIPT INFOGRAFIS (Chart.js) -->
     <script>
         const ctx = document.getElementById('myChart');
+        // Mengambil data PHP ke JavaScript menggunakan json_encode
         const dataPendapatan = <?= json_encode($data_grafik) ?>;
         const labelsGrafik = <?= json_encode($labels_grafik) ?>;
         const labelDataset = "<?= $chart_label ?>";
 
         new Chart(ctx, {
-            type: 'line',
+            type: 'line', // Jenis grafik garis
             data: {
                 labels: labelsGrafik,
                 datasets: [{
                     label: labelDataset,
                     data: dataPendapatan,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderColor: '#2563eb', // Warna garis biru 
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)', // Warna area bawah garis transparan
                     borderWidth: 2,
-                    tension: 0.4,
+                    tension: 0.4, // Membuat garis melengkung (smooth)
                     fill: true
                 }]
             },
@@ -312,10 +359,11 @@ if ($mode == 'bulanan') {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: false // Sembunyikan legenda dataset
                     },
                     tooltip: {
                         callbacks: {
+                            // Custom format mata uang IDR di tooltip saat hover
                             label: function(context) {
                                 let label = context.dataset.label || '';
                                 if (label) {
@@ -334,7 +382,7 @@ if ($mode == 'bulanan') {
                 },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true // Sumbu Y dimulai dari 0
                     }
                 }
             }
