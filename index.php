@@ -270,7 +270,6 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
             // Jika ada data, masukkan ke container (append)
             container.insertAdjacentHTML('beforeend', data);
             currentOffset += limit; // Update offset untuk load berikutnya
-            if (currentBtn) currentBtn.classList.remove('hidden'); // Munculkan tombol lagi
           } else {
             // Jika data habis / tidak ada
             if (reset) {
