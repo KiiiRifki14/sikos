@@ -47,14 +47,7 @@ class KoneksiDasar
     }
 
     // [MATERI: MAGIC METHODS - DESTRUCTOR]
-    function __destruct()
-    {
-        // [FIX CRITICAL ERROR]
-        // Jangan tutup koneksi otomatis jika file lain masih butuh akses via global $mysqli
-        // if ($this->koneksi) {
-        //     $this->koneksi->close();
-        // }
-    }
+    function __destruct() {}
 
     // [MATERI: SETTER & GETTER STANDAR]
     public function setDebugMode($status)
