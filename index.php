@@ -200,9 +200,6 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
       <button id="btn-load-more" onclick="loadMore()" class="btn btn-secondary px-8 py-3 rounded-full">
         Lihat Lebih Banyak <i class="fa-solid fa-chevron-down ml-2"></i>
       </button>
-      <div id="loading-spinner" class="hidden">
-        <i class="fa-solid fa-circle-notch fa-spin text-2xl text-primary"></i>
-      </div>
     </div>
   </section>
 
@@ -257,27 +254,17 @@ $tipeRes = $mysqli->query("SELECT id_tipe, nama_tipe FROM tipe_kamar ORDER BY na
         document.getElementById('load-more-wrapper').innerHTML = `
                 <button id="btn-load-more" onclick="loadMore()" class="btn btn-secondary px-8 py-3 rounded-full">
                     Lihat Lebih Banyak <i class="fa-solid fa-chevron-down ml-2"></i>
-                </button>
-                <div id="loading-spinner" class="hidden">
-                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-primary"></i>
-                </div>`;
+                </button>`;
       }
 
       // Set parameter offset untuk dikirim ke server
       params.set('offset', currentOffset);
 
       // Tampilkan loading spinner & sembunyikan tombol
-      const currentBtn = document.getElementById('btn-load-more');
-      const currentSpinner = document.getElementById('loading-spinner');
-      if (currentBtn) currentBtn.classList.add('hidden');
-      if (currentSpinner) currentSpinner.classList.remove('hidden');
-
       // Request AJAX menggunakan Fetch API ke ajax_kamar.php
       fetch(`ajax_kamar.php?${params.toString()}`)
         .then(response => response.text()) // Konversi response ke text HTML
         .then(data => {
-          // Sembunyikan spinner setelah selesai
-          if (currentSpinner) currentSpinner.classList.add('hidden');
 
           if (data.trim().length > 0) {
             // Jika ada data, masukkan ke container (append)
